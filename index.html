@@ -70,7 +70,31 @@
     }
 
     a:hover {
-      color: #d64d0d;
+      color: #F2B705;
+    }
+
+    .project-logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .project h3 {
+      color: #16324F;
+      margin: 0 0 8px;
+    }
+
+    .project-shots {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .project-shots img {
+      max-width: 48%;
+      border: 1px solid #16324F;
     }
   </style>
 </head>
@@ -88,9 +112,28 @@
     <p>
       I'm Njabulo, a Civil Engineering student at Majuba TVET College
       in Newcastle. I build simple, fast, mobile-friendly websites for
-      local businesses,no  bloated templates, just sites that work
+      local businesses — no bloated templates, just sites that work
       and load quickly on any phone.
     </p>
+  </section>
+
+  <section id="projects">
+    <h2>Projects</h2>
+
+    <div class="project">
+      <img src="studymind-logo.png" alt="StudyMind logo" class="project-logo">
+      <h3>StudyMind</h3>
+      <p>
+        AI-powered study platform for CAPS and NATED students — currently
+        in development. Generates notes, quizzes, and flashcards aligned
+        to the South African curriculum, built to make quality study
+        support accessible for students who can't afford private tutoring.
+      </p>
+      <div class="project-shots">
+        <img src="studymind-caps.png" alt="StudyMind CAPS subject library">
+        <img src="studymind-nated.png" alt="StudyMind NATED subject library">
+      </div>
+    </div>
   </section>
 
   <section id="skills">
