@@ -1,28 +1,47 @@
-# Cash loans poster
+# Posters
 
-A4 poster (210 × 297 mm) advertising cash loans at a flat 30% one-month rate.
+Two A4 posters (210 × 297 mm), each supplied three ways.
 
-| File | Use |
-| --- | --- |
-| `cash-loans-poster.pdf` | Print-ready A4. Send this to a print shop or share on WhatsApp. |
-| `cash-loans-poster.png` | 2479 × 3508 px at 300 dpi. For WhatsApp status, Facebook and Instagram. |
-| `cash-loans-poster.html` | The editable source. Self-contained — the font is embedded, so it works offline. |
+| | Print | Social | Editable source |
+| --- | --- | --- | --- |
+| Cash loans | `cash-loans-poster.pdf` | `cash-loans-poster.png` | `cash-loans-poster.html` |
+| Florescence | `florescence-poster.pdf` | `florescence-poster.png` | `florescence-poster.html` |
 
-## Filling in your details
+The PNGs are 2479 × 3508 px at 300 dpi, rasterised from the PDFs, so print and
+social carry the same artwork. The HTML files are self-contained — fonts and
+artwork are embedded, so they open and print correctly offline.
 
-Open `cash-loans-poster.html` in a browser and search for the placeholders,
-which are shown in green with a dashed underline:
+## Filling in the placeholders
 
-- `0XX XXX XXXX` — your phone number
-- `Your name here` — your name or trading name
-- `Your area here` — the area you lend in
-- `NCRCP XXXX` — your National Credit Regulator registration number
+Open the HTML in a browser and search for the text below. Placeholders are shown
+in the accent colour with a dashed underline, so they are easy to spot on the
+rendered page.
 
-Also check the opening hours block, which currently reads Monday to Saturday,
-08:00–18:00.
+**Cash loans**
+
+- `0XX XXX XXXX` — done, now 060 930 2017
+- `Your name here` — name or trading name
+- `Your area here` — the area she lends in
+- `NCRCP XXXX` — National Credit Regulator registration number
+
+**Florescence**
+
+- `Your name here` and `Your area here`
+- `R___ per bottle` — the starting price
+- Check the sizes listed under "Sizes"; they are a common range, not her actual
+  stock list.
 
 ## Re-exporting after an edit
 
 Open the edited HTML in Chrome, press Ctrl+P, and print to PDF with margins set
-to None and background graphics turned on. For the PNG, export the PDF at
-300 dpi.
+to None and background graphics turned on. Export that PDF at 300 dpi for the
+PNG.
+
+## Notes on the Florescence artwork
+
+The bottles and the background tile are drawn in SVG rather than photographed,
+so they stay sharp at any size and nothing depends on an external image. They
+are generic bottles — swapping in photographs of the actual stock would sell the
+real products better.
+
+The Arabic line under the wordmark reads عطور عربية, "Arabic perfumes".
