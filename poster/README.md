@@ -39,9 +39,27 @@ PNG.
 
 ## Notes on the Florescence artwork
 
-The bottles and the background tile are drawn in SVG rather than photographed,
-so they stay sharp at any size and nothing depends on an external image. They
-are generic bottles — swapping in photographs of the actual stock would sell the
-real products better.
-
 The Arabic line under the wordmark reads عطور عربية, "Arabic perfumes".
+
+The background tile is an eight-point star drawn in SVG. The four photographs
+are embedded in the HTML at 300 dpi, so the file prints correctly on its own.
+
+### Photo sources
+
+All four are from Unsplash, whose licence permits commercial use without
+attribution or permission. Sources are recorded here anyway.
+
+| Where | Source |
+| --- | --- |
+| Hero, attar bottle in sunlight | `images.unsplash.com/photo-1738414808975-201966230c59` |
+| Tile 1, attar roll-on | `images.unsplash.com/photo-1646149757906-e6e9e9a7c77f` |
+| Tile 2, incense smoke | `images.unsplash.com/photo-1770217535698-dd125e5d36c5` |
+| Tile 3, rose petals | `images.unsplash.com/photo-1585768750637-ada36319a484` |
+
+Photographs showing another perfume house's branded product were deliberately
+excluded — a poster for this shop should not advertise someone else's bottle.
+For the same reason, photographs of the actual stock would be better than any
+of these, and can be swapped in by replacing the `src` of the relevant `<img>`.
+
+An earlier version of this poster used drawn SVG bottles instead of
+photographs. It is in the git history if it is ever wanted back.
