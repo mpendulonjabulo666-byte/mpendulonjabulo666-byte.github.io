@@ -10,6 +10,10 @@ the start of every session, so these rules apply without being restated each tim
 A web app where a user lists the ingredients they have and gets a healthy recipe built
 from them, respecting their allergens, diet, and health goal.
 
+**Built for South Africa.** This is not a localisation layer — it's the premise. Read
+`docs/12-SOUTH-AFRICA.md` before writing anything that touches ingredients, recipes,
+health goals, performance, or privacy. Where it disagrees with another doc, it wins.
+
 Full specification is in `docs/`. Read the relevant file before implementing a feature —
 don't infer the design from surrounding code.
 
@@ -24,6 +28,7 @@ don't infer the design from surrounding code.
 | Endpoints and error codes | `docs/07-API.md` |
 | Recipe generation, prompts, allergen safety, cost | `docs/08-AI-ENGINE.md` |
 | Stack, folder structure, conventions | `docs/09-TECH-STACK.md` |
+| **South African context — overrides the above** | `docs/12-SOUTH-AFRICA.md` |
 
 ---
 
@@ -60,6 +65,27 @@ This is the highest-stakes code in the project.
   `<Disclaimer variant="allergen" />` renders near allergen controls. Never remove these.
 - `lib/allergens/check.ts` requires unit tests covering the catalogue path and the keyword
   fallback. Do not modify it without updating them.
+
+### South African context
+
+- Ingredients, aliases, and recipes come from `docs/12-SOUTH-AFRICA.md`. Never seed or
+  suggest a generic international catalogue.
+- The system prompt **must** include the South African context block (§ 11 of that file).
+- Never write a recipe that implies South African staples are unhealthy, or that suggests
+  replacing pap, samp, morogo, or amasi with an imported substitute. Improve the dish from
+  the inside — more vegetables, more legumes, less salt.
+- South African English and metric units throughout: braai, mielie meal, brinjal, mince.
+- Respect `budget_mode` and `cooking_constraint` on the profile — both are hard
+  constraints on generation, not hints.
+- POPIA, not GDPR. Health-related data needs explicit consent at onboarding and must
+  genuinely delete on request.
+
+### Performance is a product requirement here
+
+Mobile data costs users money and many are on mid-range Android. Budgets in
+`docs/12-SOUTH-AFRICA.md` § 7: **< 150KB initial JS**, < 500KB landing page, < 300KB
+recipe page. Optimise images aggressively, keep components server-side by default, and
+don't add a dependency without checking what it costs the bundle.
 
 ### Design system
 

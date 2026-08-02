@@ -213,11 +213,20 @@ Not everything needs a test. These do:
 
 ## Performance targets
 
+> **Superseded by [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) § 7.** Mobile data costs
+> real money for this market and many users are on mid-range Android over 3G/4G, so the
+> targets are tighter than a typical web app's. The table below is the floor; file 12 adds
+> hard bundle-size budgets.
+
 | Metric | Target |
 |--------|--------|
-| Lighthouse Performance (landing) | ≥ 90 |
+| Lighthouse Performance (mobile) | ≥ 90 |
 | Lighthouse Accessibility (all pages) | ≥ 95 |
-| Largest Contentful Paint | < 2.5s |
+| **Initial JS bundle** | **< 150KB gzipped** |
+| **Landing page total weight** | **< 500KB** |
+| **Recipe page total weight** | **< 300KB** |
+| **LCP on throttled 3G** | **< 4s** |
+| **Time to Interactive, mid-range Android** | **< 5s** |
 | Cumulative Layout Shift | < 0.1 |
 | Ingredient search response | < 200ms |
 | Recipe generation (uncached) | < 12s median |
@@ -225,6 +234,12 @@ Not everything needs a test. These do:
 
 The accessibility number is the one to hold firmest. It's also the easiest to hit if the
 design system is followed, and painful to retrofit if it isn't.
+
+**Test on a real entry-level Android phone over mobile data, not on your laptop over
+fibre.** Every one of these numbers looks fine on a development machine.
+
+Also required for this market: PWA install support, and offline read access to saved
+recipes. Both are specified in `12-SOUTH-AFRICA.md` § 7.
 
 ---
 

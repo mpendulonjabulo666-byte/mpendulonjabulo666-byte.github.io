@@ -6,6 +6,10 @@
 **The product in one sentence:** you tell it what food you already have, and it gives you
 a healthy recipe you can actually cook with those ingredients right now.
 
+**Market: South Africa.** Not as an afterthought — the ingredient catalogue, the health
+goals, the languages, and the performance budget are all built around it. See
+[`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md).
+
 ---
 
 ## What these files are
@@ -34,10 +38,18 @@ rewrite.
 | 09 | [`09-TECH-STACK.md`](./09-TECH-STACK.md) | What libraries, what folder structure, what env vars? |
 | 10 | [`10-ROADMAP.md`](./10-ROADMAP.md) | What gets built in what order, and by when? |
 | 11 | [`11-CLIENT-BRIEF.md`](./11-CLIENT-BRIEF.md) | What must I ask the client before writing a line of code? |
+| 12 | [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) | **How does all of the above change for South Africa?** |
 | — | [`CLAUDE.md`](./CLAUDE.md) | Context file to drop into the build repo so Claude follows all of the above. |
 
-**If you only read two:** read `00-START-HERE.md` and `11-CLIENT-BRIEF.md`. The first
-teaches you the shape of the problem. The second stops you building the wrong thing.
+> ⚠️ **`12-SOUTH-AFRICA.md` overrides everything else.** Files 01–11 describe the product
+> in general terms. File 12 adapts it to the actual market: South African ingredients,
+> local-language aliases, budget mode, load-shedding mode, POPIA instead of GDPR, and much
+> tighter performance budgets because mobile data costs money here. Where the two
+> disagree, file 12 is correct.
+
+**If you only read three:** `00-START-HERE.md` for the shape of the problem,
+`12-SOUTH-AFRICA.md` for what makes this product worth building, and
+`11-CLIENT-BRIEF.md` so you don't build the wrong thing.
 
 ## How to use these with Claude Code
 

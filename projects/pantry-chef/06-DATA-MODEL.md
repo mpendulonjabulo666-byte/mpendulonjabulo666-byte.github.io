@@ -32,7 +32,12 @@ pantry_items ──── N:1 ──── ingredients      recipe_ingredients
 
 ```sql
 create type health_goal as enum (
-  'balanced', 'high_protein', 'low_carb', 'heart_healthy', 'weight_loss'
+  'balanced', 'high_protein', 'low_carb', 'heart_healthy', 'weight_loss',
+  'blood_sugar_friendly'          -- South African market; see 12-SOUTH-AFRICA.md
+);
+
+create type cooking_constraint as enum (
+  'none', 'no_electricity', 'single_plate', 'no_cook'   -- load-shedding mode
 );
 
 create type diet_tag as enum (
@@ -70,6 +75,14 @@ create table profiles (
   diets           diet_tag[]   not null default '{omnivore}',
   health_goal     health_goal  not null default 'balanced',
   units           unit_system  not null default 'metric',
+
+  -- South African market — see 12-SOUTH-AFRICA.md
+  budget_mode         boolean            not null default false,
+  cooking_constraint  cooking_constraint not null default 'none',
+
+  -- POPIA: explicit consent for health-related data, captured at onboarding
+  health_data_consent_at timestamptz,
+
   onboarded_at    timestamptz,
   created_at      timestamptz  not null default now(),
   updated_at      timestamptz  not null default now()
@@ -99,6 +112,11 @@ create table ingredients (
   emoji         text,
   is_staple     boolean not null default false,   -- salt, pepper, oil, water
   allergens     allergen[] not null default '{}', -- what this ingredient CONTAINS
+
+  -- South African market — see 12-SOUTH-AFRICA.md
+  high_sodium      boolean not null default false, -- stock cubes, aromat, packet soup
+  is_budget_staple boolean not null default false, -- dried beans, samp, pilchards, eggs
+
   search_vector tsvector generated always as (
                   to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(plural_name,''))
                 ) stored,
@@ -318,12 +336,16 @@ everyone.
 
 | Table | Rows | Source |
 |-------|------|--------|
-| `ingredients` | ~500 | Curated list, allergen-annotated. Client reviews. |
-| `ingredient_aliases` | ~1,500 | Plurals, misspellings, regional names. |
-| Quick-add staples | 12 | Subset of ingredients flagged for the empty state. |
+| `ingredients` | ~500 | **South African catalogue** — see `12-SOUTH-AFRICA.md` § 3. Allergen-, sodium-, and budget-annotated. |
+| `ingredient_aliases` | ~1,500 | Plurals, misspellings, **and local-language names** — see `12-SOUTH-AFRICA.md` § 4. |
+| Quick-add staples | 12 | Subset flagged for the empty state. Use SA staples: maize meal, eggs, onions, tomatoes, cabbage, dried beans, chicken, rice, potatoes, butternut, tinned pilchards, amasi. |
 
 Seeding the catalogue is a real task — budget a day, and get the client to review the
 allergen annotations specifically. That column is the safety net.
+
+**Do not seed a generic international catalogue.** An app that doesn't recognise "mielie
+meal", "morogo", or "amasi" fails its market in the first thirty seconds. The alias table
+is where this product either feels local or feels imported.
 
 ---
 

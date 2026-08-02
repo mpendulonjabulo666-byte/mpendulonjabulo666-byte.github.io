@@ -4,6 +4,19 @@ This file is for **you**, not the client. It's what you need to find out, agree,
 down before you start building — plus the conversations that are awkward to have later and
 cheap to have now.
 
+**Known so far:** the client is a lecturer, the market is South Africa, and they already
+have platform accounts set up. That resolves the region question (§ 7) but not the AI
+billing question (§ 4) — an existing account on a hosting or design platform is not the
+same as an Anthropic account with a payment method, and that one has a recurring monthly
+cost attached to it.
+
+**One thing worth knowing about a lecturer as a client:** they may be evaluating this as
+academic or portfolio work as much as a commercial product. If so, the parts that earn
+marks are the ones that show judgement — the two-layer allergen safety system, the POPIA
+consent handling, the alignment to the South African Food-Based Dietary Guidelines, and
+the localisation decisions in `12-SOUTH-AFRICA.md`. Those are worth writing up, not just
+building. Ask whether they need documentation of the *reasoning*, not only the software.
+
 ---
 
 ## Blocking questions
@@ -45,9 +58,17 @@ account.
    Logo? Brand colours to work from, or is the design system's palette fine?
 6. **Who writes the legal pages?** You should not write their privacy policy or terms.
    Say so plainly and offer to wire up whatever they provide.
-7. **Where are the users?** Region affects the ingredient catalogue (aubergine vs
-   eggplant, coriander vs cilantro), units (metric vs imperial default), and whether GDPR
-   applies.
+7. ~~**Where are the users?**~~ **Answered: South Africa.** This is settled and has been
+   built into the spec — see [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md). Consequences:
+   a South African ingredient catalogue with local-language aliases, metric units,
+   **POPIA rather than GDPR**, and tighter performance budgets because mobile data costs
+   money here.
+
+   **POPIA is the part to raise with the client explicitly.** Allergens and health goals
+   are plausibly health information about an identifiable person, which POPIA gives
+   special protection. They need a privacy policy and a registered Information Officer.
+   You build the technical controls — consent capture, deletion, retention limits — and
+   they handle the legal obligation. Put that split in writing.
 8. **Nutrition accuracy expectations.** They must understand these are AI estimates. Get
    an explicit acknowledgement, in writing, that this is not a medical or dietary tool.
 9. **Recipe photos.** Real photography sells the landing page more than anything else on

@@ -3,6 +3,12 @@
 How a pantry becomes a recipe, safely and without bankrupting anyone. This is the file to
 read twice.
 
+> **The system prompt in § 3 is incomplete on its own.** Append the South African context
+> block from [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) § 11 — local ingredients, sodium
+> awareness, budget mode, load-shedding mode, and an explicit instruction not to imply
+> that South African food is unhealthy. Without it the model will drift toward suggesting
+> kale and quinoa to households cooking pap.
+
 ---
 
 ## 1. Model
@@ -395,6 +401,14 @@ Before launch, generate 50 recipes across varied pantries and score each one:
 - [ ] Does it match the stated health goal?
 - [ ] Zero allergen violations. **This must be 50/50.**
 - [ ] Are the steps followable without prior knowledge of the dish?
+- [ ] **Are the ingredients actually buyable at a Shoprite or a spaza shop?**
+- [ ] **Does it use South African English and metric units?**
+- [ ] **Does any recipe imply South African food is unhealthy, or suggest replacing a
+      staple with an imported substitute?** Any hit is a prompt bug, not a taste
+      difference. Fix the prompt and re-run.
+- [ ] With budget mode on: is every ingredient genuinely cheap, and is there at most one
+      missing item?
+- [ ] With a cooking constraint set: is the recipe actually cookable under it?
 
 Keep the set. When you change the prompt, run it again and compare. A prompt change with
 no evaluation behind it is a guess.

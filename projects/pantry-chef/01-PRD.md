@@ -2,7 +2,12 @@
 
 **Codename:** PantryChef
 **Version:** v1.0 (MVP)
+**Market:** South Africa
 **Status:** Draft — pending client sign-off
+
+> **Read [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) alongside this file.** It revises the
+> personas, adds a sixth health goal, adds budget mode and load-shedding mode, and replaces
+> GDPR with POPIA. Where the two differ, file 12 wins.
 
 ---
 
@@ -24,21 +29,24 @@ rough nutrition.
 
 ## 3. Who it's for
 
-### Primary — "Weeknight Wren"
-Works full time, cooks 4–5 nights a week, cares about eating well but isn't tracking
-macros. Has a half-stocked fridge and 30 minutes. **Wants:** a decision made for them from
-what they already own.
+Full detail in [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) § 9. In short:
 
-### Secondary — "Goal-driven Gugu"
-Actively working toward something — cutting, bulking, managing blood sugar. Reads
-nutrition labels. **Wants:** recipes that fit a specific target, not generic "healthy".
+### Primary — Thandi, 29, Soweto
+Works full time, commutes, cooks for herself and her mother. Monthly shop at Shoprite plus
+spaza top-ups. Mid-range Android, watches her data. **Wants:** to eat better without
+spending more or cooking anything unfamiliar.
 
-### Tertiary — "Frugal Fikile"
-Tight budget, hates throwing food away, plans around what's about to expire.
-**Wants:** zero waste and no extra shopping.
+### Secondary — Sipho, 45, Durban
+Recently diagnosed with type 2 diabetes. Told to "eat healthier" and handed a pamphlet.
+**Wants:** to keep eating the food he grew up with, cooked in a way that won't hurt him.
+*This is the user who most justifies the product existing.*
 
-All three want the same core loop. Wren defines the default experience; Gugu justifies the
-health-goal system; Fikile justifies the "use what expires first" nudge in v2.
+### Tertiary — Lerato, 21, Cape Town
+Student. Res kitchen, one hot plate, tiny budget, limited skills. **Wants:** cheap, fast,
+one-pot.
+
+All three want the same core loop. Thandi defines the default experience; Sipho justifies
+the health-goal system; Lerato justifies budget mode and load-shedding mode.
 
 ## 4. Value proposition
 
@@ -65,6 +73,12 @@ health-goal system; Fikile justifies the "use what expires first" nudge in v2.
 | F14 | Profile: edit allergens, diet, goal | Preferences change |
 | F15 | Rate limiting + generation counter | Cost protection |
 | F16 | Nutrition and allergen disclaimers | Legal / ethical baseline |
+| F17 | **Budget mode** toggle | For much of this market, "healthy" and "affordable" are the same question |
+| F18 | **Load-shedding mode** (cooking constraint) | An electric stove isn't always available. Cheap to build, immediately obvious value |
+| F19 | POPIA consent capture at onboarding | Health data has special protection under South African law |
+| F20 | Local-language ingredient aliases | Typing "mielie meal" or "morogo" must work |
+
+F17–F20 are specified in [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md).
 
 ## 6. Explicitly OUT of scope for v1
 
@@ -110,9 +124,17 @@ The user picks exactly one. It's editable at any time.
 | `low_carb` | ≤ 30g net carbs per serving. |
 | `heart_healthy` | Low saturated fat, low sodium, fibre-forward. |
 | `weight_loss` | ≤ 500 kcal per serving, high satiety (protein + fibre + volume). |
+| `blood_sugar_friendly` | Lower-GI starches, fibre alongside carbs, no added sugar. **Added for the South African market** — see `12-SOUTH-AFRICA.md` § 2. |
 
-Deliberately five, not fifteen. Each one must be visibly different in output or it isn't
+Deliberately six, not fifteen. Each one must be visibly different in output or it isn't
 earning its place in the UI.
+
+`blood_sugar_friendly` is **not** the same as `low_carb`. In a country where starch is the
+foundation of most meals, "remove the starch" is advice people ignore. "Choose samp over
+refined maize meal, and eat beans with it" is advice they can act on.
+
+**Budget mode and cooking constraint are separate settings, not health goals.** They're
+orthogonal — someone can want high-protein *and* cheap *and* cookable on a gas ring.
 
 ## 9. Diets (v1 set)
 
