@@ -2,6 +2,12 @@
 
 ---
 
+> **If you're building in an AI app builder (Newly), the tool may impose its own stack.**
+> That's fine — the specific libraries below matter less than the constraints they exist to
+> satisfy. Whatever the builder generates must still keep secrets server-side, enforce Row
+> Level Security, and hit the bundle budgets in `12-SOUTH-AFRICA.md` § 7. See
+> [`13-AI-BUILDER-WORKFLOW.md`](./13-AI-BUILDER-WORKFLOW.md).
+
 ## The stack
 
 | Layer | Choice | Why this one |

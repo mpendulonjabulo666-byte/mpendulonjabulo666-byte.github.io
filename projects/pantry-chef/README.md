@@ -39,6 +39,7 @@ rewrite.
 | 10 | [`10-ROADMAP.md`](./10-ROADMAP.md) | What gets built in what order, and by when? |
 | 11 | [`11-CLIENT-BRIEF.md`](./11-CLIENT-BRIEF.md) | What must I ask the client before writing a line of code? |
 | 12 | [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) | **How does all of the above change for South Africa?** |
+| 13 | [`13-AI-BUILDER-WORKFLOW.md`](./13-AI-BUILDER-WORKFLOW.md) | Building this in an AI app builder — prompt order, and what to verify by hand |
 | — | [`CLAUDE.md`](./CLAUDE.md) | Context file to drop into the build repo so Claude follows all of the above. |
 
 > ⚠️ **`12-SOUTH-AFRICA.md` overrides everything else.** Files 01–11 describe the product
@@ -50,6 +51,16 @@ rewrite.
 **If you only read three:** `00-START-HERE.md` for the shape of the problem,
 `12-SOUTH-AFRICA.md` for what makes this product worth building, and
 `11-CLIENT-BRIEF.md` so you don't build the wrong thing.
+
+## If you're building in an AI app builder
+
+The client is using **Newly**. Read [`13-AI-BUILDER-WORKFLOW.md`](./13-AI-BUILDER-WORKFLOW.md)
+before you start — it has the prompt order (design system first, landing page last) and,
+more importantly, the three things to verify by hand before building any feature.
+
+Short version: builders are excellent at the half of this app you can see, and unreliable
+at the half you can't. Let it build the screens fast; personally verify the allergen
+check, the API key handling, and the database access rules.
 
 ## How to use these with Claude Code
 
