@@ -30,6 +30,7 @@ don't infer the design from surrounding code.
 | Stack, folder structure, conventions | `docs/09-TECH-STACK.md` |
 | **South African context — overrides the above** | `docs/12-SOUTH-AFRICA.md` |
 | Working alongside an AI app builder | `docs/13-AI-BUILDER-WORKFLOW.md` |
+| **Native mobile (React Native) — supersedes the web stack** | `docs/15-NEWLY-MOBILE.md` |
 
 ---
 

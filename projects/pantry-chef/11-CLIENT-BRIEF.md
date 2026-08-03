@@ -35,12 +35,19 @@ after 30 days is cheaper and simpler. This also touches the privacy policy.
 **Recommendation:** keep everything for now — the cache benefit is real and storage is
 cheap at this scale. Revisit at 100k recipes.
 
-### 3. Web app, or native iOS/Android?
-The spec is a responsive web app, installable to the home screen. If the client is
-picturing App Store listings, that's a fundamentally different project — different
-timeline, different skills, app store review, two more platforms to maintain.
-**Ask directly. Do not assume.** This is the single most common source of a blown-up
-freelance project.
+### 3. ~~Web app, or native iOS/Android?~~ **ANSWERED: native, both platforms**
+Newly builds native React Native apps for iOS and Android. See
+[`15-NEWLY-MOBILE.md`](./15-NEWLY-MOBILE.md).
+
+Consequences the client must agree to **before** you start:
+- **Apple Developer Program, $99/year, and Google Play, $25 once** — in their name, on
+  their card.
+- **Store review adds 1–2 weeks** at the end, and first-time rejection is normal. Don't
+  promise a hard launch date.
+- **A live privacy policy URL is mandatory** — both stores reject placeholders. This makes
+  question 6 below genuinely blocking rather than merely important.
+- **The marketing landing page is now separate scope**, since it can't live inside an app.
+  Decide whether it's in or out, and price it accordingly.
 
 ### 4. Who pays for the AI usage, and what happens at scale?
 Roughly $0.07 per uncached recipe (see `08-AI-ENGINE.md` § 7). At 10,000 generations a

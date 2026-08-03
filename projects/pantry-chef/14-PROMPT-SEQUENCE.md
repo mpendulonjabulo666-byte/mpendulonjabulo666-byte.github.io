@@ -3,6 +3,21 @@
 Copy-paste prompts for building PantryChef in an AI builder, in order. Each is
 self-contained — you don't need to have the spec loaded for them to work, though it helps.
 
+> ## ⚠️ Building on Newly? Three prompts here are superseded.
+>
+> Newly generates **native React Native apps**, not web apps. Use these replacements from
+> [`15-NEWLY-MOBILE.md`](./15-NEWLY-MOBILE.md):
+>
+> | Prompt | Use instead |
+> |---|---|
+> | **1** — design system | § 9 — React Native theme object, not CSS variables |
+> | **6** — generation | § 10 — Supabase Edge Function, key never in the app binary |
+> | **8** — landing page | § 11 — App Store listing; there's no landing page in an app |
+>
+> Prompts 2, 3, 4, 5, 7 and 7b work as written — say "screen" where they say "page", and
+> ignore the URL paths. Prompt 2 in particular is unchanged, because Newly already uses
+> Supabase.
+
 **Rules for using these:**
 
 - **One prompt at a time.** Wait for it to finish, check the result, then send the next.

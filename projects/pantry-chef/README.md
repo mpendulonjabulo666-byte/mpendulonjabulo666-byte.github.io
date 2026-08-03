@@ -41,6 +41,7 @@ rewrite.
 | 12 | [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) | **How does all of the above change for South Africa?** |
 | 13 | [`13-AI-BUILDER-WORKFLOW.md`](./13-AI-BUILDER-WORKFLOW.md) | Building this in an AI app builder — prompt order, and what to verify by hand |
 | 14 | [`14-PROMPT-SEQUENCE.md`](./14-PROMPT-SEQUENCE.md) | **The actual copy-paste prompts, in order, 1 through 8** |
+| 15 | [`15-NEWLY-MOBILE.md`](./15-NEWLY-MOBILE.md) | **Native mobile on Newly — what changes, and the three replacement prompts** |
 | — | [`CLAUDE.md`](./CLAUDE.md) | Context file to drop into the build repo so Claude follows all of the above. |
 
 > ⚠️ **`12-SOUTH-AFRICA.md` overrides everything else.** Files 01–11 describe the product
