@@ -40,6 +40,7 @@ rewrite.
 | 11 | [`11-CLIENT-BRIEF.md`](./11-CLIENT-BRIEF.md) | What must I ask the client before writing a line of code? |
 | 12 | [`12-SOUTH-AFRICA.md`](./12-SOUTH-AFRICA.md) | **How does all of the above change for South Africa?** |
 | 13 | [`13-AI-BUILDER-WORKFLOW.md`](./13-AI-BUILDER-WORKFLOW.md) | Building this in an AI app builder — prompt order, and what to verify by hand |
+| 14 | [`14-PROMPT-SEQUENCE.md`](./14-PROMPT-SEQUENCE.md) | **The actual copy-paste prompts, in order, 1 through 8** |
 | — | [`CLAUDE.md`](./CLAUDE.md) | Context file to drop into the build repo so Claude follows all of the above. |
 
 > ⚠️ **`12-SOUTH-AFRICA.md` overrides everything else.** Files 01–11 describe the product
