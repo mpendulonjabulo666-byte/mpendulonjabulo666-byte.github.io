@@ -69,13 +69,20 @@ Both from Unsplash, free licence, no attribution required.
 
 | Where | Source |
 | --- | --- |
-| Hero, handshake against a brick wall | `images.unsplash.com/photo-1745847768380-2caeadbb3b71` |
+| Hero, handshake, tightly cropped to hands and forearms only | `images.unsplash.com/photo-1739285452621-59d92842fcc8` (cropped from a wider four-person office photo — see below) |
 | Tile, South African Rand notes (R50/R100) | `images.unsplash.com/photo-1579940906447-34fd001e4289` |
 
-One candidate hero — a handshake photo — was rejected after a full-resolution
-check showed a gun on the table beneath the hands (a common "shady deal"
-stock-photo trope). Worth remembering: always check stock photography at full
-size before use, not just the thumbnail.
+The hero was specifically chosen (by request) to show a Black woman's hand in
+the handshake. The source photo is a wider four-person scene in a coffee shop
+with a visible "Café One" fridge; the poster crops tightly to just one
+handshake on the side of the frame away from that branding, so no third-party
+logo ends up on the poster and no faces are shown.
+
+Two earlier hero candidates were rejected: a moodier handshake-over-a-table
+shot turned out to have a gun on the table beneath the hands once checked at
+full resolution (a common "shady deal" stock-photo trope, invisible at
+thumbnail size); and the original brick-wall handshake was replaced outright
+per this request, since it didn't show a Black woman's hand.
 
 ## Notes on the Flore Scents artwork
 
