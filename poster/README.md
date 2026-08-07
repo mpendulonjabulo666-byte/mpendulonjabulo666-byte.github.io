@@ -22,10 +22,10 @@ rendered page.
 
 **Cash loans**
 
-- `0XX XXX XXXX` — done, now 060 930 2017
-- `Your name here` — name or trading name
-- `Your area here` — the area she lends in
 - `NCRCP XXXX` — National Credit Regulator registration number
+
+Name and area placeholders were removed in the photo-led redesign — this
+poster now carries only the WhatsApp number, same as the Flore Scents one.
 
 **Flore Scents**
 
@@ -39,6 +39,43 @@ been confirmed as an actual policy).
 Open the edited HTML in Chrome, press Ctrl+P, and print to PDF with margins set
 to None and background graphics turned on. Export that PDF at 300 dpi for the
 PNG.
+
+## Notes on the Cash loans artwork
+
+Redesigned around real photography, the same way the Flore Scents poster was:
+a handshake hero (trust, warm light, unbranded) and a tile of genuine South
+African Rand notes, both under the same green-tinted grade overlay
+(`mix-blend-mode: multiply` on `.hero-wrap`/`.photo`) so the two photos read
+as one shelf. Palette is two-tone by design — near-black ink and one refined
+money-green (`#2E6B45`) — deliberately fewer colours than Flore Scents, to
+keep a financial poster reading calm rather than decorative. Lora (serif,
+italic) is used once, for a short trust statement, paired with Archivo for
+everything functional (headline, table, numbers).
+
+The **"What to bring" list (ID, payslip, bank statements) was removed and the
+"How it works" step that asked for those documents was rewritten** — she
+lends on trust rather than requiring paperwork, so listing document
+requirements was no longer accurate. In its place is a two-step process and a
+short quote explaining why there's no checklist. The **NCR fine print at the
+bottom still mentions "affordability assessment and approval"** — that's a
+regulatory disclosure, not a paperwork checklist, and I left it as-is since
+it's a legal requirement rather than a design choice. Worth having her (or
+whoever holds the NCR registration) confirm that line still applies under a
+trust-based process before this goes to print.
+
+### Photo sources
+
+Both from Unsplash, free licence, no attribution required.
+
+| Where | Source |
+| --- | --- |
+| Hero, handshake against a brick wall | `images.unsplash.com/photo-1745847768380-2caeadbb3b71` |
+| Tile, South African Rand notes (R50/R100) | `images.unsplash.com/photo-1579940906447-34fd001e4289` |
+
+One candidate hero — a handshake photo — was rejected after a full-resolution
+check showed a gun on the table beneath the hands (a common "shady deal"
+stock-photo trope). Worth remembering: always check stock photography at full
+size before use, not just the thumbnail.
 
 ## Notes on the Flore Scents artwork
 
