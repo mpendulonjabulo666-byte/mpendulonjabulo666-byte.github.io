@@ -42,6 +42,17 @@ PNG.
 
 ## Notes on the Flore Scents artwork
 
+The palette follows a named design direction, **"Gold Hour"** — espresso
+ground (`#15100D`), one antique gold (`#B4884A`), one ember accent
+(`#9A4326`), warm cream text (`#EFE6D8`). The mood board that direction comes
+from is a separate Claude-published page, not part of this repo.
+
+Every photo (hero and all three tiles) carries the same soft warm-gold
+gradient overlay (`mix-blend-mode: overlay` on a `.photo`/`.hero-wrap`
+wrapper). That is what keeps four unrelated stock photos — one of them shot on
+a neutral grey background — reading as one consistent shelf instead of four
+random images.
+
 The Arabic line under the wordmark reads عطور عربية, "Arabic perfumes".
 
 The background tile is an eight-point star drawn in SVG. The four photographs
