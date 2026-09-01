@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards — SchoolBag</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<style>
+  :root{
+    --bg:#FBF1E3;
+    --card:#FFFFFF;
+    --border:#ECE0CC;
+    --accent:#C8102E;
+    --accent-soft:#FBE0E3;
+    --text:#1C1A16;
+    --muted:#8D8578;
+    --green:#2F9E44;
+    --green-soft:#DFF0E2;
+    --amber:#B5502E;
+    --amber-soft:#F6DFD3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .app{max-width:480px;margin:0 auto;padding:20px 20px 40px;min-height:100vh;display:flex;flex-direction:column;}
+
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .back-btn{
+    width:36px;height:36px;border-radius:50%;background:var(--card);
+    display:flex;align-items:center;justify-content:center;color:var(--text);
+    text-decoration:none;box-shadow:0 1px 3px rgba(28,26,22,0.08);flex-shrink:0;border:none;cursor:pointer;
+  }
+  .topbar-text{flex:1;min-width:0;}
+  .topbar-title{font-size:17px;font-weight:700;line-height:1.2;}
+  .topbar-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+
+  /* ---- deck list ---- */
+  .deck-list{display:flex;flex-direction:column;gap:12px;}
+  .deck-card{
+    display:flex;align-items:center;gap:14px;background:var(--card);
+    border:1px solid var(--border);border-radius:16px;padding:14px 16px;
+    text-align:left;width:100%;font-family:inherit;cursor:pointer;
+  }
+  .deck-icon{
+    width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:15px;
+  }
+  .deck-info{flex:1;min-width:0;}
+  .deck-title{font-weight:700;font-size:15px;margin-bottom:2px;}
+  .deck-meta{font-size:12.5px;color:var(--muted);}
+  .deck-progress-track{height:4px;border-radius:3px;background:var(--border);margin-top:8px;overflow:hidden;}
+  .deck-progress-fill{height:100%;background:var(--green);border-radius:3px;}
+  .chev{color:var(--muted);width:16px;height:16px;flex-shrink:0;}
+
+  /* ---- study view ---- */
+  .study{display:none;flex:1;flex-direction:column;}
+  .study.active{display:flex;}
+  .deck-list.hidden{display:none;}
+
+  .study-progress-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .study-progress-text{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .study-progress-track{height:5px;border-radius:4px;background:var(--border);margin-bottom:22px;overflow:hidden;}
+  .study-progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .25s;}
+
+  .card-stage{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;}
+  .flashcard{width:100%;max-width:400px;height:260px;position:relative;cursor:pointer;}
+  .flashcard-inner{
+    width:100%;height:100%;position:relative;transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.4,.2,.2,1);
+  }
+  .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+  .flashcard-face{
+    position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:28px;background:var(--card);border:1px solid var(--border);
+    box-shadow:0 2px 10px rgba(28,26,22,0.06);
+  }
+  .flashcard-face .kicker{
+    position:absolute;top:16px;left:20px;font-size:10.5px;font-weight:700;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .flashcard-face p{font-size:17px;line-height:1.5;font-weight:600;margin:0;max-width:100%;overflow-x:auto;}
+  .flashcard-face.back{transform:rotateY(180deg);background:var(--accent-soft);border-color:var(--accent-soft);}
+  .flashcard-face.back p{font-weight:500;font-size:15.5px;}
+  .flashcard-face .katex{font-size:1.05em;}
+  .flashcard-face .katex-display{margin:.4em 0;}
+
+  .hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;}
+
+  .study-actions{display:flex;gap:12px;margin-top:20px;}
+  .action-btn{
+    flex:1;border:none;border-radius:14px;padding:14px;font-family:inherit;
+    font-weight:700;font-size:14.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .action-btn.learning{background:var(--amber-soft);color:var(--amber);}
+  .action-btn.got-it{background:var(--green-soft);color:var(--green);}
+  .action-btn:disabled{opacity:.5;cursor:default;}
+
+  .study-footer{display:flex;justify-content:space-between;margin-top:16px;}
+  .text-btn{
+    background:none;border:none;font-family:inherit;color:var(--muted);font-size:13px;
+    cursor:pointer;padding:6px 2px;
+  }
+  .text-btn:hover{color:var(--text);}
+
+  /* ---- summary ---- */
+  .summary{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+  .summary.active{display:flex;}
+  .summary-icon{
+    width:64px;height:64px;border-radius:50%;background:var(--green-soft);color:var(--green);
+    display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+  }
+  .summary h1{font-size:20px;margin:0 0 8px;}
+  .summary p{font-size:14.5px;color:var(--muted);margin:0 0 26px;max-width:32ch;line-height:1.5;}
+  .summary-stats{display:flex;gap:12px;margin-bottom:26px;}
+  .summary-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 20px;min-width:100px;}
+  .summary-stat strong{display:block;font-size:22px;}
+  .summary-stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  .summary-actions{display:flex;gap:12px;}
+  .primary-btn{
+    display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;text-decoration:none;
+    font-weight:700;font-size:14.5px;padding:13px 20px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;
+  }
+  .ghost-btn{
+    display:inline-flex;align-items:center;justify-content:center;background:var(--card);color:var(--text);
+    border:1px solid var(--border);font-weight:700;font-size:14.5px;padding:13px 20px;border-radius:12px;cursor:pointer;font-family:inherit;
+  }
+
+  .footer-nav{margin-top:auto;padding-top:28px;text-align:center;}
+  .footer-nav a{color:var(--muted);font-size:12.5px;text-decoration:none;margin:0 8px;}
+  .footer-nav a:hover{text-decoration:underline;}
+
+  svg{display:block;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <a class="back-btn" id="topBack" href="schoolbag-dashboard-student.html" aria-label="Back">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="topbar-text">
+      <div class="topbar-title" id="topTitle">Flashcards</div>
+      <div class="topbar-sub" id="topSub">4 decks &middot; 24 cards</div>
+    </div>
+  </div>
+
+  <div class="deck-list" id="deckList"></div>
+
+  <div class="study" id="studyView">
+    <div class="study-progress-row">
+      <span class="study-progress-text" id="studyCount">1 / 6</span>
+      <span class="study-progress-text" id="studyMastered">0 mastered</span>
+    </div>
+    <div class="study-progress-track"><div class="study-progress-fill" id="studyProgressFill" style="width:0%"></div></div>
+
+    <div class="card-stage">
+      <div class="flashcard" id="flashcard">
+        <div class="flashcard-inner">
+          <div class="flashcard-face front">
+            <span class="kicker">Question</span>
+            <p id="cardFront"></p>
+          </div>
+          <div class="flashcard-face back">
+            <span class="kicker">Answer</span>
+            <p id="cardBack"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Tap the card to flip it</div>
+
+    <div class="study-actions">
+      <button class="action-btn learning" id="btnLearning" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
+        Still learning
+      </button>
+      <button class="action-btn got-it" id="btnGotIt" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Got it
+      </button>
+    </div>
+
+    <div class="study-footer">
+      <button class="text-btn" id="btnShuffle">Shuffle deck</button>
+      <button class="text-btn" id="btnBackToDecks">All decks</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summaryView">
+    <div class="summary-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <h1>Deck complete</h1>
+    <p id="summaryText">You've been through every card in this deck.</p>
+    <div class="summary-stats">
+      <div class="summary-stat"><strong id="statMastered">0</strong><span>Mastered</span></div>
+      <div class="summary-stat"><strong id="statReview">0</strong><span>To review</span></div>
+    </div>
+    <div class="summary-actions">
+      <button class="ghost-btn" id="btnRestart">Study again</button>
+      <button class="primary-btn" id="btnDone">All decks</button>
+    </div>
+  </div>
+
+  <div class="footer-nav" id="footerNav">
+    <a href="schoolbag-dashboard-student.html">Dashboard</a>&middot;
+    <a href="schoolbag-terms.html">Terms</a>&middot;
+    <a href="schoolbag-privacy.html">Privacy</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var DECKS = [
+    {
+      id: 'materials',
+      title: 'Stress & Strain',
+      subject: 'Materials Science · Civil Engineering',
+      initials: 'CE',
+      cards: [
+        { q: "What does the elastic region of a stress-strain graph show?", a: "The material deforms proportionally to load and returns to its original shape when unloaded — this is where Hooke's Law applies." },
+        { q: "What is Young's Modulus?", a: "The slope of the stress-strain graph in the elastic region — a measure of a material's stiffness (stress ÷ strain)." },
+        { q: "What happens at the yield point?", a: "The material begins to deform permanently — beyond this point it won't return to its original shape." },
+        { q: "What is Ultimate Tensile Strength (UTS)?", a: "The maximum stress a material can withstand before it starts to neck and weaken — the highest point on the graph." },
+        { q: "What's the difference between stress and strain?", a: "Stress is force per unit area, measured in MPa. Strain is the ratio of deformation to original length, and has no units." },
+        { q: "What happens at the fracture point?", a: "The material breaks completely — it's the final point on the stress-strain curve." }
+      ]
+    },
+    {
+      id: 'quadratics',
+      title: 'Quadratic Equations',
+      subject: 'Mathematics',
+      initials: 'MA',
+      cards: [
+        { q: "What is the quadratic formula, for $ax^2 + bx + c = 0$?", a: "$$x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$" },
+        { q: "What is the discriminant?", a: "$b^2 - 4ac$ — it tells you how many real roots the equation has, before you solve it." },
+        { q: "Discriminant greater than 0 means?", a: "Two distinct real roots." },
+        { q: "Discriminant equal to 0 means?", a: "One repeated real root — the graph just touches the x-axis." },
+        { q: "Discriminant less than 0 means?", a: "No real roots — the graph never crosses the x-axis." },
+        { q: "What shape does a quadratic function graph make?", a: "A parabola — u-shaped when a is positive, n-shaped when a is negative." }
+      ]
+    },
+    {
+      id: 'photosynthesis',
+      title: 'Photosynthesis',
+      subject: 'Life Sciences',
+      initials: 'LS',
+      cards: [
+        { q: "What is the overall equation for photosynthesis?", a: "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂" },
+        { q: "Where do the light-dependent reactions happen?", a: "In the thylakoid membrane of the chloroplast." },
+        { q: "What do the light-dependent reactions produce?", a: "ATP, NADPH, and oxygen — released from splitting water molecules." },
+        { q: "Where does the Calvin cycle happen?", a: "In the stroma of the chloroplast." },
+        { q: "What does the Calvin cycle use to make glucose?", a: "ATP and NADPH from the light-dependent reactions, plus CO₂ from the air." },
+        { q: "Photosynthesis vs respiration — which organelle for which?", a: "Photosynthesis happens in the chloroplast. Cellular respiration happens in the mitochondrion." }
+      ]
+    },
+    {
+      id: 'circuits',
+      title: 'Basic Circuits',
+      subject: 'Electrical · NCV N2',
+      initials: 'EL',
+      cards: [
+        { q: "What is Ohm's Law?", a: "V = I × R — voltage equals current multiplied by resistance." },
+        { q: "In a series circuit, how does current behave?", a: "Current is the same at every point in the circuit." },
+        { q: "In a parallel circuit, how does voltage behave?", a: "Voltage is the same across every parallel branch." },
+        { q: "What does a multimeter measure?", a: "Voltage, current, and resistance — depending on the mode it's set to." },
+        { q: "What is the unit of electrical resistance?", a: "The ohm (Ω)." },
+        { q: "What safety device protects a circuit from overcurrent?", a: "A circuit breaker or fuse." }
+      ]
+    }
+  ];
+
+  var STORAGE_KEY = 'schoolbag_flashcards_progress_v1';
+
+  function loadProgress(){
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function saveProgress(progress){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch (e) { /* storage unavailable — progress just won't persist */ }
+  }
+
+  var progress = loadProgress();
+
+  function deckMastery(deck){
+    var known = (progress[deck.id] && progress[deck.id].known) || [];
+    return known.length;
+  }
+
+  var deckListEl = document.getElementById('deckList');
+  var studyView = document.getElementById('studyView');
+  var summaryView = document.getElementById('summaryView');
+  var footerNav = document.getElementById('footerNav');
+  var topTitle = document.getElementById('topTitle');
+  var topSub = document.getElementById('topSub');
+  var topBack = document.getElementById('topBack');
+
+  function renderDeckList(){
+    deckListEl.innerHTML = '';
+    DECKS.forEach(function(deck){
+      var mastered = deckMastery(deck);
+      var pct = Math.round((mastered / deck.cards.length) * 100);
+
+      var card = document.createElement('button');
+      card.className = 'deck-card';
+      card.type = 'button';
+      card.innerHTML =
+        '<div class="deck-icon">' + deck.initials + '</div>' +
+        '<div class="deck-info">' +
+          '<div class="deck-title">' + deck.title + '</div>' +
+          '<div class="deck-meta">' + deck.subject + ' &middot; ' + deck.cards.length + ' cards' +
+            (mastered ? ' &middot; ' + mastered + ' mastered' : '') + '</div>' +
+          '<div class="deck-progress-track"><div class="deck-progress-fill" style="width:' + pct + '%"></div></div>' +
+        '</div>' +
+        '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+      card.addEventListener('click', function(){ openDeck(deck); });
+      deckListEl.appendChild(card);
+    });
+  }
+
+  var current = null; // { deck, order: [indices], pos, results: {index: 'known'|'learning'} }
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function openDeck(deck, keepOrder){
+    current = {
+      deck: deck,
+      order: keepOrder || deck.cards.map(function(_, i){ return i; }),
+      pos: 0,
+      results: {}
+    };
+    showView('study');
+    renderCard();
+  }
+
+  var flashcardEl = document.getElementById('flashcard');
+  var cardFront = document.getElementById('cardFront');
+  var cardBack = document.getElementById('cardBack');
+  var studyCount = document.getElementById('studyCount');
+  var studyMastered = document.getElementById('studyMastered');
+  var studyProgressFill = document.getElementById('studyProgressFill');
+  var btnLearning = document.getElementById('btnLearning');
+  var btnGotIt = document.getElementById('btnGotIt');
+
+  // Renders plain text mixed with $inline$ and $$display$$ LaTeX math via KaTeX,
+  // falling back to raw text if KaTeX hasn't loaded or a formula fails to parse.
+  function renderContent(el, text){
+    el.innerHTML = '';
+    var re = /\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        el.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      var isDisplay = match[1] !== undefined;
+      var expr = isDisplay ? match[1] : match[2];
+      var span = document.createElement(isDisplay ? 'div' : 'span');
+      try {
+        if (window.katex) {
+          katex.render(expr, span, { throwOnError: false, displayMode: isDisplay });
+        } else {
+          span.textContent = (isDisplay ? '$$' : '$') + expr + (isDisplay ? '$$' : '$');
+        }
+      } catch (e) {
+        span.textContent = expr;
+      }
+      el.appendChild(span);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      el.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  function renderCard(){
+    var deck = current.deck;
+    var idx = current.order[current.pos];
+    var cardData = deck.cards[idx];
+
+    flashcardEl.classList.remove('flipped');
+    renderContent(cardFront, cardData.q);
+    renderContent(cardBack, cardData.a);
+
+    studyCount.textContent = (current.pos + 1) + ' / ' + current.order.length;
+    var masteredNow = Object.keys(current.results).filter(function(k){ return current.results[k] === 'known'; }).length;
+    studyMastered.textContent = masteredNow + ' mastered this round';
+    studyProgressFill.style.width = Math.round((current.pos / current.order.length) * 100) + '%';
+
+    btnLearning.disabled = false;
+    btnGotIt.disabled = false;
+
+    topTitle.textContent = deck.title;
+    topSub.textContent = deck.subject;
+  }
+
+  flashcardEl.addEventListener('click', function(){
+    flashcardEl.classList.toggle('flipped');
+  });
+
+  function answer(result){
+    var idx = current.order[current.pos];
+    current.results[idx] = result;
+
+    var deckProgress = progress[current.deck.id] || { known: [] };
+    var known = deckProgress.known.filter(function(i){ return i !== idx; });
+    if (result === 'known') known.push(idx);
+    progress[current.deck.id] = { known: known };
+    saveProgress(progress);
+
+    if (current.pos + 1 < current.order.length) {
+      current.pos += 1;
+      renderCard();
+    } else {
+      showSummary();
+    }
+  }
+
+  btnGotIt.addEventListener('click', function(){ answer('known'); });
+  btnLearning.addEventListener('click', function(){ answer('learning'); });
+
+  document.getElementById('btnShuffle').addEventListener('click', function(){
+    current.order = shuffle(current.order);
+    current.pos = 0;
+    current.results = {};
+    renderCard();
+  });
+
+  document.getElementById('btnBackToDecks').addEventListener('click', function(){
+    showView('decks');
+  });
+
+  var summaryText = document.getElementById('summaryText');
+  var statMastered = document.getElementById('statMastered');
+  var statReview = document.getElementById('statReview');
+
+  function showSummary(){
+    var results = current.results;
+    var masteredCount = Object.keys(results).filter(function(k){ return results[k] === 'known'; }).length;
+    var reviewCount = Object.keys(results).length - masteredCount;
+
+    statMastered.textContent = masteredCount;
+    statReview.textContent = reviewCount;
+    summaryText.textContent = reviewCount === 0
+      ? "Every card in " + current.deck.title + " is marked as mastered. Nice work."
+      : "You've been through every card in " + current.deck.title + ". " + reviewCount + " could use another pass.";
+
+    showView('summary');
+  }
+
+  document.getElementById('btnRestart').addEventListener('click', function(){
+    openDeck(current.deck);
+  });
+  document.getElementById('btnDone').addEventListener('click', function(){
+    showView('decks');
+  });
+
+  function showView(name){
+    deckListEl.classList.toggle('hidden', name !== 'decks');
+    studyView.classList.toggle('active', name === 'study');
+    summaryView.classList.toggle('active', name === 'summary');
+    footerNav.style.display = name === 'decks' ? '' : 'none';
+
+    if (name === 'decks') {
+      topTitle.textContent = 'Flashcards';
+      var totalCards = DECKS.reduce(function(sum, d){ return sum + d.cards.length; }, 0);
+      topSub.textContent = DECKS.length + ' decks · ' + totalCards + ' cards';
+      topBack.setAttribute('href', 'schoolbag-dashboard-student.html');
+      topBack.onclick = null;
+      renderDeckList();
+    } else {
+      topBack.setAttribute('href', '#');
+      topBack.onclick = function(e){ e.preventDefault(); showView('decks'); };
+    }
+  }
+
+  showView('decks');
+})();
+</script>
+
+</body>
+</html>

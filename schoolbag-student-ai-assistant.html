@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI assistant — SchoolBag</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<style>
+  :root{
+    --bg:#FBF1E3;
+    --card:#FFFFFF;
+    --border:#ECE0CC;
+    --accent:#C8102E;
+    --accent-soft:#FBE0E3;
+    --text:#1C1A16;
+    --muted:#8D8578;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .app{
+    max-width:480px;margin:0 auto;
+    height:100dvh;height:100vh;
+    display:flex;flex-direction:column;
+  }
+
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:16px 20px;flex-shrink:0;
+    border-bottom:1px solid var(--border);
+  }
+  .back-btn{
+    width:36px;height:36px;border-radius:50%;background:var(--card);
+    display:flex;align-items:center;justify-content:center;color:var(--text);
+    text-decoration:none;box-shadow:0 1px 3px rgba(28,26,22,0.08);flex-shrink:0;
+  }
+  .topbar-text{flex:1;min-width:0;}
+  .topbar-title{font-size:16px;font-weight:700;line-height:1.2;}
+  .topbar-sub{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-top:1px;}
+  .dot-live{width:6px;height:6px;border-radius:50%;background:#4C9A5A;flex-shrink:0;}
+  .demo-badge{
+    font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);padding:4px 8px;border-radius:6px;flex-shrink:0;
+  }
+
+  .chat-scroll{
+    flex:1;overflow-y:auto;
+    padding:18px 20px 8px;
+    display:flex;flex-direction:column;gap:14px;
+  }
+
+  .row{display:flex;gap:9px;align-items:flex-end;max-width:100%;}
+  .row.user{justify-content:flex-end;}
+  .avatar{
+    width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .msg{
+    max-width:76%;padding:11px 14px;border-radius:16px;
+    font-size:14.5px;line-height:1.55;white-space:pre-wrap;
+  }
+  .msg.assistant{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(28,26,22,0.04);}
+  .msg.user{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+
+  .typing{display:flex;gap:4px;padding:4px 2px;}
+  .typing span{
+    width:6px;height:6px;border-radius:50%;background:var(--muted);
+    animation:bounce 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2){animation-delay:.15s;}
+  .typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
+
+  .chips-wrap{padding:2px 20px 14px;flex-shrink:0;}
+  .chips-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0;border:1px solid var(--border);background:var(--card);color:var(--text);
+    font-size:13px;padding:9px 14px;border-radius:20px;cursor:pointer;white-space:nowrap;
+    font-family:inherit;
+  }
+  .chip:hover{border-color:var(--accent);}
+
+  .composer{
+    flex-shrink:0;display:flex;gap:10px;align-items:flex-end;
+    padding:12px 20px calc(16px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border);background:var(--bg);
+  }
+  .composer textarea{
+    flex:1;resize:none;border:1px solid var(--border);background:var(--card);
+    border-radius:18px;padding:11px 16px;font-size:14.5px;font-family:inherit;color:var(--text);
+    max-height:110px;line-height:1.4;
+  }
+  .composer textarea:focus{outline:none;border-color:var(--accent);}
+  .send-btn{
+    width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;
+    border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;
+  }
+  .send-btn:disabled{opacity:.4;cursor:default;}
+
+  .msg .katex{font-size:1.02em;}
+  .msg .katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden;}
+
+  svg{display:block;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <a class="back-btn" href="schoolbag-dashboard-student.html" aria-label="Back to dashboard">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="topbar-text">
+      <div class="topbar-title">AI assistant</div>
+      <div class="topbar-sub"><span class="dot-live"></span> CAPS &middot; NCV &middot; NATED aligned</div>
+    </div>
+    <span class="demo-badge">Preview</span>
+  </div>
+
+  <div class="chat-scroll" id="chatScroll">
+    <div class="row assistant">
+      <div class="avatar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </div>
+      <div class="msg assistant">Hi Njabulo! Ask me anything about your coursework and I'll explain it against your CAPS, NCV, or NATED syllabus. Try a question, or tap one below.</div>
+    </div>
+  </div>
+
+  <div class="chips-wrap" id="chipsWrap">
+    <div class="chips-label">Try asking</div>
+    <div class="chips" id="chips">
+      <button class="chip" type="button">Explain stress-strain graphs</button>
+      <button class="chip" type="button">Help with quadratic equations</button>
+      <button class="chip" type="button">What's covered in NCV Electrical N2?</button>
+      <button class="chip" type="button">Summarise photosynthesis for a test</button>
+    </div>
+  </div>
+
+  <form class="composer" id="composer">
+    <textarea id="input" rows="1" placeholder="Ask a study question…" aria-label="Message"></textarea>
+    <button class="send-btn" type="submit" id="sendBtn" aria-label="Send" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2z"/></svg>
+    </button>
+  </form>
+
+</div>
+
+<script>
+(function(){
+  var scroll = document.getElementById('chatScroll');
+  var form = document.getElementById('composer');
+  var input = document.getElementById('input');
+  var sendBtn = document.getElementById('sendBtn');
+  var chipsWrap = document.getElementById('chipsWrap');
+  var chips = document.getElementById('chips');
+
+  var KB = [
+    { keys: ['stress', 'strain'], reply:
+      "Stress-strain graphs plot stress (force per unit area, in MPa) on the y-axis against strain (deformation ratio, unitless) on the x-axis.\n\n" +
+      "Key regions to know for your Civil Engineering / Materials paper:\n" +
+      "• Elastic region — a straight line; the material returns to its original shape when unloaded. The slope here is Young's Modulus, $E = \\dfrac{\\sigma}{\\varepsilon}$ (stress over strain).\n" +
+      "• Yield point — where the material starts to deform permanently.\n" +
+      "• Plastic region — permanent deformation continues even as load changes.\n" +
+      "• Ultimate tensile strength — the highest point on the curve.\n" +
+      "• Fracture point — where the material breaks.\n\n" +
+      "Exam tip: examiners often ask you to label these five points on a blank graph, so practise sketching it from memory." },
+    { keys: ['quadratic'], reply:
+      "For quadratic equations in the form $ax^2 + bx + c = 0$, the quadratic formula is:\n\n" +
+      "$$x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\n" +
+      "Steps:\n1. Identify $a$, $b$, and $c$ from the equation.\n2. Calculate the discriminant, $b^2 - 4ac$.\n   - If it's positive, there are two real roots.\n   - If it's zero, there's one repeated root.\n   - If it's negative, there are no real roots.\n3. Substitute into the formula and simplify.\n\nWant me to work through a specific equation with you?" },
+    { keys: ['electrical', 'ncv'], reply:
+      "NCV Electrical Infrastructure Construction N2 typically covers:\n\n" +
+      "• Basic electrical principles — Ohm's law, series/parallel circuits\n" +
+      "• Electrical drawings and diagrams\n" +
+      "• Wiring of single- and three-phase installations\n" +
+      "• Safety regulations and the Occupational Health and Safety Act\n" +
+      "• Hand tools and test instruments (multimeter, megger)\n\n" +
+      "Check your Study plan tile for the exact weighting your campus uses this term — it can vary slightly by provider." },
+    { keys: ['photosynthesis'], reply:
+      "Quick exam summary of photosynthesis:\n\n" +
+      "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂\n\n" +
+      "• Light-dependent reactions (in the thylakoid) — sunlight splits water, releasing oxygen and producing ATP and NADPH.\n" +
+      "• Light-independent reactions / Calvin cycle (in the stroma) — ATP and NADPH are used to fix CO₂ into glucose.\n\n" +
+      "Common exam trap: remember photosynthesis happens in the chloroplast, not the mitochondrion — that's respiration." },
+    { keys: ['popia', 'privacy'], reply:
+      "POPIA (the Protection of Personal Information Act) gives you the right to access, correct, or ask for deletion of your personal information. SchoolBag's full data practices are in the Privacy Policy, linked at the bottom of every page." }
+  ];
+
+  function fallback(){
+    return "I don't have a canned answer for that one in this preview build — in the live app this is where your question would go to Gemini for a real, curriculum-aligned explanation. Try one of the suggested questions above to see a full example.";
+  }
+
+  function matchReply(text){
+    var lower = text.toLowerCase();
+    for (var i = 0; i < KB.length; i++) {
+      for (var j = 0; j < KB[i].keys.length; j++) {
+        if (lower.indexOf(KB[i].keys[j]) !== -1) return KB[i].reply;
+      }
+    }
+    return fallback();
+  }
+
+  function scrollToBottom(){
+    scroll.scrollTop = scroll.scrollHeight;
+  }
+
+  // Renders plain text mixed with $inline$ and $$display$$ LaTeX math via KaTeX,
+  // falling back to raw text if KaTeX hasn't loaded or a formula fails to parse.
+  function renderContent(el, text){
+    el.innerHTML = '';
+    var re = /\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        el.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      var isDisplay = match[1] !== undefined;
+      var expr = isDisplay ? match[1] : match[2];
+      var span = document.createElement(isDisplay ? 'div' : 'span');
+      try {
+        if (window.katex) {
+          katex.render(expr, span, { throwOnError: false, displayMode: isDisplay });
+        } else {
+          span.textContent = (isDisplay ? '$$' : '$') + expr + (isDisplay ? '$$' : '$');
+        }
+      } catch (e) {
+        span.textContent = expr;
+      }
+      el.appendChild(span);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      el.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  function addMessage(role, text){
+    var row = document.createElement('div');
+    row.className = 'row ' + role;
+
+    if (role === 'assistant') {
+      var avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+      row.appendChild(avatar);
+    }
+
+    var msg = document.createElement('div');
+    msg.className = 'msg ' + role;
+    renderContent(msg, text);
+    row.appendChild(msg);
+
+    scroll.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function showTyping(){
+    var row = document.createElement('div');
+    row.className = 'row assistant';
+    row.id = 'typingRow';
+    row.innerHTML =
+      '<div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>' +
+      '<div class="msg assistant"><div class="typing"><span></span><span></span><span></span></div></div>';
+    scroll.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTyping(){
+    var row = document.getElementById('typingRow');
+    if (row) row.remove();
+  }
+
+  function send(text){
+    text = text.trim();
+    if (!text) return;
+
+    chipsWrap.style.display = 'none';
+    addMessage('user', text);
+    input.value = '';
+    autosize();
+    sendBtn.disabled = true;
+
+    showTyping();
+    var delay = 500 + Math.random() * 500;
+    setTimeout(function(){
+      removeTyping();
+      addMessage('assistant', matchReply(text));
+    }, delay);
+  }
+
+  function autosize(){
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    sendBtn.disabled = input.value.trim().length === 0;
+  }
+
+  input.addEventListener('input', autosize);
+  input.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    send(input.value);
+  });
+
+  chips.addEventListener('click', function(e){
+    var btn = e.target.closest('.chip');
+    if (!btn) return;
+    send(btn.textContent);
+  });
+})();
+</script>
+
+</body>
+</html>
