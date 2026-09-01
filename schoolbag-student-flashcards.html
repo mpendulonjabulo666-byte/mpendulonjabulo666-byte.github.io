@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flashcards — SchoolBag</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
 <style>
   :root{
     --bg:#FBF1E3;
     --card:#FFFFFF;
     --border:#ECE0CC;
-    --accent:#8B5A2C;
-    --accent-soft:#F0D9A6;
+    --accent:#C8102E;
+    --accent-soft:#FBE0E3;
     --text:#1C1A16;
     --muted:#8D8578;
     --green:#2F9E44;
@@ -82,9 +84,11 @@
     position:absolute;top:16px;left:20px;font-size:10.5px;font-weight:700;letter-spacing:.6px;
     text-transform:uppercase;color:var(--muted);
   }
-  .flashcard-face p{font-size:17px;line-height:1.5;font-weight:600;margin:0;}
+  .flashcard-face p{font-size:17px;line-height:1.5;font-weight:600;margin:0;max-width:100%;overflow-x:auto;}
   .flashcard-face.back{transform:rotateY(180deg);background:var(--accent-soft);border-color:var(--accent-soft);}
   .flashcard-face.back p{font-weight:500;font-size:15.5px;}
+  .flashcard-face .katex{font-size:1.05em;}
+  .flashcard-face .katex-display{margin:.4em 0;}
 
   .hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;}
 
@@ -236,8 +240,8 @@
       subject: 'Mathematics',
       initials: 'MA',
       cards: [
-        { q: "What is the quadratic formula?", a: "x = (−b ± √(b² − 4ac)) / 2a, for an equation in the form ax² + bx + c = 0." },
-        { q: "What is the discriminant?", a: "b² − 4ac — it tells you how many real roots the equation has, before you solve it." },
+        { q: "What is the quadratic formula, for $ax^2 + bx + c = 0$?", a: "$$x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$" },
+        { q: "What is the discriminant?", a: "$b^2 - 4ac$ — it tells you how many real roots the equation has, before you solve it." },
         { q: "Discriminant greater than 0 means?", a: "Two distinct real roots." },
         { q: "Discriminant equal to 0 means?", a: "One repeated real root — the graph just touches the x-axis." },
         { q: "Discriminant less than 0 means?", a: "No real roots — the graph never crosses the x-axis." },
@@ -358,14 +362,45 @@
   var btnLearning = document.getElementById('btnLearning');
   var btnGotIt = document.getElementById('btnGotIt');
 
+  // Renders plain text mixed with $inline$ and $$display$$ LaTeX math via KaTeX,
+  // falling back to raw text if KaTeX hasn't loaded or a formula fails to parse.
+  function renderContent(el, text){
+    el.innerHTML = '';
+    var re = /\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        el.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      var isDisplay = match[1] !== undefined;
+      var expr = isDisplay ? match[1] : match[2];
+      var span = document.createElement(isDisplay ? 'div' : 'span');
+      try {
+        if (window.katex) {
+          katex.render(expr, span, { throwOnError: false, displayMode: isDisplay });
+        } else {
+          span.textContent = (isDisplay ? '$$' : '$') + expr + (isDisplay ? '$$' : '$');
+        }
+      } catch (e) {
+        span.textContent = expr;
+      }
+      el.appendChild(span);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      el.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
   function renderCard(){
     var deck = current.deck;
     var idx = current.order[current.pos];
     var cardData = deck.cards[idx];
 
     flashcardEl.classList.remove('flipped');
-    cardFront.textContent = cardData.q;
-    cardBack.textContent = cardData.a;
+    renderContent(cardFront, cardData.q);
+    renderContent(cardBack, cardData.a);
 
     studyCount.textContent = (current.pos + 1) + ' / ' + current.order.length;
     var masteredNow = Object.keys(current.results).filter(function(k){ return current.results[k] === 'known'; }).length;

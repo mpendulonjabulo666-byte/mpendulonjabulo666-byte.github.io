@@ -9,8 +9,8 @@
     --bg:#FBF1E3;
     --card:#FFFFFF;
     --border:#ECE0CC;
-    --accent:#8B5A2C;
-    --accent-soft:#F0D9A6;
+    --accent:#C8102E;
+    --accent-soft:#FBE0E3;
     --text:#1C1A16;
     --muted:#8D8578;
   }
@@ -21,34 +21,71 @@
     color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
-  .app{max-width:480px;margin:0 auto;padding:20px 20px 48px;min-height:100vh;display:flex;flex-direction:column;}
-  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+  .app{max-width:480px;margin:0 auto;padding:20px 20px 40px;min-height:100vh;}
+
+  .hero{
+    position:relative;height:156px;margin:-20px -20px 22px;overflow:hidden;
+    background-image:url('schoolbag-study-hero.jpg');background-size:cover;background-position:center 32%;
+  }
+  .hero::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(20,10,10,.35) 0%, rgba(148,9,32,.55) 55%, rgba(200,16,46,.85) 100%);
+  }
+  .hero-inner{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:16px 20px;}
+  .hero-top{display:flex;align-items:center;}
   .back-btn{
-    width:36px;height:36px;border-radius:50%;background:var(--card);
+    width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.94);
     display:flex;align-items:center;justify-content:center;color:var(--text);
-    text-decoration:none;box-shadow:0 1px 3px rgba(28,26,22,0.08);flex-shrink:0;
+    text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.2);flex-shrink:0;
   }
-  .topbar-title{font-size:17px;font-weight:700;}
+  .hero-title{color:#fff;font-size:20px;font-weight:800;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.25);}
+  .hero-sub{color:rgba(255,255,255,.88);font-size:12.5px;margin-top:3px;}
 
-  .feature{flex:1;display:flex;flex-direction:column;align-items:flex-start;}
-  .feature-icon{
-    width:64px;height:64px;border-radius:18px;background:var(--accent-soft);color:var(--accent);
-    display:flex;align-items:center;justify-content:center;margin-bottom:20px;
-  }
-  .feature h1{font-size:22px;margin:0 0 10px;}
-  .soon-badge{
-    display:inline-block;background:var(--accent-soft);color:var(--accent);
-    font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-    padding:5px 10px;border-radius:6px;margin-bottom:16px;
-  }
-  .feature p{font-size:15px;line-height:1.6;color:var(--muted);margin:0 0 28px;max-width:38ch;}
+  h2.section-title{font-size:15px;font-weight:800;margin:0 0 12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
 
-  .primary-btn{
-    display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
-    font-weight:700;font-size:15px;padding:14px 22px;border-radius:12px;
+  .upcoming-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:24px;}
+  .upcoming-empty{font-size:13.5px;color:var(--muted);padding:4px 0;}
+
+  .task-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .task-row:last-child{border-bottom:none;}
+  .task-checkbox{
+    width:19px;height:19px;margin-top:1px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;
+  }
+  .task-body{flex:1;min-width:0;}
+  .task-title{font-size:14px;font-weight:600;line-height:1.4;}
+  .task-title.done{color:var(--muted);text-decoration:line-through;}
+  .task-meta{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .task-type-badge{
+    font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;
+    background:var(--accent-soft);color:var(--accent);text-transform:uppercase;letter-spacing:.3px;
   }
 
-  .footer-nav{margin-top:auto;padding-top:32px;text-align:center;}
+  .term-tabs{display:flex;gap:8px;margin-bottom:18px;}
+  .term-tab{
+    flex:1;text-align:center;padding:9px 4px;border-radius:12px;border:1px solid var(--border);
+    background:var(--card);font-family:inherit;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;
+  }
+  .term-tab .range{display:block;font-size:9.5px;font-weight:500;margin-top:2px;opacity:.75;}
+  .term-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  .term-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .term-header h2{margin:0;}
+  .term-progress-text{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .term-progress-track{height:5px;border-radius:4px;background:var(--border);margin-bottom:18px;overflow:hidden;}
+  .term-progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .25s;}
+
+  .week-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:12px;}
+  .week-card.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+  .week-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .week-title-row{display:flex;align-items:center;gap:8px;}
+  .week-title{font-weight:700;font-size:14px;}
+  .week-badge{
+    font-size:9.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+    padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.3px;
+  }
+  .week-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  .footer-nav{padding-top:28px;text-align:center;}
   .footer-nav a{color:var(--muted);font-size:12.5px;text-decoration:none;margin:0 8px;}
   .footer-nav a:hover{text-decoration:underline;}
 
@@ -58,22 +95,34 @@
 <body>
 <div class="app">
 
-  <div class="topbar">
-    <a class="back-btn" href="schoolbag-dashboard-student.html" aria-label="Back to dashboard">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </a>
-    <div class="topbar-title">Study plan</div>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <a class="back-btn" href="schoolbag-dashboard-student.html" aria-label="Back to dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </a>
+      </div>
+      <div>
+        <div class="hero-title">Study plan</div>
+        <div class="hero-sub">NCV Level 2 &middot; Civil Engineering &amp; Building Construction</div>
+      </div>
+    </div>
   </div>
 
-  <div class="feature">
-    <div class="feature-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-    </div>
-    <span class="soon-badge">Coming soon</span>
-    <h1>Study plan</h1>
-    <p>A personalised weekly plan that adapts to your upcoming tests and assignments.</p>
-    <a class="primary-btn" href="schoolbag-dashboard-student.html">Back to dashboard</a>
+  <div class="upcoming-card">
+    <h2 class="section-title">Upcoming</h2>
+    <div id="upcomingList"></div>
   </div>
+
+  <div class="term-tabs" id="termTabs"></div>
+
+  <div class="term-header">
+    <h2 class="section-title" id="termHeading">Term</h2>
+    <span class="term-progress-text" id="termProgressText">0/0</span>
+  </div>
+  <div class="term-progress-track"><div class="term-progress-fill" id="termProgressFill" style="width:0%"></div></div>
+
+  <div id="weekList"></div>
 
   <div class="footer-nav">
     <a href="schoolbag-dashboard-student.html">Dashboard</a>&middot;
@@ -82,5 +131,229 @@
   </div>
 
 </div>
+
+<script>
+(function(){
+  // South African academic year: 4 terms. Term 3 (Jul–Sep) is treated as
+  // the current term for this demo, since it lines up with today's date.
+  var TERMS = [
+    {
+      id: 1, label: 'Term 1', range: 'Jan – Mar',
+      weeks: [
+        { label: 'Week 1', tasks: [
+          { subject: 'Life Orientation', title: 'Orientation & goal-setting', type: 'Task', done: true },
+          { subject: 'Mathematics', title: 'Algebra refresher', type: 'Revise', done: true }
+        ]},
+        { label: 'Week 2', tasks: [
+          { subject: 'Civil Technology Services', title: 'Intro to construction materials', type: 'Revise', done: true },
+          { subject: 'Construction Planning', title: 'Health & safety induction', type: 'Task', done: true }
+        ]}
+      ]
+    },
+    {
+      id: 2, label: 'Term 2', range: 'Apr – Jun',
+      weeks: [
+        { label: 'Week 1', tasks: [
+          { subject: 'Mathematics', title: 'Linear equations test', type: 'Test', done: true },
+          { subject: 'Civil Technology Services', title: 'Structural drawing basics', type: 'Practice', done: true }
+        ]},
+        { label: 'Week 2', tasks: [
+          { subject: 'Construction Planning', title: 'Site plan assignment', type: 'Assignment', done: true },
+          { subject: 'Life Orientation', title: 'CV writing workshop', type: 'Task', done: true }
+        ]}
+      ]
+    },
+    {
+      id: 3, label: 'Term 3', range: 'Jul – Sep', current: true,
+      weeks: [
+        { label: 'Week 1', tasks: [
+          { subject: 'Civil Technology Services', title: 'Revise stress-strain graphs', type: 'Revise', done: true },
+          { subject: 'Mathematics', title: 'Practice quadratic equations', type: 'Practice', done: true }
+        ]},
+        { label: 'Week 2', tasks: [
+          { subject: 'Construction Planning', title: 'Submit site safety report', type: 'Assignment', done: true },
+          { subject: 'Life Orientation', title: 'Career portfolio draft', type: 'Assignment', done: true }
+        ]},
+        { label: 'Week 3', tasks: [
+          { subject: 'Civil Technology Services', title: 'Materials L2 — Assignment 3', type: 'Assignment', done: true },
+          { subject: 'Mathematics', title: 'Quiz: functions & graphs', type: 'Test', done: true }
+        ]},
+        { label: 'Week 4', tasks: [
+          { subject: 'Construction Planning', title: 'Read: concrete curing standards', type: 'Revise', done: true },
+          { subject: 'Civil Technology Services', title: 'Practical: tensile test write-up', type: 'Practice', done: true }
+        ]},
+        { label: 'Week 5', tasks: [
+          { subject: 'Mathematics', title: 'Mid-term test', type: 'Test', done: true },
+          { subject: 'Life Orientation', title: 'Group presentation: workplace readiness', type: 'Task', done: true }
+        ]},
+        { label: 'Week 6', current: true, tasks: [
+          { subject: 'Civil Technology Services', title: 'Materials L2 — mid-term test corrections', type: 'Revise', done: false },
+          { subject: 'Construction Planning', title: 'Site visit report due', type: 'Assignment', done: false },
+          { subject: 'Mathematics', title: 'Practice: trigonometric ratios', type: 'Practice', done: false }
+        ]}
+      ]
+    },
+    {
+      id: 4, label: 'Term 4', range: 'Oct – Dec',
+      weeks: [
+        { label: 'Week 1', tasks: [
+          { subject: 'Civil Technology Services', title: 'Exam revision: full syllabus', type: 'Revise', done: false },
+          { subject: 'Mathematics', title: 'Final exam preparation', type: 'Revise', done: false }
+        ]},
+        { label: 'Week 2', tasks: [
+          { subject: 'Construction Planning', title: 'Portfolio of Evidence submission', type: 'Assignment', done: false },
+          { subject: 'Life Orientation', title: 'Final assessment task', type: 'Test', done: false }
+        ]}
+      ]
+    }
+  ];
+
+  // Assign a stable id to every task and flatten for easy lookup.
+  var allTasks = [];
+  TERMS.forEach(function(term){
+    term.weeks.forEach(function(week, wi){
+      week.tasks.forEach(function(task, ti){
+        task.id = 't' + term.id + '-w' + wi + '-' + ti;
+        task._term = term;
+        task._week = week;
+        allTasks.push(task);
+      });
+    });
+  });
+
+  var STORAGE_KEY = 'schoolbag_study_plan_v1';
+  function loadOverrides(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function saveOverrides(o){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); }
+    catch (e) { /* storage unavailable — edits just won't persist */ }
+  }
+  var overrides = loadOverrides();
+
+  function isDone(task){
+    return Object.prototype.hasOwnProperty.call(overrides, task.id) ? overrides[task.id] : task.done;
+  }
+  function setDone(task, value){
+    overrides[task.id] = value;
+    saveOverrides(overrides);
+  }
+
+  var activeTermId = (TERMS.filter(function(t){ return t.current; })[0] || TERMS[0]).id;
+
+  var upcomingList = document.getElementById('upcomingList');
+  var termTabs = document.getElementById('termTabs');
+  var termHeading = document.getElementById('termHeading');
+  var termProgressText = document.getElementById('termProgressText');
+  var termProgressFill = document.getElementById('termProgressFill');
+  var weekList = document.getElementById('weekList');
+
+  function makeTaskRow(task, opts){
+    opts = opts || {};
+    var row = document.createElement('label');
+    row.className = 'task-row';
+
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'task-checkbox';
+    cb.checked = isDone(task);
+    cb.addEventListener('change', function(){
+      setDone(task, cb.checked);
+      renderAll();
+    });
+    row.appendChild(cb);
+
+    var body = document.createElement('div');
+    body.className = 'task-body';
+
+    var title = document.createElement('div');
+    title.className = 'task-title' + (isDone(task) ? ' done' : '');
+    title.textContent = task.title;
+    body.appendChild(title);
+
+    var meta = document.createElement('div');
+    meta.className = 'task-meta';
+    var metaText = task.subject + (opts.showLocation ? ' · ' + task._term.label + ' · ' + task._week.label : '');
+    meta.innerHTML = '<span>' + metaText + '</span><span class="task-type-badge">' + task.type + '</span>';
+    body.appendChild(meta);
+
+    row.appendChild(body);
+    return row;
+  }
+
+  function renderUpcoming(){
+    var pending = allTasks.filter(function(t){ return !isDone(t); }).slice(0, 3);
+    upcomingList.innerHTML = '';
+    if (!pending.length) {
+      var empty = document.createElement('div');
+      empty.className = 'upcoming-empty';
+      empty.textContent = "You're all caught up — nothing outstanding right now.";
+      upcomingList.appendChild(empty);
+      return;
+    }
+    pending.forEach(function(task){
+      upcomingList.appendChild(makeTaskRow(task, { showLocation: true }));
+    });
+  }
+
+  function renderTermTabs(){
+    termTabs.innerHTML = '';
+    TERMS.forEach(function(term){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'term-tab' + (term.id === activeTermId ? ' active' : '');
+      btn.innerHTML = term.label + '<span class="range">' + term.range + '</span>';
+      btn.addEventListener('click', function(){
+        activeTermId = term.id;
+        renderAll();
+      });
+      termTabs.appendChild(btn);
+    });
+  }
+
+  function renderTermView(){
+    var term = TERMS.filter(function(t){ return t.id === activeTermId; })[0];
+    var termTasks = [];
+    term.weeks.forEach(function(w){ termTasks = termTasks.concat(w.tasks); });
+    var doneCount = termTasks.filter(isDone).length;
+
+    termHeading.textContent = term.label + ' plan';
+    termProgressText.textContent = doneCount + '/' + termTasks.length + ' done';
+    termProgressFill.style.width = termTasks.length ? Math.round((doneCount / termTasks.length) * 100) + '%' : '0%';
+
+    weekList.innerHTML = '';
+    term.weeks.forEach(function(week){
+      var wDone = week.tasks.filter(isDone).length;
+
+      var card = document.createElement('div');
+      card.className = 'week-card' + (week.current ? ' current' : '');
+
+      var header = document.createElement('div');
+      header.className = 'week-header';
+      header.innerHTML =
+        '<div class="week-title-row"><span class="week-title">' + week.label + '</span>' +
+        (week.current ? '<span class="week-badge">This week</span>' : '') + '</div>' +
+        '<span class="week-count">' + wDone + '/' + week.tasks.length + '</span>';
+      card.appendChild(header);
+
+      week.tasks.forEach(function(task){
+        card.appendChild(makeTaskRow(task));
+      });
+
+      weekList.appendChild(card);
+    });
+  }
+
+  function renderAll(){
+    renderUpcoming();
+    renderTermTabs();
+    renderTermView();
+  }
+
+  renderAll();
+})();
+</script>
+
 </body>
 </html>

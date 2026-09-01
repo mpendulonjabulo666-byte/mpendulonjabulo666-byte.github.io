@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI assistant — SchoolBag</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
 <style>
   :root{
     --bg:#FBF1E3;
     --card:#FFFFFF;
     --border:#ECE0CC;
-    --accent:#8B5A2C;
-    --accent-soft:#F0D9A6;
+    --accent:#C8102E;
+    --accent-soft:#FBE0E3;
     --text:#1C1A16;
     --muted:#8D8578;
   }
@@ -103,6 +105,9 @@
   }
   .send-btn:disabled{opacity:.4;cursor:default;}
 
+  .msg .katex{font-size:1.02em;}
+  .msg .katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden;}
+
   svg{display:block;}
 </style>
 </head>
@@ -161,16 +166,16 @@
     { keys: ['stress', 'strain'], reply:
       "Stress-strain graphs plot stress (force per unit area, in MPa) on the y-axis against strain (deformation ratio, unitless) on the x-axis.\n\n" +
       "Key regions to know for your Civil Engineering / Materials paper:\n" +
-      "• Elastic region — a straight line; the material returns to its original shape when unloaded. The slope here is Young's Modulus.\n" +
+      "• Elastic region — a straight line; the material returns to its original shape when unloaded. The slope here is Young's Modulus, $E = \\dfrac{\\sigma}{\\varepsilon}$ (stress over strain).\n" +
       "• Yield point — where the material starts to deform permanently.\n" +
       "• Plastic region — permanent deformation continues even as load changes.\n" +
       "• Ultimate tensile strength — the highest point on the curve.\n" +
       "• Fracture point — where the material breaks.\n\n" +
       "Exam tip: examiners often ask you to label these five points on a blank graph, so practise sketching it from memory." },
     { keys: ['quadratic'], reply:
-      "For quadratic equations in the form ax² + bx + c = 0, the quadratic formula is:\n\n" +
-      "x = (-b ± √(b² - 4ac)) / 2a\n\n" +
-      "Steps:\n1. Identify a, b, and c from the equation.\n2. Calculate the discriminant, b² - 4ac.\n   - If it's positive, there are two real roots.\n   - If it's zero, there's one repeated root.\n   - If it's negative, there are no real roots.\n3. Substitute into the formula and simplify.\n\nWant me to work through a specific equation with you?" },
+      "For quadratic equations in the form $ax^2 + bx + c = 0$, the quadratic formula is:\n\n" +
+      "$$x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\n" +
+      "Steps:\n1. Identify $a$, $b$, and $c$ from the equation.\n2. Calculate the discriminant, $b^2 - 4ac$.\n   - If it's positive, there are two real roots.\n   - If it's zero, there's one repeated root.\n   - If it's negative, there are no real roots.\n3. Substitute into the formula and simplify.\n\nWant me to work through a specific equation with you?" },
     { keys: ['electrical', 'ncv'], reply:
       "NCV Electrical Infrastructure Construction N2 typically covers:\n\n" +
       "• Basic electrical principles — Ohm's law, series/parallel circuits\n" +
@@ -207,6 +212,37 @@
     scroll.scrollTop = scroll.scrollHeight;
   }
 
+  // Renders plain text mixed with $inline$ and $$display$$ LaTeX math via KaTeX,
+  // falling back to raw text if KaTeX hasn't loaded or a formula fails to parse.
+  function renderContent(el, text){
+    el.innerHTML = '';
+    var re = /\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        el.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      var isDisplay = match[1] !== undefined;
+      var expr = isDisplay ? match[1] : match[2];
+      var span = document.createElement(isDisplay ? 'div' : 'span');
+      try {
+        if (window.katex) {
+          katex.render(expr, span, { throwOnError: false, displayMode: isDisplay });
+        } else {
+          span.textContent = (isDisplay ? '$$' : '$') + expr + (isDisplay ? '$$' : '$');
+        }
+      } catch (e) {
+        span.textContent = expr;
+      }
+      el.appendChild(span);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      el.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
   function addMessage(role, text){
     var row = document.createElement('div');
     row.className = 'row ' + role;
@@ -220,7 +256,7 @@
 
     var msg = document.createElement('div');
     msg.className = 'msg ' + role;
-    msg.textContent = text;
+    renderContent(msg, text);
     row.appendChild(msg);
 
     scroll.appendChild(row);
