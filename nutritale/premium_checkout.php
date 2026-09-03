@@ -6,45 +6,35 @@ require_once __DIR__ . '/includes/payfast.php';
 
 $user = require_login();
 
-$recipeId = $_GET['recipe_id'] ?? '';
-$stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND is_premium = 1');
-$stmt->execute([$recipeId]);
-$recipe = $stmt->fetch();
-
-if (!$recipe) {
-    http_response_code(404);
-    die('This recipe is not available for purchase.');
-}
-if ((int)$recipe['created_by'] === (int)$user['id']) {
-    redirect('recipe.php?id=' . urlencode($recipeId));
-}
-
-$existingStmt = db()->prepare("SELECT 1 FROM recipe_purchases WHERE buyer_id = ? AND recipe_id = ? AND status = 'paid'");
-$existingStmt->execute([$user['id'], $recipeId]);
-if ($existingStmt->fetch()) {
-    redirect('recipe.php?id=' . urlencode($recipeId));
+if ($user['is_premium_member']) {
+    redirect('pantry.php');
 }
 
 $mPaymentId = payfast_new_payment_id();
 
-$ins = db()->prepare(
-    'INSERT INTO recipe_purchases (m_payment_id, buyer_id, recipe_id, vendor_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)'
-);
-$ins->execute([$mPaymentId, $user['id'], $recipeId, $recipe['created_by'], $recipe['price'], 'pending']);
+$ins = db()->prepare('INSERT INTO premium_subscriptions (user_id, m_payment_id, amount, status) VALUES (?, ?, ?, ?)');
+$ins->execute([$user['id'], $mPaymentId, PREMIUM_MONTHLY_PRICE, 'pending']);
 
 $baseUrl = app_base_url();
 $pfData = [
     'merchant_id' => PAYFAST_MERCHANT_ID,
     'merchant_key' => PAYFAST_MERCHANT_KEY,
-    'return_url' => $baseUrl . 'checkout_return.php?m=' . urlencode($mPaymentId),
-    'cancel_url' => $baseUrl . 'checkout_cancel.php?m=' . urlencode($mPaymentId),
+    'return_url' => $baseUrl . 'premium_return.php?m=' . urlencode($mPaymentId),
+    'cancel_url' => $baseUrl . 'premium_cancel.php?m=' . urlencode($mPaymentId),
     'notify_url' => $baseUrl . 'payfast_notify.php',
     'name_first' => $user['name'],
     'email_address' => $user['email'],
     'm_payment_id' => $mPaymentId,
-    'amount' => number_format((float)$recipe['price'], 2, '.', ''),
-    'item_name' => mb_substr($recipe['title'], 0, 100),
-    'item_description' => 'Premium recipe on ' . APP_NAME,
+    'amount' => number_format((float)PREMIUM_MONTHLY_PRICE, 2, '.', ''),
+    'item_name' => APP_NAME . ' Premium (monthly)',
+    'item_description' => 'Unlimited AI ingredient recommendations, billed monthly.',
+    // PayFast recurring subscription fields — see
+    // https://developers.payfast.co.za/docs#subscriptions
+    'subscription_type' => '1',
+    'billing_date' => date('Y-m-d'),
+    'recurring_amount' => number_format((float)PREMIUM_MONTHLY_PRICE, 2, '.', ''),
+    'frequency' => '3', // 3 = monthly
+    'cycles' => '0', // 0 = bill indefinitely, until cancelled
 ];
 $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 ?>
@@ -64,7 +54,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
         <div class="center-text mb-16"><?= nutritale_logo_svg(56) ?></div>
         <h1 class="center-text">Redirecting to secure payment</h1>
         <div class="card center-text">
-            <p class="muted">Taking you to PayFast to pay <strong>R<?= number_format((float)$recipe['price'], 2) ?></strong> for <strong><?= h($recipe['title']) ?></strong>.</p>
+            <p class="muted">Setting up your <strong>R<?= number_format((float)PREMIUM_MONTHLY_PRICE, 2) ?>/month</strong> Premium subscription via PayFast.</p>
             <?php if (PAYFAST_SANDBOX): ?>
                 <p class="muted" style="font-size:12px;">Sandbox mode — no real money moves. Use PayFast's test card details on the next screen.</p>
             <?php endif; ?>

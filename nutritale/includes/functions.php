@@ -13,7 +13,7 @@ function current_user(): ?array
     }
     static $user = null;
     if ($user === null) {
-        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, created_at FROM users WHERE id = ?');
+        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, is_premium_member, pantry_free_uses_used, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
     }
@@ -59,6 +59,14 @@ function redirect(string $path): void
 {
     header('Location: ' . $path);
     exit;
+}
+
+// Splits a gross sale amount into [platformFee, sellerAmount] using
+// PLATFORM_COMMISSION_PCT, rounded to cents.
+function platform_fee_split(float $amount): array
+{
+    $fee = round($amount * PLATFORM_COMMISSION_PCT / 100, 2);
+    return [$fee, round($amount - $fee, 2)];
 }
 
 function app_base_url(): string

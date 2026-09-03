@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     is_admin TINYINT(1) NOT NULL DEFAULT 0,
     email_notifications TINYINT(1) NOT NULL DEFAULT 1,
     is_vendor TINYINT(1) NOT NULL DEFAULT 0,
+    is_premium_member TINYINT(1) NOT NULL DEFAULT 0,
+    pantry_free_uses_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -164,6 +166,8 @@ CREATE TABLE IF NOT EXISTS recipe_purchases (
     recipe_id VARCHAR(40) NOT NULL,
     vendor_id INT UNSIGNED NOT NULL,
     amount DECIMAL(8,2) NOT NULL,
+    platform_fee DECIMAL(8,2) NULL,
+    vendor_amount DECIMAL(8,2) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     pf_payment_id VARCHAR(60) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -173,4 +177,50 @@ CREATE TABLE IF NOT EXISTS recipe_purchases (
     FOREIGN KEY (vendor_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_buyer_recipe (buyer_id, recipe_id),
     INDEX idx_vendor (vendor_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS premium_subscriptions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    pf_token VARCHAR(60) NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user (user_id),
+    INDEX idx_token (pf_token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ingredient_listings (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    seller_id INT UNSIGNED NOT NULL,
+    ingredient_name VARCHAR(150) NOT NULL,
+    quantity VARCHAR(50) NOT NULL,
+    price DECIMAL(8,2) NOT NULL,
+    description TEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ingredient_orders (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    listing_id INT UNSIGNED NOT NULL,
+    buyer_id INT UNSIGNED NOT NULL,
+    seller_id INT UNSIGNED NOT NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    platform_fee DECIMAL(8,2) NOT NULL,
+    seller_amount DECIMAL(8,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    pf_payment_id VARCHAR(60) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (listing_id) REFERENCES ingredient_listings(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_seller (seller_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

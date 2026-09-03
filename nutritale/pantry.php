@@ -5,13 +5,19 @@ require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
 
+$usesLeft = max(0, PANTRY_FREE_USES - (int)$user['pantry_free_uses_used']);
+$isBlocked = !$user['is_premium_member'] && $usesLeft <= 0;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
     if ($action === 'add') {
         $name = trim($_POST['ingredient_name'] ?? '');
-        if ($name !== '') {
+        if ($name !== '' && !$isBlocked) {
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
             $stmt->execute([$user['id'], $name]);
+            if ($stmt->rowCount() > 0 && !$user['is_premium_member']) {
+                db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
+            }
         }
     } elseif ($action === 'remove') {
         $name = $_POST['ingredient_name'] ?? '';
@@ -27,9 +33,18 @@ $pantryStmt->execute([$user['id']]);
 $pantry = $pantryStmt->fetchAll(PDO::FETCH_COLUMN);
 $pantryNorm = array_map(fn($p) => mb_strtolower(trim($p)), $pantry);
 
+$dietPrefStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE user_id = ?');
+$dietPrefStmt->execute([$user['id']]);
+$dietPrefs = $dietPrefStmt->fetchAll(PDO::FETCH_COLUMN);
+
 $matches = [];
 if ($pantry) {
-    $recipeStmt = db()->query('SELECT id, title, description, image_url, cook_time_minutes, calories FROM recipes ORDER BY title');
+    $recipeStmt = db()->query(
+        'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
+         GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags
+         FROM recipes r LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
+         GROUP BY r.id ORDER BY r.title'
+    );
     $recipes = $recipeStmt->fetchAll();
 
     $ingStmt = db()->prepare('SELECT name FROM recipe_ingredients WHERE recipe_id = ? ORDER BY order_index');
@@ -53,15 +68,17 @@ if ($pantry) {
         }
 
         if (!$have) continue;
+        $recipeDietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
         $matches[] = [
             'recipe' => $recipe,
             'have' => count($have),
             'total' => count($ingredients),
             'missing' => $missing,
             'pct' => count($have) / count($ingredients),
+            'diet_match' => $dietPrefs ? (bool)array_intersect($dietPrefs, $recipeDietTags) : false,
         ];
     }
-    usort($matches, fn($a, $b) => $b['pct'] <=> $a['pct'] ?: $b['have'] <=> $a['have']);
+    usort($matches, fn($a, $b) => $b['diet_match'] <=> $a['diet_match'] ?: $b['pct'] <=> $a['pct'] ?: $b['have'] <=> $a['have']);
 }
 ?>
 <!DOCTYPE html>
@@ -81,13 +98,29 @@ if ($pantry) {
     <h1 class="mb-16"><?= icon('wand', 20) ?> What Can I Make?</h1>
     <p class="muted" style="margin-top:-10px;">Add the ingredients you have on hand and we'll find recipes that use them.</p>
 
+    <?php if (!$user['is_premium_member']): ?>
+        <p class="muted mb-16" style="font-size:13px;">
+            <?= $usesLeft > 0 ? "$usesLeft free ingredient" . ($usesLeft === 1 ? '' : 's') . ' left on your trial.' : 'Your free trial is used up.' ?>
+            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for unlimited use.
+        </p>
+    <?php endif; ?>
+
     <div class="card mb-16">
-        <form method="post" style="display:flex;gap:8px;">
-            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-            <input type="hidden" name="action" value="add">
-            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
-            <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
-        </form>
+        <?php if ($isBlocked): ?>
+            <div class="paywall" style="padding:20px;">
+                <?= icon('wand', 24) ?>
+                <h2 style="margin:8px 0 4px;font-size:17px;">You've used your <?= PANTRY_FREE_USES ?> free trials</h2>
+                <p class="muted" style="margin:0 0 14px;font-size:13.5px;">Upgrade to Premium for unlimited ingredient lookups and diet-matched recommendations.</p>
+                <a href="premium.php" class="btn btn-primary">Go Premium — R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month</a>
+            </div>
+        <?php else: ?>
+            <form method="post" style="display:flex;gap:8px;">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="action" value="add">
+                <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+                <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
+            </form>
+        <?php endif; ?>
 
         <?php if ($pantry): ?>
             <div class="tag-row mt-16">
@@ -120,6 +153,9 @@ if ($pantry) {
                     <a class="recipe-card" href="recipe.php?id=<?= urlencode($recipe['id']) ?>">
                         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
                             <span class="pantry-match-badge <?= $m['pct'] >= 1 ? 'is-full' : '' ?>"><?= $m['have'] ?>/<?= $m['total'] ?> ingredients</span>
+                            <?php if ($m['diet_match']): ?>
+                                <span class="tag" style="position:absolute;top:8px;right:8px;">Matches your diet</span>
+                            <?php endif; ?>
                         </div>
                         <div class="recipe-card-body">
                             <h3><?= h($recipe['title']) ?></h3>

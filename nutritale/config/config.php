@@ -21,6 +21,12 @@ define('PAYFAST_MERCHANT_ID', '10000100');
 define('PAYFAST_MERCHANT_KEY', '46f0cd694581a');
 define('PAYFAST_PASSPHRASE', '');
 
+// Platform economics. PLATFORM_COMMISSION_PCT applies to both premium
+// recipe sales and ingredient marketplace sales.
+define('PLATFORM_COMMISSION_PCT', 10);
+define('PREMIUM_MONTHLY_PRICE', 99.00);
+define('PANTRY_FREE_USES', 3);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
