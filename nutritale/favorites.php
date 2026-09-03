@@ -7,16 +7,23 @@ require_once __DIR__ . '/includes/recipe_card.php';
 $user = require_login();
 
 $stmt = db()->prepare(
-    'SELECT r.*, GROUP_CONCAT(dt.diet_type SEPARATOR ",") AS diet_tags
+    'SELECT r.*,
+     GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
+     GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
      FROM favorites f
      JOIN recipes r ON r.id = f.recipe_id
      LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
+     LEFT JOIN recipe_allergens al ON al.recipe_id = r.id
      WHERE f.user_id = ?
      GROUP BY r.id
      ORDER BY f.created_at DESC'
 );
 $stmt->execute([$user['id']]);
 $recipes = $stmt->fetchAll();
+
+$userAllergenStmt = db()->prepare('SELECT allergen FROM user_allergens WHERE user_id = ?');
+$userAllergenStmt->execute([$user['id']]);
+$userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,7 +43,11 @@ $recipes = $stmt->fetchAll();
     <?php else: ?>
         <div class="recipe-grid">
             <?php foreach ($recipes as $recipe): ?>
-                <?php render_recipe_card($recipe, true); ?>
+                <?php
+                $recipeAllergens = array_filter(explode(',', $recipe['allergens'] ?? ''));
+                $conflicts = array_intersect($recipeAllergens, $userAllergens);
+                render_recipe_card($recipe, true, $conflicts);
+                ?>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

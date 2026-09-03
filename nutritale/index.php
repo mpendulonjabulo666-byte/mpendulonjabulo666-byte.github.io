@@ -26,24 +26,65 @@ if ($diet !== '') {
     $params[] = $diet;
 }
 
-$sql = 'SELECT r.*, GROUP_CONCAT(dt.diet_type SEPARATOR ",") AS diet_tags
+$countSql = 'SELECT COUNT(*) FROM recipes r';
+if ($where) {
+    $countSql .= ' WHERE ' . implode(' AND ', $where);
+}
+$countStmt = db()->prepare($countSql);
+$countStmt->execute($params);
+$totalRecipes = (int)$countStmt->fetchColumn();
+
+$perPage = 12;
+$totalPages = max(1, (int)ceil($totalRecipes / $perPage));
+$page = max(1, min($totalPages, (int)($_GET['page'] ?? 1)));
+$offset = ($page - 1) * $perPage;
+
+$sql = 'SELECT r.*,
+        GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
+        GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
         FROM recipes r
-        LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id';
+        LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
+        LEFT JOIN recipe_allergens al ON al.recipe_id = r.id';
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
-$sql .= ' GROUP BY r.id ORDER BY r.title';
+$sql .= ' GROUP BY r.id ORDER BY r.title LIMIT ' . $perPage . ' OFFSET ' . $offset;
 
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $recipes = $stmt->fetchAll();
 
+function paginate_url(int $targetPage, string $q, string $mealType, string $diet): string
+{
+    return 'index.php?' . http_build_query(array_filter([
+        'q' => $q, 'meal_type' => $mealType, 'diet' => $diet, 'page' => $targetPage,
+    ], fn($v) => $v !== '' && $v !== 1));
+}
+
 $favStmt = db()->prepare('SELECT recipe_id FROM favorites WHERE user_id = ?');
 $favStmt->execute([$user['id']]);
 $favoriteIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 
+$userAllergenStmt = db()->prepare('SELECT allergen FROM user_allergens WHERE user_id = ?');
+$userAllergenStmt->execute([$user['id']]);
+$userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
+
+$userDietStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE user_id = ?');
+$userDietStmt->execute([$user['id']]);
+$userDiets = $userDietStmt->fetchAll(PDO::FETCH_COLUMN);
+
 $dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
 $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+$todayStmt = db()->prepare(
+    'SELECT r.title, r.calories, mpi.meal_type
+     FROM meal_plan_items mpi JOIN recipes r ON r.id = mpi.recipe_id
+     WHERE mpi.user_id = ? AND mpi.plan_date = CURDATE()
+     ORDER BY FIELD(mpi.meal_type, "breakfast", "lunch", "dinner", "snack")'
+);
+$todayStmt->execute([$user['id']]);
+$todayMeals = $todayStmt->fetchAll();
+$todayCalories = array_sum(array_column($todayMeals, 'calories'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,6 +100,29 @@ $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
 <main class="app-main">
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
+    <?php endif; ?>
+
+    <?php if ($todayMeals): ?>
+        <div class="card mb-16 today-widget">
+            <div class="today-widget-head">
+                <strong>Today's plan</strong>
+                <span class="muted"><?= icon('flame', 14) ?> <?= (int)$todayCalories ?> cal</span>
+            </div>
+            <div class="tag-row">
+                <?php foreach ($todayMeals as $m): ?>
+                    <span class="tag"><?= h(ucfirst($m['meal_type'])) ?>: <?= h($m['title']) ?></span>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($userDiets && $q === '' && $mealType === '' && $diet === ''): ?>
+        <div class="tag-row mb-16">
+            <span class="muted" style="font-size:13px;">Recommended for you:</span>
+            <?php foreach ($userDiets as $d): ?>
+                <a class="tag" href="index.php?diet=<?= urlencode($d) ?>"><?= h(ucfirst($d)) ?></a>
+            <?php endforeach; ?>
+        </div>
     <?php endif; ?>
 
     <form method="get" class="filter-bar">
@@ -86,9 +150,30 @@ $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
     <?php else: ?>
         <div class="recipe-grid">
             <?php foreach ($recipes as $recipe): ?>
-                <?php render_recipe_card($recipe, isset($favoriteIds[$recipe['id']])); ?>
+                <?php
+                $recipeAllergens = array_filter(explode(',', $recipe['allergens'] ?? ''));
+                $conflicts = array_intersect($recipeAllergens, $userAllergens);
+                render_recipe_card($recipe, isset($favoriteIds[$recipe['id']]), $conflicts);
+                ?>
             <?php endforeach; ?>
         </div>
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="<?= h(paginate_url($page - 1, $q, $mealType, $diet)) ?>"><?= icon('chevron-left', 14) ?></a>
+                <?php endif; ?>
+                <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                    <?php if ($p === $page): ?>
+                        <span class="is-current"><?= $p ?></span>
+                    <?php else: ?>
+                        <a href="<?= h(paginate_url($p, $q, $mealType, $diet)) ?>"><?= $p ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?= h(paginate_url($page + 1, $q, $mealType, $diet)) ?>"><?= icon('chevron-right', 14) ?></a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </main>
 </body>

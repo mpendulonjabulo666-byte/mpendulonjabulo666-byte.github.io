@@ -1,5 +1,5 @@
 <?php
-function render_recipe_card(array $recipe, bool $isFavorite): void
+function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConflicts = []): void
 {
     $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
     ?>
@@ -27,6 +27,9 @@ function render_recipe_card(array $recipe, bool $isFavorite): void
                         <span class="tag"><?= h($tag) ?></span>
                     <?php endforeach; ?>
                 </div>
+            <?php endif; ?>
+            <?php if ($allergenConflicts): ?>
+                <p class="allergen-warning"><?= icon('flame', 12) ?> Contains <?= h(implode(', ', $allergenConflicts)) ?></p>
             <?php endif; ?>
         </div>
     </a>

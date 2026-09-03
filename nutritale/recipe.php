@@ -35,6 +35,11 @@ $steps = $stepStmt->fetchAll();
 $favStmt = db()->prepare('SELECT 1 FROM favorites WHERE user_id = ? AND recipe_id = ?');
 $favStmt->execute([$user['id'], $id]);
 $isFavorite = (bool)$favStmt->fetch();
+
+$userAllergenStmt = db()->prepare('SELECT allergen FROM user_allergens WHERE user_id = ?');
+$userAllergenStmt->execute([$user['id']]);
+$userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
+$allergenConflicts = array_intersect($allergens, $userAllergens);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,6 +72,10 @@ $isFavorite = (bool)$favStmt->fetch();
             </div>
             <p class="muted"><?= h($recipe['description']) ?></p>
 
+            <?php if ($allergenConflicts): ?>
+                <div class="alert alert-error">This recipe contains <?= h(implode(', ', $allergenConflicts)) ?>, which you've marked as an allergen to avoid.</div>
+            <?php endif; ?>
+
             <div class="recipe-stats">
                 <div><?= icon('clock', 16) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</div>
                 <div><?= icon('users', 16) ?> Serves <?= (int)$recipe['servings'] ?></div>
@@ -89,6 +98,17 @@ $isFavorite = (bool)$favStmt->fetch();
 
             <?php if ($allergens): ?>
                 <p class="muted">Contains: <?= h(implode(', ', $allergens)) ?></p>
+            <?php endif; ?>
+
+            <?php if ((int)$recipe['created_by'] === (int)$user['id']): ?>
+                <div class="recipe-owner-actions mb-16">
+                    <a class="btn btn-text btn-small" href="add_recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= icon('settings', 14) ?> Edit recipe</a>
+                    <form method="post" action="recipe_delete.php" onsubmit="return confirm('Delete this recipe?');">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                        <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Delete</button>
+                    </form>
+                </div>
             <?php endif; ?>
 
             <div class="recipe-columns">
