@@ -119,6 +119,40 @@ a { color: inherit; text-decoration: none; }
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* Full-bleed photo banner used as a page header on a few app screens.
+   Always dark-scrim + white text regardless of site theme, since it
+   sits on a photo rather than the themed background. */
+.page-hero-banner {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-height: 168px;
+    display: flex;
+    align-items: flex-end;
+    padding: 22px;
+    margin-bottom: 24px;
+    background-size: cover;
+    background-position: center;
+    isolation: isolate;
+}
+.page-hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 14, 12, 0.15) 0%, rgba(10, 14, 12, 0.82) 100%);
+    z-index: -1;
+}
+.page-hero-banner h1 {
+    color: #fff;
+    margin: 0 0 4px;
+}
+.page-hero-banner p {
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-size: 13.5px;
+    max-width: 480px;
+}
+
 .alert {
     padding: 10px 14px;
     border-radius: 8px;

@@ -102,10 +102,12 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
             </p>
             <a href="register.php" class="btn btn-primary">Start selling</a>
         </div>
-        <div class="landing-vendor-card card">
-            <div class="recipe-card-meta mb-16"><span><?= icon('clock', 14) ?> 35 min</span><span><?= icon('flame', 14) ?> 520 cal</span></div>
-            <span class="tag premium-tag">R49.00</span>
-            <p class="mt-16 muted" style="font-size:13px;">Ingredients &amp; instructions unlock after purchase</p>
+        <div class="landing-vendor-card page-hero-banner" style="background-image:url('assets/img/banners/landing-ribeye.jpg');min-height:220px;">
+            <div>
+                <div class="recipe-card-meta mb-16" style="color:rgba(255,255,255,0.85);"><span><?= icon('clock', 14) ?> 35 min</span><span><?= icon('flame', 14) ?> 520 cal</span></div>
+                <span class="tag premium-tag">R49.00</span>
+                <p class="mt-16" style="font-size:13px;">Ingredients &amp; instructions unlock after purchase</p>
+            </div>
         </div>
     </section>
 

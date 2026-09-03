@@ -60,8 +60,12 @@ $mine = $mineStmt->fetchAll();
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <h1 class="mb-16"><?= icon('shopping-cart', 20) ?> Ingredient Marketplace</h1>
-    <p class="muted" style="margin-top:-10px;">Buy and sell surplus ingredients with other <?= APP_NAME ?> members. <?= APP_NAME ?> keeps <?= PLATFORM_COMMISSION_PCT ?>% of each sale.</p>
+    <div class="page-hero-banner" style="background-image:url('assets/img/banners/marketplace-herbs.jpg');">
+        <div>
+            <h1><?= icon('shopping-cart', 20) ?> Ingredient Marketplace</h1>
+            <p>Buy and sell surplus ingredients with other <?= APP_NAME ?> members. <?= APP_NAME ?> keeps <?= PLATFORM_COMMISSION_PCT ?>% of each sale.</p>
+        </div>
+    </div>
 
     <div class="card mb-16">
         <h2 style="margin:0 0 12px;font-size:16px;">List an ingredient for sale</h2>

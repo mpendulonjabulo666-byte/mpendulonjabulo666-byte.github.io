@@ -95,8 +95,12 @@ if ($pantry) {
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <h1 class="mb-16"><?= icon('wand', 20) ?> What Can I Make?</h1>
-    <p class="muted" style="margin-top:-10px;">Add the ingredients you have on hand and we'll find recipes that use them.</p>
+    <div class="page-hero-banner" style="background-image:url('assets/img/banners/pantry-vegetables.jpg');">
+        <div>
+            <h1><?= icon('wand', 20) ?> What Can I Make?</h1>
+            <p>Add the ingredients you have on hand and we'll find recipes that use them.</p>
+        </div>
+    </div>
 
     <?php if (!$user['is_premium_member']): ?>
         <p class="muted mb-16" style="font-size:13px;">

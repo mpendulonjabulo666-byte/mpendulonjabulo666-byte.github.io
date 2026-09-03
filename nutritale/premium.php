@@ -23,8 +23,12 @@ if ($user['is_premium_member']) {
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main" style="max-width:520px;">
-    <div class="center-text mb-16"><?= icon('wand', 36) ?></div>
-    <h1 class="center-text mb-16">Go Premium</h1>
+    <div class="page-hero-banner center-text" style="background-image:url('assets/img/banners/premium-plated.jpg');justify-content:center;">
+        <div>
+            <h1><?= icon('wand', 28) ?> Go Premium</h1>
+            <p>Unlimited ingredient recommendations, matched to your diet.</p>
+        </div>
+    </div>
 
     <div class="card">
         <ul style="padding-left:20px;margin:0 0 20px;font-size:14px;line-height:1.9;">

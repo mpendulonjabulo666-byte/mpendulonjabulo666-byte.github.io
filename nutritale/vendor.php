@@ -60,9 +60,14 @@ $ingredientTotals = $ingredientTotalsStmt->fetch();
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <div class="planner-header">
-        <h1>Vendor Dashboard</h1>
-        <a class="btn btn-primary" href="add_recipe.php"><?= icon('plus', 16) ?> New recipe</a>
+    <div class="page-hero-banner" style="background-image:url('assets/img/banners/vendor-flame.jpg');">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;width:100%;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>Vendor Dashboard</h1>
+                <p>Track earnings from your premium recipes and ingredient sales.</p>
+            </div>
+            <a class="btn btn-primary" href="add_recipe.php"><?= icon('plus', 16) ?> New recipe</a>
+        </div>
     </div>
 
     <div class="macro-row" style="grid-template-columns:repeat(3,1fr);max-width:560px;margin-bottom:8px;">
