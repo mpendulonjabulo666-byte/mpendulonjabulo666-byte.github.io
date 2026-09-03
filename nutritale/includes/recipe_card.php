@@ -3,7 +3,7 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
 {
     $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
     ?>
-    <a class="recipe-card" href="recipe.php?id=<?= urlencode($recipe['id']) ?>">
+    <a class="recipe-card" href="recipe.php?id=<?= urlencode($recipe['id']) ?>" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
             <form method="post" action="favorite_toggle.php" class="recipe-card-fav" onclick="event.stopPropagation()">
                 <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">

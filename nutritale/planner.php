@@ -133,12 +133,11 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
                             <input type="hidden" name="plan_date" value="<?= h($dateKey) ?>">
                             <input type="hidden" name="meal_type" value="<?= h($mealType) ?>">
                             <input type="hidden" name="week_anchor" value="<?= h($monday->format('Y-m-d')) ?>">
-                            <select name="recipe_id" onchange="this.form.submit()">
-                                <option value="">+ Add recipe</option>
-                                <?php foreach ($recipes as $r): ?>
-                                    <option value="<?= h($r['id']) ?>"><?= h($r['title']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <input type="hidden" name="recipe_id" class="combobox-value">
+                            <div class="combobox">
+                                <input type="text" class="combobox-input" placeholder="+ Add recipe" autocomplete="off">
+                                <div class="combobox-list" hidden></div>
+                            </div>
                         </form>
                     </div>
                 <?php endforeach; ?>
@@ -149,5 +148,47 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
         ?>
     </div>
 </main>
+
+<script>
+var PLANNER_RECIPES = <?= json_encode(array_map(fn($r) => ['id' => $r['id'], 'title' => $r['title']], $recipes), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+
+(function () {
+    function closeList(list) { list.hidden = true; list.innerHTML = ''; }
+
+    function openList(input, list, query) {
+        var q = query.trim().toLowerCase();
+        var matches = PLANNER_RECIPES.filter(function (r) {
+            return !q || r.title.toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 8);
+
+        if (!matches.length) {
+            list.innerHTML = '<div class="combobox-empty">No recipes match</div>';
+        } else {
+            list.innerHTML = matches.map(function (r) {
+                return '<button type="button" class="combobox-option" data-id="' + r.id.replace(/"/g, '&quot;') + '">' + r.title.replace(/</g, '&lt;') + '</button>';
+            }).join('');
+        }
+        list.hidden = false;
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('.combobox'), function (box) {
+        var input = box.querySelector('.combobox-input');
+        var list = box.querySelector('.combobox-list');
+        var form = box.closest('form');
+        var hiddenValue = form.querySelector('.combobox-value');
+
+        input.addEventListener('focus', function () { openList(input, list, input.value); });
+        input.addEventListener('input', function () { openList(input, list, input.value); });
+        input.addEventListener('blur', function () { setTimeout(function () { closeList(list); }, 150); });
+
+        list.addEventListener('mousedown', function (e) {
+            var opt = e.target.closest('.combobox-option');
+            if (!opt) return;
+            hiddenValue.value = opt.getAttribute('data-id');
+            form.submit();
+        });
+    });
+})();
+</script>
 </body>
 </html>

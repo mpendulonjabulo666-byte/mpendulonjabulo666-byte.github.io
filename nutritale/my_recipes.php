@@ -35,9 +35,13 @@ $recipes = $stmt->fetchAll();
     <?php if (!$recipes): ?>
         <p class="muted">You haven't added any recipes yet.</p>
     <?php else: ?>
-        <div class="recipe-grid">
+        <div class="search-field mb-16">
+            <?= icon('search', 16) ?>
+            <input type="text" id="mineSearch" placeholder="Search your recipes...">
+        </div>
+        <div class="recipe-grid" id="mineGrid">
             <?php foreach ($recipes as $recipe): ?>
-                <div class="recipe-card">
+                <div class="recipe-card" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
                     <a href="recipe.php?id=<?= urlencode($recipe['id']) ?>">
                         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
                         <div class="recipe-card-body">
@@ -56,6 +60,20 @@ $recipes = $stmt->fetchAll();
                 </div>
             <?php endforeach; ?>
         </div>
+        <p class="muted center-text mt-16" id="mineEmpty" hidden>No recipes match your search.</p>
+        <script>
+        document.getElementById('mineSearch').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            var cards = document.querySelectorAll('#mineGrid .recipe-card');
+            var visible = 0;
+            cards.forEach(function (card) {
+                var match = card.getAttribute('data-title').indexOf(q) !== -1;
+                card.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            document.getElementById('mineEmpty').hidden = visible > 0;
+        });
+        </script>
     <?php endif; ?>
 </main>
 </body>

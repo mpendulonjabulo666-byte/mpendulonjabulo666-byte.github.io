@@ -45,7 +45,11 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
     <?php if (!$recipes): ?>
         <p class="muted">You haven't favorited any recipes yet. <a href="index.php">Browse recipes</a>.</p>
     <?php else: ?>
-        <div class="recipe-grid">
+        <div class="search-field mb-16">
+            <?= icon('search', 16) ?>
+            <input type="text" id="favSearch" placeholder="Search your favorites...">
+        </div>
+        <div class="recipe-grid" id="favGrid">
             <?php foreach ($recipes as $recipe): ?>
                 <?php
                 $recipeAllergens = array_filter(explode(',', $recipe['allergens'] ?? ''));
@@ -54,6 +58,20 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
                 ?>
             <?php endforeach; ?>
         </div>
+        <p class="muted center-text mt-16" id="favEmpty" hidden>No favorites match your search.</p>
+        <script>
+        document.getElementById('favSearch').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            var cards = document.querySelectorAll('#favGrid .recipe-card');
+            var visible = 0;
+            cards.forEach(function (card) {
+                var match = card.getAttribute('data-title').indexOf(q) !== -1;
+                card.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            document.getElementById('favEmpty').hidden = visible > 0;
+        });
+        </script>
     <?php endif; ?>
 </main>
 </body>
