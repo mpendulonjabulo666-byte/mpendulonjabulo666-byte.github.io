@@ -13,7 +13,7 @@ function current_user(): ?array
     }
     static $user = null;
     if ($user === null) {
-        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, created_at FROM users WHERE id = ?');
+        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
     }
@@ -59,6 +59,13 @@ function redirect(string $path): void
 {
     header('Location: ' . $path);
     exit;
+}
+
+function app_base_url(): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
+    return $scheme . '://' . $_SERVER['HTTP_HOST'] . $dir . '/';
 }
 
 function csrf_token(): string

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     locked_until DATETIME NULL,
     is_admin TINYINT(1) NOT NULL DEFAULT 0,
     email_notifications TINYINT(1) NOT NULL DEFAULT 1,
+    is_vendor TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -29,6 +30,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     fat_g SMALLINT UNSIGNED,
     fiber_g SMALLINT UNSIGNED,
     is_generated TINYINT(1) NOT NULL DEFAULT 0,
+    is_premium TINYINT(1) NOT NULL DEFAULT 0,
+    price DECIMAL(8,2) NULL,
     created_by INT UNSIGNED NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
@@ -152,4 +155,22 @@ CREATE TABLE IF NOT EXISTS user_pantry_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, ingredient_name),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_purchases (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    buyer_id INT UNSIGNED NOT NULL,
+    recipe_id VARCHAR(40) NOT NULL,
+    vendor_id INT UNSIGNED NOT NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    pf_payment_id VARCHAR(60) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (vendor_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_buyer_recipe (buyer_id, recipe_id),
+    INDEX idx_vendor (vendor_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -16,6 +16,9 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
         </div>
         <div class="recipe-card-body">
             <h3><?= h($recipe['title']) ?></h3>
+            <?php if (!empty($recipe['is_premium'])): ?>
+                <span class="tag premium-tag mb-16"><?= icon('wand', 11) ?> R<?= number_format((float)$recipe['price'], 2) ?></span>
+            <?php endif; ?>
             <?= render_stars((float)($recipe['avg_rating'] ?? 0), (int)($recipe['rating_count'] ?? 0), 12) ?>
             <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
             <div class="recipe-card-meta">

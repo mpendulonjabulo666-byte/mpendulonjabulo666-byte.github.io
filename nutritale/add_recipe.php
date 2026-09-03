@@ -16,6 +16,7 @@ $recipe = [
     'title' => '', 'description' => '', 'image_url' => '', 'meal_type' => 'dinner',
     'cuisine' => '', 'difficulty' => 'easy', 'cook_time' => 20, 'servings' => 2,
     'calories' => '', 'protein' => '', 'carbs' => '', 'fat' => '', 'fiber' => '',
+    'is_premium' => false, 'price' => '',
 ];
 $selectedDiets = [];
 $selectedAllergens = [];
@@ -36,6 +37,7 @@ if ($editId) {
         'meal_type' => $existing['meal_type'], 'cuisine' => $existing['cuisine'], 'difficulty' => $existing['difficulty'],
         'cook_time' => $existing['cook_time_minutes'], 'servings' => $existing['servings'], 'calories' => $existing['calories'],
         'protein' => $existing['protein_g'], 'carbs' => $existing['carbs_g'], 'fat' => $existing['fat_g'], 'fiber' => $existing['fiber_g'],
+        'is_premium' => (bool)$existing['is_premium'], 'price' => $existing['price'],
     ];
     $selectedDiets = db()->prepare('SELECT diet_type FROM recipe_diet_tags WHERE recipe_id = ?');
     $selectedDiets->execute([$editId]);
@@ -68,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $recipe['carbs'] = (int)($_POST['carbs'] ?? 0);
         $recipe['fat'] = (int)($_POST['fat'] ?? 0);
         $recipe['fiber'] = (int)($_POST['fiber'] ?? 0);
+        $recipe['is_premium'] = $user['is_vendor'] && isset($_POST['is_premium']);
+        $recipe['price'] = $recipe['is_premium'] ? (float)($_POST['price'] ?? 0) : null;
 
         $selectedDiets = array_intersect($_POST['diet_types'] ?? [], $dietOptions);
         $selectedAllergens = array_intersect($_POST['allergens'] ?? [], $allergenOptions);
@@ -92,18 +96,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($recipe['servings'] <= 0) $errors[] = 'Servings must be greater than 0.';
         if (!$ingredients) $errors[] = 'Add at least one ingredient.';
         if (!$steps) $errors[] = 'Add at least one instruction step.';
+        if ($recipe['is_premium'] && $recipe['price'] <= 0) $errors[] = 'Set a price greater than R0 for a premium recipe.';
 
         if (!$errors) {
             if ($editId) {
                 $recipeId = $editId;
                 $upd = db()->prepare(
                     'UPDATE recipes SET title=?, description=?, image_url=?, meal_type=?, cuisine=?, difficulty=?,
-                     cook_time_minutes=?, servings=?, calories=?, protein_g=?, carbs_g=?, fat_g=?, fiber_g=? WHERE id=?'
+                     cook_time_minutes=?, servings=?, calories=?, protein_g=?, carbs_g=?, fat_g=?, fiber_g=?,
+                     is_premium=?, price=? WHERE id=?'
                 );
                 $upd->execute([
                     $recipe['title'], $recipe['description'], $recipe['image_url'], $recipe['meal_type'], $recipe['cuisine'],
                     $recipe['difficulty'], $recipe['cook_time'], $recipe['servings'], $recipe['calories'], $recipe['protein'],
-                    $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $recipeId,
+                    $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $recipe['is_premium'] ? 1 : 0, $recipe['price'], $recipeId,
                 ]);
                 db()->prepare('DELETE FROM recipe_diet_tags WHERE recipe_id = ?')->execute([$recipeId]);
                 db()->prepare('DELETE FROM recipe_allergens WHERE recipe_id = ?')->execute([$recipeId]);
@@ -112,13 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $recipeId = 'r-' . preg_replace('/-+/', '-', preg_replace('/[^a-z0-9]+/', '-', strtolower($recipe['title']))) . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
                 $ins = db()->prepare(
-                    'INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, is_generated, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+                    'INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, is_generated, is_premium, price, created_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
                 );
                 $ins->execute([
                     $recipeId, $recipe['title'], $recipe['description'], $recipe['image_url'], $recipe['meal_type'], $recipe['cuisine'],
                     $recipe['difficulty'], $recipe['cook_time'], $recipe['servings'], $recipe['calories'], $recipe['protein'],
-                    $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $user['id'],
+                    $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $recipe['is_premium'] ? 1 : 0, $recipe['price'], $user['id'],
                 ]);
             }
 
@@ -214,6 +220,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="field"><span>Fat (g)</span><input type="number" name="fat" value="<?= h($recipe['fat']) ?>" min="0"></label>
             <label class="field"><span>Fiber (g)</span><input type="number" name="fiber" value="<?= h($recipe['fiber']) ?>" min="0"></label>
         </div>
+
+        <?php if ($user['is_vendor']): ?>
+            <div class="pref-group card" style="background:var(--green-light);border-color:var(--green);">
+                <h3 style="margin-top:0;">Sell this recipe</h3>
+                <label class="pref-chip <?= $recipe['is_premium'] ? 'is-active' : '' ?>" style="display:inline-flex;background:var(--white);">
+                    <input type="checkbox" name="is_premium" id="premium-toggle" <?= $recipe['is_premium'] ? 'checked' : '' ?>>
+                    Make this a premium recipe
+                </label>
+                <label class="field mt-16" id="price-field" style="<?= $recipe['is_premium'] ? '' : 'display:none;' ?>max-width:200px;">
+                    <span>Price (ZAR)</span>
+                    <input type="number" name="price" value="<?= h($recipe['price']) ?>" min="1" step="0.01" placeholder="e.g. 49.00">
+                </label>
+            </div>
+            <script>
+            document.getElementById('premium-toggle').addEventListener('change', function (e) {
+                document.getElementById('price-field').style.display = e.target.checked ? '' : 'none';
+            });
+            </script>
+        <?php endif; ?>
 
         <div class="pref-group">
             <h3>Diet tags</h3>

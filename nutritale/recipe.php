@@ -87,6 +87,15 @@ $reviewsStmt = db()->prepare(
 );
 $reviewsStmt->execute([$id]);
 $reviews = $reviewsStmt->fetchAll();
+
+$isOwner = (int)$recipe['created_by'] === (int)$user['id'];
+$hasPurchased = false;
+if ($recipe['is_premium'] && !$isOwner) {
+    $purchaseStmt = db()->prepare("SELECT 1 FROM recipe_purchases WHERE buyer_id = ? AND recipe_id = ? AND status = 'paid'");
+    $purchaseStmt->execute([$user['id'], $id]);
+    $hasPurchased = (bool)$purchaseStmt->fetch();
+}
+$isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user['is_admin']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,7 +138,12 @@ $reviews = $reviewsStmt->fetchAll();
                 </div>
             </div>
             <div id="share-toast" class="share-toast" hidden>Link copied!</div>
-            <?= render_stars($avgRating, $ratingCount, 16) ?>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <?= render_stars($avgRating, $ratingCount, 16) ?>
+                <?php if ($recipe['is_premium']): ?>
+                    <span class="tag premium-tag"><?= icon('wand', 12) ?> Premium · R<?= number_format((float)$recipe['price'], 2) ?></span>
+                <?php endif; ?>
+            </div>
             <p class="muted"><?= h($recipe['description']) ?></p>
 
             <?php if ($success = flash_get('success')): ?>
@@ -180,29 +194,41 @@ $reviews = $reviewsStmt->fetchAll();
                 </div>
             <?php endif; ?>
 
-            <div class="recipe-columns">
-                <div>
-                    <h2>Ingredients</h2>
-                    <ul class="ingredient-list" id="ingredient-list">
-                        <?php foreach ($ingredients as $ing): ?>
-                            <li
-                                data-base-qty="<?= h($ing['quantity']) ?>"
-                                data-unit="<?= h($ing['unit']) ?>"
-                                data-display="<?= h($ing['display_quantity']) ?>"
-                                data-name="<?= h($ing['name']) ?>"
-                            ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
+            <?php if ($isLocked): ?>
+                <div class="paywall card">
+                    <?= icon('wand', 28) ?>
+                    <h2 style="margin:10px 0 4px;">Unlock the full recipe</h2>
+                    <p class="muted" style="margin:0 0 16px;">Ingredients and step-by-step instructions for this premium recipe unlock after purchase.</p>
+                    <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
                 </div>
-                <div>
-                    <h2>Instructions</h2>
-                    <ol class="step-list">
-                        <?php foreach ($steps as $step): ?>
-                            <li><?= h($step['step_text']) ?></li>
-                        <?php endforeach; ?>
-                    </ol>
+            <?php else: ?>
+                <?php if ($recipe['is_premium'] && $hasPurchased): ?>
+                    <p class="alert alert-success">You've purchased this recipe — enjoy!</p>
+                <?php endif; ?>
+                <div class="recipe-columns">
+                    <div>
+                        <h2>Ingredients</h2>
+                        <ul class="ingredient-list" id="ingredient-list">
+                            <?php foreach ($ingredients as $ing): ?>
+                                <li
+                                    data-base-qty="<?= h($ing['quantity']) ?>"
+                                    data-unit="<?= h($ing['unit']) ?>"
+                                    data-display="<?= h($ing['display_quantity']) ?>"
+                                    data-name="<?= h($ing['name']) ?>"
+                                ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2>Instructions</h2>
+                        <ol class="step-list">
+                            <?php foreach ($steps as $step): ?>
+                                <li><?= h($step['step_text']) ?></li>
+                            <?php endforeach; ?>
+                        </ol>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
 
             <div class="reviews-section">
                 <h2>Ratings &amp; reviews</h2>

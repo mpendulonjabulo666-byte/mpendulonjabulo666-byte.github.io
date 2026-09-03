@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="auth-shell">
 <?= render_theme_toggle() ?>
     <div class="auth-card">
-        <div class="center-text mb-16"><?= nutritale_logo_svg(56) ?></div>
+        <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(56) ?></a>
         <h1 class="center-text">Create your account</h1>
         <div class="card">
             <?php foreach ($errors as $error): ?>

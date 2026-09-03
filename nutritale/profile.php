@@ -81,6 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         $stmt->execute([$user['id'], $calories, $protein, $carbs, $fat]);
         flash_set('success', 'Nutrition goals saved.');
         redirect('profile.php');
+    } elseif ($form === 'vendor') {
+        $isVendor = isset($_POST['is_vendor']) ? 1 : 0;
+        db()->prepare('UPDATE users SET is_vendor = ? WHERE id = ?')->execute([$isVendor, $user['id']]);
+        flash_set('success', $isVendor ? 'Selling is now on — mark a recipe as premium from My Recipes to list it.' : 'Selling turned off.');
+        redirect('profile.php');
     }
 }
 
@@ -210,6 +215,23 @@ $goals = $goalStmt->fetch() ?: [];
             </div>
             <button type="submit" class="btn btn-primary mt-16">Save goals</button>
         </form>
+    </div>
+
+    <div class="card mt-16">
+        <h2 style="font-size:16px;margin-top:0;">Sell your recipes</h2>
+        <p class="muted" style="margin-top:0;font-size:13px;">Turn this on to mark your own recipes as premium with a price. Buyers pay through PayFast to unlock the full recipe.</p>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="form" value="vendor">
+            <label class="pref-chip <?= $user['is_vendor'] ? 'is-active' : '' ?>" style="display:inline-flex;">
+                <input type="checkbox" name="is_vendor" <?= $user['is_vendor'] ? 'checked' : '' ?>>
+                I want to sell recipes
+            </label>
+            <button type="submit" class="btn btn-primary mt-16" style="display:block;">Save</button>
+        </form>
+        <?php if ($user['is_vendor']): ?>
+            <a class="btn btn-text btn-small mt-16" href="vendor.php"><?= icon('flame', 14) ?> Go to your vendor dashboard</a>
+        <?php endif; ?>
     </div>
 </main>
 </body>
