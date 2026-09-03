@@ -13,7 +13,7 @@ function current_user(): ?array
     }
     static $user = null;
     if ($user === null) {
-        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, created_at FROM users WHERE id = ?');
+        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
     }
@@ -26,6 +26,16 @@ function require_login(): array
     if (!$user) {
         header('Location: login.php');
         exit;
+    }
+    return $user;
+}
+
+function require_admin(): array
+{
+    $user = require_login();
+    if (empty($user['is_admin'])) {
+        http_response_code(403);
+        die('Admins only.');
     }
     return $user;
 }

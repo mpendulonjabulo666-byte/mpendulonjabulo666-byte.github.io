@@ -83,7 +83,13 @@ function format_qty(float $qty): string
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <a href="planner.php?week=<?= h($monday->format('Y-m-d')) ?>" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to planner</a>
+    <div class="mb-16" style="display:flex;justify-content:space-between;align-items:center;">
+        <a href="planner.php?week=<?= h($monday->format('Y-m-d')) ?>" class="btn btn-text btn-small"><?= icon('chevron-left', 16) ?> Back to planner</a>
+        <div style="display:flex;gap:8px;">
+            <a class="btn btn-text btn-small" href="shopping_list_export.php?week=<?= h($monday->format('Y-m-d')) ?>"><?= icon('download', 16) ?> Export CSV</a>
+            <button type="button" class="btn btn-text btn-small" onclick="window.print()"><?= icon('printer', 16) ?> Print</button>
+        </div>
+    </div>
     <h1 class="mb-16"><?= icon('shopping-cart', 20) ?> Shopping list — <?= $monday->format('M j') ?> to <?= $sunday->format('M j, Y') ?></h1>
 
     <?php if (!$items): ?>

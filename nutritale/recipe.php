@@ -87,7 +87,10 @@ $reviews = $reviewsStmt->fetchAll();
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <a href="index.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to recipes</a>
+    <div class="mb-16" style="display:flex;justify-content:space-between;align-items:center;">
+        <a href="index.php" class="btn btn-text btn-small"><?= icon('chevron-left', 16) ?> Back to recipes</a>
+        <button type="button" class="btn btn-text btn-small" onclick="window.print()"><?= icon('printer', 16) ?> Print</button>
+    </div>
 
     <div class="recipe-detail">
         <div class="recipe-detail-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
@@ -181,7 +184,7 @@ $reviews = $reviewsStmt->fetchAll();
 
             <div class="reviews-section">
                 <h2>Ratings &amp; reviews</h2>
-                <form method="post" class="card mb-16">
+                <form method="post" class="card mb-16 print-hide">
                     <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                     <input type="hidden" name="action" value="rate">
                     <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">

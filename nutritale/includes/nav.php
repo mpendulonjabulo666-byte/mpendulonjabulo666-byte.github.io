@@ -13,6 +13,9 @@
             <a href="favorites.php"><?= icon('heart', 18) ?> Favorites</a>
             <a href="planner.php"><?= icon('calendar', 18) ?> Planner</a>
             <a href="my_recipes.php"><?= icon('plus', 18) ?> My Recipes</a>
+            <?php if (!empty($user['is_admin'])): ?>
+                <a href="admin.php"><?= icon('shield', 18) ?> Admin</a>
+            <?php endif; ?>
         </nav>
         <div class="app-nav-user">
             <a href="profile.php" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>

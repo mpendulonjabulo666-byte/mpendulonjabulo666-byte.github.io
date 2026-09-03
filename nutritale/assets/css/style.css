@@ -541,6 +541,19 @@ a { color: inherit; text-decoration: none; }
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 14px;
 }
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.admin-table th, .admin-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.admin-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+
 .recipe-owner-actions {
     display: flex;
     gap: 8px;
@@ -586,6 +599,18 @@ a { color: inherit; text-decoration: none; }
 }
 .pagination a:hover { border-color: var(--green); color: var(--green-dark); }
 .pagination .is-current { background: var(--green); color: var(--white); border-color: var(--green); }
+
+@media print {
+    .app-nav, .filter-bar, .btn, .fav-btn, .recipe-owner-actions,
+    .planner-add, .planner-remove, .servings-scaler button, .rate-input,
+    .today-widget, .pagination, .print-hide {
+        display: none !important;
+    }
+    body { background: #fff; }
+    .app-main { padding: 0; max-width: 100%; }
+    .card, .recipe-detail { border: none; box-shadow: none; }
+    a[href]::after { content: none; }
+}
 
 @media (max-width: 700px) {
     .recipe-columns { grid-template-columns: 1fr; }

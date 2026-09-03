@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     onboarded_at TIMESTAMP NULL,
     failed_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
     locked_until DATETIME NULL,
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

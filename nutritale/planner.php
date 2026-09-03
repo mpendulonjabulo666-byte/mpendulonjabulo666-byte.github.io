@@ -93,6 +93,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
             <span class="muted"><?= $monday->format('M j') ?> – <?= $sunday->format('M j, Y') ?></span>
             <a class="btn btn-text btn-small" href="planner.php?week=<?= h($nextWeek) ?>">Next</a>
         </div>
+        <a class="btn btn-text btn-small" href="planner_export.php?week=<?= h($monday->format('Y-m-d')) ?>"><?= icon('download', 16) ?> Export CSV</a>
         <a class="btn btn-primary btn-small" href="shopping_list.php?week=<?= h($monday->format('Y-m-d')) ?>">Shopping list for this week</a>
     </div>
 

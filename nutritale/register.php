@@ -34,8 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$errors) {
-            $stmt = db()->prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)');
-            $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
+            $isFirstUser = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn() === 0;
+            $stmt = db()->prepare('INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $isFirstUser ? 1 : 0]);
             $_SESSION['user_id'] = (int)db()->lastInsertId();
             flash_set('success', 'Welcome to NutriTale, ' . $name . '!');
             redirect('index.php');
