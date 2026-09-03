@@ -22,6 +22,8 @@ function icon(string $name, int $size = 20): string
         'trash' => '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>',
         'shopping-cart' => '<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>',
         'settings' => '<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path>',
+        'star' => '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
+        'minus' => '<line x1="5" y1="12" x2="19" y2="12"></line>',
     ];
 
     $body = $paths[$name] ?? '<circle cx="12" cy="12" r="9"></circle>';
@@ -29,6 +31,20 @@ function icon(string $name, int $size = 20): string
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size
         . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
         . 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $body . '</svg>';
+}
+
+function render_stars(float $average, ?int $count = null, int $size = 14): string
+{
+    $rounded = (int)round($average);
+    $html = '<span class="star-rating">';
+    for ($i = 1; $i <= 5; $i++) {
+        $html .= '<span class="' . ($i <= $rounded ? 'star-filled' : 'star-empty') . '">' . icon('star', $size) . '</span>';
+    }
+    if ($count !== null) {
+        $html .= '<span class="star-count">' . ($count > 0 ? number_format($average, 1) . ' (' . $count . ')' : 'No reviews yet') . '</span>';
+    }
+    $html .= '</span>';
+    return $html;
 }
 
 function nutritale_logo_svg(int $size = 48): string

@@ -41,10 +41,12 @@ $offset = ($page - 1) * $perPage;
 
 $sql = 'SELECT r.*,
         GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
-        GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
+        GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens,
+        rt.avg_rating, rt.rating_count
         FROM recipes r
         LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
-        LEFT JOIN recipe_allergens al ON al.recipe_id = r.id';
+        LEFT JOIN recipe_allergens al ON al.recipe_id = r.id
+        LEFT JOIN (SELECT recipe_id, AVG(rating) avg_rating, COUNT(*) rating_count FROM recipe_ratings GROUP BY recipe_id) rt ON rt.recipe_id = r.id';
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
@@ -77,14 +79,34 @@ $dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
 $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 $todayStmt = db()->prepare(
-    'SELECT r.title, r.calories, mpi.meal_type
+    'SELECT r.title, r.calories, r.protein_g, r.carbs_g, r.fat_g, mpi.meal_type
      FROM meal_plan_items mpi JOIN recipes r ON r.id = mpi.recipe_id
      WHERE mpi.user_id = ? AND mpi.plan_date = CURDATE()
      ORDER BY FIELD(mpi.meal_type, "breakfast", "lunch", "dinner", "snack")'
 );
 $todayStmt->execute([$user['id']]);
 $todayMeals = $todayStmt->fetchAll();
-$todayCalories = array_sum(array_column($todayMeals, 'calories'));
+$todayTotals = [
+    'calories' => array_sum(array_column($todayMeals, 'calories')),
+    'protein_g' => array_sum(array_column($todayMeals, 'protein_g')),
+    'carbs_g' => array_sum(array_column($todayMeals, 'carbs_g')),
+    'fat_g' => array_sum(array_column($todayMeals, 'fat_g')),
+];
+
+$goalStmt = db()->prepare('SELECT * FROM user_goals WHERE user_id = ?');
+$goalStmt->execute([$user['id']]);
+$goals = $goalStmt->fetch() ?: [];
+
+function render_goal_progress(string $label, int $value, ?int $goal): string
+{
+    if (!$goal) return '';
+    $pct = min(100, round(($value / $goal) * 100));
+    $over = $value > $goal;
+    return '<div class="goal-progress">
+        <div class="goal-progress-label"><span>' . h($label) . '</span><span>' . $value . ' / ' . $goal . '</span></div>
+        <div class="goal-progress-bar"><div class="goal-progress-fill' . ($over ? ' is-over' : '') . '" style="width:' . $pct . '%"></div></div>
+    </div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -106,13 +128,21 @@ $todayCalories = array_sum(array_column($todayMeals, 'calories'));
         <div class="card mb-16 today-widget">
             <div class="today-widget-head">
                 <strong>Today's plan</strong>
-                <span class="muted"><?= icon('flame', 14) ?> <?= (int)$todayCalories ?> cal</span>
+                <span class="muted"><?= icon('flame', 14) ?> <?= (int)$todayTotals['calories'] ?> cal</span>
             </div>
-            <div class="tag-row">
+            <div class="tag-row mb-16">
                 <?php foreach ($todayMeals as $m): ?>
                     <span class="tag"><?= h(ucfirst($m['meal_type'])) ?>: <?= h($m['title']) ?></span>
                 <?php endforeach; ?>
             </div>
+            <?php if ($goals): ?>
+                <?= render_goal_progress('Calories', $todayTotals['calories'], $goals['daily_calories'] ?? null) ?>
+                <?= render_goal_progress('Protein (g)', $todayTotals['protein_g'], $goals['daily_protein_g'] ?? null) ?>
+                <?= render_goal_progress('Carbs (g)', $todayTotals['carbs_g'], $goals['daily_carbs_g'] ?? null) ?>
+                <?= render_goal_progress('Fat (g)', $todayTotals['fat_g'], $goals['daily_fat_g'] ?? null) ?>
+            <?php else: ?>
+                <p class="muted" style="font-size:12.5px;">Set daily goals in your <a href="profile.php">profile</a> to see progress bars here.</p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 

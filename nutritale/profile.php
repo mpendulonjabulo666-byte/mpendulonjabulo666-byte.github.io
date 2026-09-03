@@ -66,6 +66,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
 
         flash_set('success', 'Preferences saved.');
         redirect('profile.php');
+    } elseif ($form === 'goals') {
+        $calories = $_POST['daily_calories'] !== '' ? (int)$_POST['daily_calories'] : null;
+        $protein = $_POST['daily_protein_g'] !== '' ? (int)$_POST['daily_protein_g'] : null;
+        $carbs = $_POST['daily_carbs_g'] !== '' ? (int)$_POST['daily_carbs_g'] : null;
+        $fat = $_POST['daily_fat_g'] !== '' ? (int)$_POST['daily_fat_g'] : null;
+
+        $stmt = db()->prepare(
+            'INSERT INTO user_goals (user_id, daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g) VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE daily_calories = VALUES(daily_calories), daily_protein_g = VALUES(daily_protein_g),
+             daily_carbs_g = VALUES(daily_carbs_g), daily_fat_g = VALUES(daily_fat_g)'
+        );
+        $stmt->execute([$user['id'], $calories, $protein, $carbs, $fat]);
+        flash_set('success', 'Nutrition goals saved.');
+        redirect('profile.php');
     }
 }
 
@@ -76,6 +90,10 @@ $selectedDiets = $dietStmt->fetchAll(PDO::FETCH_COLUMN);
 $allergenStmt = db()->prepare('SELECT allergen FROM user_allergens WHERE user_id = ?');
 $allergenStmt->execute([$user['id']]);
 $selectedAllergens = $allergenStmt->fetchAll(PDO::FETCH_COLUMN);
+
+$goalStmt = db()->prepare('SELECT * FROM user_goals WHERE user_id = ?');
+$goalStmt->execute([$user['id']]);
+$goals = $goalStmt->fetch() ?: [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -168,6 +186,22 @@ $selectedAllergens = $allergenStmt->fetchAll(PDO::FETCH_COLUMN);
             </div>
 
             <button type="submit" class="btn btn-primary">Save preferences</button>
+        </form>
+    </div>
+
+    <div class="card mt-16">
+        <h2 style="font-size:16px;margin-top:0;">Daily nutrition goals</h2>
+        <p class="muted" style="margin-top:0;font-size:13px;">Optional targets used to show progress bars against your planned meals for today.</p>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="form" value="goals">
+            <div class="form-grid">
+                <label class="field"><span>Calories</span><input type="number" name="daily_calories" value="<?= h($goals['daily_calories'] ?? '') ?>" min="0"></label>
+                <label class="field"><span>Protein (g)</span><input type="number" name="daily_protein_g" value="<?= h($goals['daily_protein_g'] ?? '') ?>" min="0"></label>
+                <label class="field"><span>Carbs (g)</span><input type="number" name="daily_carbs_g" value="<?= h($goals['daily_carbs_g'] ?? '') ?>" min="0"></label>
+                <label class="field"><span>Fat (g)</span><input type="number" name="daily_fat_g" value="<?= h($goals['daily_fat_g'] ?? '') ?>" min="0"></label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-16">Save goals</button>
         </form>
     </div>
 </main>

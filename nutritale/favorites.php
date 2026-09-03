@@ -9,11 +9,13 @@ $user = require_login();
 $stmt = db()->prepare(
     'SELECT r.*,
      GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
-     GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
+     GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens,
+     rt.avg_rating, rt.rating_count
      FROM favorites f
      JOIN recipes r ON r.id = f.recipe_id
      LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
      LEFT JOIN recipe_allergens al ON al.recipe_id = r.id
+     LEFT JOIN (SELECT recipe_id, AVG(rating) avg_rating, COUNT(*) rating_count FROM recipe_ratings GROUP BY recipe_id) rt ON rt.recipe_id = r.id
      WHERE f.user_id = ?
      GROUP BY r.id
      ORDER BY f.created_at DESC'

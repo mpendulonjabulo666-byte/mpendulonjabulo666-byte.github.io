@@ -16,6 +16,7 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
         </div>
         <div class="recipe-card-body">
             <h3><?= h($recipe['title']) ?></h3>
+            <?= render_stars((float)($recipe['avg_rating'] ?? 0), (int)($recipe['rating_count'] ?? 0), 12) ?>
             <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
             <div class="recipe-card-meta">
                 <span><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</span>
