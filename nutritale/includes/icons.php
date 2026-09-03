@@ -62,12 +62,13 @@ function render_theme_toggle(): string
         . '</button>';
 }
 
+// $size sets the rendered height; width follows the source image's own
+// aspect ratio (the isolated book mark isn't square, unlike the old
+// vector circle-leaf mark this replaced).
 function nutritale_logo_svg(int $size = 48): string
 {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size
-        . '" viewBox="0 0 48 48" fill="none">'
-        . '<circle cx="24" cy="24" r="22" fill="#eafaf0" stroke="#2fae66" stroke-width="2"/>'
-        . '<path d="M24 14c-6 0-10 5-10 11 0 6.5 5 9 10 9s10-2.5 10-9c0-6-4-11-10-11Z" fill="#2fae66"/>'
-        . '<path d="M24 14c0-3 2-6 5-7-1 3-1 6 0 8" stroke="#1f7d49" stroke-width="2" stroke-linecap="round" fill="none"/>'
-        . '</svg>';
+    $height = $size;
+    $width = (int)round($size * 700 / 455);
+    return '<img src="assets/img/logo/book-mark.png" alt="' . h(APP_NAME) . '" width="' . $width . '" height="' . $height
+        . '" style="display:inline-block;vertical-align:middle;">';
 }
