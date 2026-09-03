@@ -16,7 +16,8 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= APP_NAME ?> — Cook what you have, plan what you need</title>
-<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
 <script src="assets/js/theme-toggle.js" defer></script>
@@ -89,14 +90,9 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
             <a href="assets/downloads/nutritale-recipe-book.pdf" class="btn btn-primary" download>Download Now</a>
         </div>
         <div class="book-mockup">
-            <div class="book-cover">
-                <div class="book-spine"></div>
-                <div class="book-pages"></div>
-                <div class="book-face">
-                    <?= nutritale_logo_svg(34) ?>
-                    <strong><?= APP_NAME ?></strong>
-                    <span>8 Free Starter<br>Recipes</span>
-                </div>
+            <div class="book-mockup-inner">
+                <img src="assets/img/logo/book-mark.png" alt="The NutriTale starter recipe book" width="700" height="455">
+                <span class="tag premium-tag book-badge">8 Free Recipes</span>
             </div>
         </div>
     </section>

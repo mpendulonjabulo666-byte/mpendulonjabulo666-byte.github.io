@@ -1,5 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+
 :root {
     color-scheme: light;
+    --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
     --green: #2fae66;
     --green-dark: #1f7d49;
     --green-light: #eafaf0;
@@ -63,6 +66,11 @@ body {
     background: var(--bg);
     color: var(--ink);
     transition: background-color 0.15s ease, color 0.15s ease;
+}
+h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .theme-toggle-btn {
@@ -225,8 +233,9 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 700;
-    font-size: 17px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 19px;
 }
 .app-nav-links {
     display: flex;
@@ -907,56 +916,26 @@ a { color: inherit; text-decoration: none; }
 .landing-vendor-text p { font-size: 14.5px; line-height: 1.6; margin-bottom: 20px; }
 .landing-vendor-card { max-width: 280px; margin: 0 auto; }
 
-/* Pure-CSS 3D book mockup for the free recipe book teaser. */
-.book-mockup { display: flex; justify-content: center; align-items: center; perspective: 1200px; padding: 20px 0; }
-.book-cover {
-    position: relative;
-    width: 170px;
-    height: 230px;
-    transform-style: preserve-3d;
-    transform: rotateY(-28deg) rotateX(2deg);
+/* Free recipe book teaser — the real book illustration from the brand mark. */
+.book-mockup {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+.book-mockup-inner { position: relative; display: inline-block; max-width: 340px; width: 100%; }
+.book-mockup img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 18px 30px rgba(20, 30, 20, 0.22));
     transition: transform 0.4s ease;
 }
-.book-mockup:hover .book-cover { transform: rotateY(-18deg) rotateX(2deg); }
-.book-face {
+.book-mockup:hover img { transform: translateY(-4px) scale(1.02); }
+.book-badge {
     position: absolute;
-    inset: 0;
-    border-radius: 3px 8px 8px 3px;
-    background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 100%);
-    box-shadow: 12px 18px 34px rgba(10, 20, 14, 0.35), inset -3px 0 6px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 18px;
-    color: #fff;
-}
-.book-face svg { width: 34px; height: 34px; margin-bottom: 10px; }
-.book-face strong { font-size: 17px; letter-spacing: 0.3px; }
-.book-face span { font-size: 11px; margin-top: 6px; opacity: 0.85; line-height: 1.5; }
-.book-spine {
-    position: absolute;
-    left: -16px;
-    top: 3px;
-    bottom: 3px;
-    width: 16px;
-    background: var(--green-dark);
-    filter: brightness(0.75);
-    transform: rotateY(-90deg);
-    transform-origin: right center;
-    border-radius: 3px 0 0 3px;
-}
-.book-pages {
-    position: absolute;
-    right: -5px;
-    top: 4px;
-    bottom: 4px;
-    width: 8px;
-    background: repeating-linear-gradient(180deg, #fff 0, #fff 1px, #eee 1px, #eee 2px);
-    transform: rotateY(90deg);
-    transform-origin: left center;
-    border-radius: 0 2px 2px 0;
+    top: -6px;
+    right: -6px;
+    transform: rotate(6deg);
 }
 
 .landing-final-cta {

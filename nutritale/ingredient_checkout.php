@@ -49,7 +49,8 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Checkout · <?= APP_NAME ?></title>
-<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
