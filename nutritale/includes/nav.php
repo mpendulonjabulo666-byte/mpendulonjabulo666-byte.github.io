@@ -10,6 +10,7 @@
     <div class="app-nav-collapsible">
         <nav class="app-nav-links">
             <a href="index.php"><?= icon('list', 18) ?> Recipes</a>
+            <a href="pantry.php"><?= icon('wand', 18) ?> What Can I Make?</a>
             <a href="favorites.php"><?= icon('heart', 18) ?> Favorites</a>
             <a href="planner.php"><?= icon('calendar', 18) ?> Planner</a>
             <a href="my_recipes.php"><?= icon('plus', 18) ?> My Recipes</a>
