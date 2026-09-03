@@ -521,7 +521,8 @@ a { color: inherit; text-decoration: none; }
     background: var(--white);
 }
 .pref-chip input { accent-color: var(--green); }
-.pref-chip.is-active { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+.pref-chip.is-active,
+.pref-chip:has(input:checked) { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
 
 /* My recipes form */
 .dynamic-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }

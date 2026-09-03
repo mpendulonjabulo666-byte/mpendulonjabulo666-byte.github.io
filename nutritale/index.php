@@ -6,6 +6,10 @@ require_once __DIR__ . '/includes/recipe_card.php';
 
 $user = require_login();
 
+if (empty($user['onboarded_at'])) {
+    redirect('onboarding.php');
+}
+
 $q = trim($_GET['q'] ?? '');
 $mealType = $_GET['meal_type'] ?? '';
 $diet = $_GET['diet'] ?? '';
@@ -14,7 +18,8 @@ $where = [];
 $params = [];
 
 if ($q !== '') {
-    $where[] = 'r.title LIKE ?';
+    $where[] = '(r.title LIKE ? OR EXISTS (SELECT 1 FROM recipe_ingredients ri WHERE ri.recipe_id = r.id AND ri.name LIKE ?))';
+    $params[] = '%' . $q . '%';
     $params[] = '%' . $q . '%';
 }
 if ($mealType !== '') {
@@ -158,7 +163,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
     <form method="get" class="filter-bar">
         <div class="search-field">
             <?= icon('search', 16) ?>
-            <input type="text" name="q" value="<?= h($q) ?>" placeholder="Search recipes...">
+            <input type="text" name="q" value="<?= h($q) ?>" placeholder="Search by title or ingredient...">
         </div>
         <select name="meal_type" onchange="this.form.submit()">
             <option value="">All meals</option>
