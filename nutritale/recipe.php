@@ -18,6 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rate'
         );
         $stmt->execute([$recipeId, $user['id'], $rating, $review !== '' ? $review : null]);
         flash_set('success', 'Thanks for your rating!');
+
+        $ownerStmt = db()->prepare(
+            'SELECT u.id, u.email, u.name, u.email_notifications, r.title
+             FROM recipes r JOIN users u ON u.id = r.created_by
+             WHERE r.id = ?'
+        );
+        $ownerStmt->execute([$recipeId]);
+        $owner = $ownerStmt->fetch();
+        if ($owner && $owner['email_notifications'] && (int)$owner['id'] !== (int)$user['id']) {
+            $body = $user['name'] . ' rated your recipe "' . $owner['title'] . '" ' . $rating . '/5.'
+                . ($review !== '' ? "\n\nReview: " . $review : '');
+            send_notification_email($owner['email'], 'New rating on ' . $owner['title'], $body);
+        }
     }
     redirect('recipe.php?id=' . urlencode($recipeId));
 }
@@ -82,7 +95,9 @@ $reviews = $reviewsStmt->fetchAll();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= h($recipe['title']) ?> · <?= APP_NAME ?></title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -98,15 +113,22 @@ $reviews = $reviewsStmt->fetchAll();
         <div class="recipe-detail-body">
             <div class="recipe-detail-header">
                 <h1><?= h($recipe['title']) ?></h1>
-                <form method="post" action="favorite_toggle.php">
-                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                    <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
-                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                    <button type="submit" class="fav-btn <?= $isFavorite ? 'is-active' : '' ?>" aria-label="Toggle favorite">
-                        <?= icon('heart', 22) ?>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" id="share-btn" class="fav-btn print-hide" aria-label="Share recipe"
+                        data-title="<?= h($recipe['title']) ?>" data-text="<?= h($recipe['description']) ?>">
+                        <?= icon('share', 20) ?>
                     </button>
-                </form>
+                    <form method="post" action="favorite_toggle.php" class="print-hide">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                        <button type="submit" class="fav-btn <?= $isFavorite ? 'is-active' : '' ?>" aria-label="Toggle favorite">
+                            <?= icon('heart', 22) ?>
+                        </button>
+                    </form>
+                </div>
             </div>
+            <div id="share-toast" class="share-toast" hidden>Link copied!</div>
             <?= render_stars($avgRating, $ratingCount, 16) ?>
             <p class="muted"><?= h($recipe['description']) ?></p>
 
@@ -248,6 +270,37 @@ $reviews = $reviewsStmt->fetchAll();
     });
     document.getElementById('servings-plus').addEventListener('click', function () {
         servings++; render();
+    });
+})();
+
+(function () {
+    var shareBtn = document.getElementById('share-btn');
+    var toast = document.getElementById('share-toast');
+
+    function showToast(text) {
+        toast.textContent = text;
+        toast.hidden = false;
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { toast.hidden = true; }, 2500);
+    }
+
+    shareBtn.addEventListener('click', function () {
+        var shareData = {
+            title: shareBtn.getAttribute('data-title'),
+            text: shareBtn.getAttribute('data-text'),
+            url: window.location.href,
+        };
+        if (navigator.share) {
+            navigator.share(shareData).catch(function () { /* user cancelled - no-op */ });
+            return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareData.url)
+                .then(function () { showToast('Link copied!'); })
+                .catch(function () { showToast(shareData.url); });
+        } else {
+            showToast(shareData.url);
+        }
     });
 })();
 </script>

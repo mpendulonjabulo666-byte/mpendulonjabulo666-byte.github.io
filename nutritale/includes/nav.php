@@ -18,6 +18,7 @@
             <?php endif; ?>
         </nav>
         <div class="app-nav-user">
+            <?= render_theme_toggle() ?>
             <a href="profile.php" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>
             <a href="logout.php" class="btn btn-text btn-small"><?= icon('logout', 16) ?> Log out</a>
         </div>

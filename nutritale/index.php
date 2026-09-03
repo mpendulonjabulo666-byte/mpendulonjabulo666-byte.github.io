@@ -120,7 +120,9 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recipes · <?= APP_NAME ?></title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>

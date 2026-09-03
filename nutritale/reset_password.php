@@ -44,10 +44,13 @@ if (!$reset) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reset Password · <?= APP_NAME ?></title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <div class="auth-shell">
+<?= render_theme_toggle() ?>
     <div class="auth-card">
         <div class="center-text mb-16"><?= nutritale_logo_svg(56) ?></div>
         <h1 class="center-text">Set a new password</h1>

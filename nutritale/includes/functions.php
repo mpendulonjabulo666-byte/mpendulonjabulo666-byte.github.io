@@ -13,7 +13,7 @@ function current_user(): ?array
     }
     static $user = null;
     if ($user === null) {
-        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, created_at FROM users WHERE id = ?');
+        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
     }
@@ -73,4 +73,12 @@ function csrf_check(): bool
 {
     return isset($_POST['csrf_token'], $_SESSION['csrf_token'])
         && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
+}
+
+function send_notification_email(string $to, string $subject, string $body): void
+{
+    // No SMTP is configured for this app by default. This is a best-effort
+    // send via PHP's mail() function; wire a real mail service (or SMTP in
+    // php.ini) in production for this to actually deliver.
+    @mail($to, $subject, $body, 'From: ' . APP_NAME . ' <no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>');
 }

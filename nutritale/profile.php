@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     if ($form === 'details') {
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
+        $emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
         if ($name === '') $errors[] = 'Please enter your name.';
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Please enter a valid email address.';
 
@@ -26,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         }
 
         if (!$errors) {
-            $upd = db()->prepare('UPDATE users SET name = ?, email = ? WHERE id = ?');
-            $upd->execute([$name, $email, $user['id']]);
+            $upd = db()->prepare('UPDATE users SET name = ?, email = ?, email_notifications = ? WHERE id = ?');
+            $upd->execute([$name, $email, $emailNotifications, $user['id']]);
             flash_set('success', 'Profile updated.');
             redirect('profile.php');
         }
@@ -102,7 +103,9 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Profile · <?= APP_NAME ?></title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -128,6 +131,10 @@ $goals = $goalStmt->fetch() ?: [];
             <label class="field">
                 <span>Email</span>
                 <input type="email" name="email" value="<?= h($user['email']) ?>" required>
+            </label>
+            <label class="pref-chip <?= $user['email_notifications'] ? 'is-active' : '' ?> mb-16" style="display:inline-flex;">
+                <input type="checkbox" name="email_notifications" <?= $user['email_notifications'] ? 'checked' : '' ?>>
+                Email me when someone rates or reviews my recipes
             </label>
             <button type="submit" class="btn btn-primary">Save details</button>
         </form>

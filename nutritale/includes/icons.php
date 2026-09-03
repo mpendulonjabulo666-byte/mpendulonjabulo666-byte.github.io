@@ -27,6 +27,9 @@ function icon(string $name, int $size = 20): string
         'printer' => '<polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect>',
         'download' => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>',
         'shield' => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>',
+        'sun' => '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>',
+        'moon' => '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>',
+        'share' => '<circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>',
     ];
 
     $body = $paths[$name] ?? '<circle cx="12" cy="12" r="9"></circle>';
@@ -48,6 +51,14 @@ function render_stars(float $average, ?int $count = null, int $size = 14): strin
     }
     $html .= '</span>';
     return $html;
+}
+
+function render_theme_toggle(): string
+{
+    return '<button type="button" id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle dark mode">'
+        . '<span class="theme-icon-sun">' . icon('sun', 18) . '</span>'
+        . '<span class="theme-icon-moon">' . icon('moon', 18) . '</span>'
+        . '</button>';
 }
 
 function nutritale_logo_svg(int $size = 48): string
