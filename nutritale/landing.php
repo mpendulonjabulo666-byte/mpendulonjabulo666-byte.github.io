@@ -49,7 +49,12 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
         <div class="feature-card">
             <?= icon('wand', 24) ?>
             <h3>What Can I Make?</h3>
-            <p class="muted">Add the ingredients sitting in your kitchen and get ranked recipe matches, missing items called out.</p>
+            <p class="muted">Add the ingredients sitting in your kitchen and get ranked recipe matches — matched to your diet first, missing items called out. 3 free tries, then Premium.</p>
+        </div>
+        <div class="feature-card">
+            <?= icon('shopping-cart', 24) ?>
+            <h3>Ingredient marketplace</h3>
+            <p class="muted">Got surplus ingredients? List them for other members to buy, or pick up what you're missing from someone nearby.</p>
         </div>
         <div class="feature-card">
             <?= icon('calendar', 24) ?>
@@ -65,6 +70,24 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
             <?= icon('star', 24) ?>
             <h3>Ratings &amp; reviews</h3>
             <p class="muted">Every recipe carries real ratings from people who've cooked it — no guessing if it's any good.</p>
+        </div>
+    </section>
+
+    <section class="landing-vendor">
+        <div class="landing-vendor-text">
+            <span class="tag premium-tag mb-16"><?= icon('wand', 12) ?> Premium</span>
+            <h2>Unlimited "What Can I Make?"</h2>
+            <p class="muted">
+                Everyone gets 3 free ingredient lookups. Go Premium for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month
+                and get unlimited AI-matched recipe recommendations, ranked to your diet preferences first — cancel
+                any time.
+            </p>
+            <a href="register.php" class="btn btn-primary">Try it free</a>
+        </div>
+        <div class="landing-vendor-card card">
+            <div class="center-text mb-16"><?= icon('wand', 28) ?></div>
+            <span class="tag premium-tag">R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month</span>
+            <p class="mt-16 muted" style="font-size:13px;">Unlimited lookups &middot; diet-matched ranking &middot; cancel anytime</p>
         </div>
     </section>
 
