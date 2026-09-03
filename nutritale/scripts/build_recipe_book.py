@@ -27,8 +27,8 @@ APP_DIR = SCRIPT_DIR.parent
 BOOK_IMAGE = APP_DIR / 'assets' / 'img' / 'logo' / 'book-mark.png'
 OUTPUT_PDF = APP_DIR / 'assets' / 'downloads' / 'nutritale-recipe-book.pdf'
 
-pdfmetrics.registerFont(TTFont('Fraunces-SemiBold', str(SCRIPT_DIR / 'fonts' / 'Fraunces-SemiBold.ttf')))
-pdfmetrics.registerFont(TTFont('Fraunces-Bold', str(SCRIPT_DIR / 'fonts' / 'Fraunces-Bold.ttf')))
+pdfmetrics.registerFont(TTFont('Playfair-SemiBold', str(SCRIPT_DIR / 'fonts' / 'Playfair-SemiBold.ttf')))
+pdfmetrics.registerFont(TTFont('Playfair-Bold', str(SCRIPT_DIR / 'fonts' / 'Playfair-Bold.ttf')))
 
 GREEN = colors.HexColor('#2fae66')
 GREEN_DARK = colors.HexColor('#1f7d49')
@@ -169,11 +169,11 @@ def cover_page(c, doc_width, doc_height):
     )
 
     c.setFillColor(INK)
-    c.setFont('Fraunces-Bold', 34)
+    c.setFont('Playfair-Bold', 34)
     c.drawCentredString(doc_width / 2, doc_height - 3.35 * inch, 'NutriTale')
 
     c.setFillColor(GREEN_DARK)
-    c.setFont('Fraunces-SemiBold', 19)
+    c.setFont('Playfair-SemiBold', 19)
     c.drawCentredString(doc_width / 2, doc_height - 3.75 * inch, '8 Free Starter Recipes')
 
     c.setFillColor(MUTED)
@@ -200,7 +200,7 @@ def cover_page(c, doc_width, doc_height):
         c.drawString(text_x + 10, row_y, r['title'])
 
     c.setFillColor(GREEN_DARK)
-    c.setFont('Fraunces-SemiBold', 12)
+    c.setFont('Playfair-SemiBold', 12)
     c.drawCentredString(doc_width / 2, 1.4 * inch, 'Want more?')
     c.setFillColor(MUTED)
     c.setFont('Helvetica', 10)
@@ -231,9 +231,9 @@ def make_ingredient_table(ingredients, styles):
 
 def build():
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle('RecipeTitle', fontName='Fraunces-Bold', fontSize=21, textColor=INK, spaceAfter=6, leading=25))
+    styles.add(ParagraphStyle('RecipeTitle', fontName='Playfair-Bold', fontSize=21, textColor=INK, spaceAfter=6, leading=25))
     styles.add(ParagraphStyle('RecipeDesc', fontName='Helvetica-Oblique', fontSize=10.5, textColor=MUTED, spaceAfter=12, leading=14))
-    styles.add(ParagraphStyle('SectionHead', fontName='Fraunces-SemiBold', fontSize=13, textColor=GREEN_DARK, spaceBefore=14, spaceAfter=6))
+    styles.add(ParagraphStyle('SectionHead', fontName='Playfair-SemiBold', fontSize=13, textColor=GREEN_DARK, spaceBefore=14, spaceAfter=6))
     styles.add(ParagraphStyle('Ingredient', fontName='Helvetica', fontSize=10, textColor=INK, leading=14))
     styles.add(ParagraphStyle('Step', fontName='Helvetica', fontSize=10.5, textColor=INK, leading=15, spaceAfter=7))
     styles.add(ParagraphStyle('Tag', fontName='Helvetica-Bold', fontSize=8, textColor=GREEN_DARK))
