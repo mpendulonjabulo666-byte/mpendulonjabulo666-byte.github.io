@@ -39,7 +39,10 @@ $listingsStmt = db()->prepare($sql);
 $listingsStmt->execute($params);
 $listings = $listingsStmt->fetchAll();
 
-$mineStmt = db()->prepare('SELECT * FROM ingredient_listings WHERE seller_id = ? ORDER BY created_at DESC');
+$mineStmt = db()->prepare(
+    'SELECT l.*, (SELECT o.seller_amount FROM ingredient_orders o WHERE o.listing_id = l.id AND o.status = "paid" LIMIT 1) AS seller_amount
+     FROM ingredient_listings l WHERE l.seller_id = ? ORDER BY l.created_at DESC'
+);
 $mineStmt->execute([$user['id']]);
 $mine = $mineStmt->fetchAll();
 ?>
@@ -83,7 +86,7 @@ $mine = $mineStmt->fetchAll();
         <h2 class="mb-16">Your listings</h2>
         <div class="card mb-16" style="overflow-x:auto;">
             <table class="admin-table">
-                <thead><tr><th>Ingredient</th><th>Quantity</th><th>Price</th><th>Status</th><th></th></tr></thead>
+                <thead><tr><th>Ingredient</th><th>Quantity</th><th>Price</th><th>Status</th><th>Your earnings</th><th></th></tr></thead>
                 <tbody>
                     <?php foreach ($mine as $l): ?>
                         <tr>
@@ -91,6 +94,7 @@ $mine = $mineStmt->fetchAll();
                             <td><?= h($l['quantity']) ?></td>
                             <td>R<?= number_format((float)$l['price'], 2) ?></td>
                             <td><?= $l['status'] === 'sold' ? 'Sold' : 'Available' ?></td>
+                            <td><?= $l['seller_amount'] !== null ? 'R' . number_format((float)$l['seller_amount'], 2) : '—' ?></td>
                             <td>
                                 <?php if ($l['status'] === 'available'): ?>
                                     <form method="post" onsubmit="return confirm('Remove this listing?');">
