@@ -449,6 +449,10 @@ a { color: inherit; text-decoration: none; }
     border-radius: 999px;
     margin-bottom: 8px;
 }
+/* [hidden] ties with .share-toast on specificity, so without this the
+   toast — set to display:none only via the hidden attribute — stays
+   visible on page load instead of appearing just after a share click. */
+.share-toast[hidden] { display: none; }
 
 .premium-tag {
     display: inline-flex;
@@ -830,7 +834,7 @@ a { color: inherit; text-decoration: none; }
 }
 .landing-hero {
     text-align: center;
-    padding: 72px 12px 56px;
+    padding: 56px 12px 40px;
 }
 .landing-hero h1 {
     font-size: 40px;
@@ -849,6 +853,26 @@ a { color: inherit; text-decoration: none; }
     gap: 12px;
     margin-bottom: 16px;
     flex-wrap: wrap;
+}
+.landing-hero-grid { display: flex; flex-direction: column; gap: 24px; }
+.landing-hero-photo {
+    order: -1;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto;
+    aspect-ratio: 4 / 3;
+    border-radius: 16px;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 16px 40px rgba(20, 30, 24, 0.14);
+}
+@media (min-width: 820px) {
+    .landing-hero { text-align: left; padding: 64px 12px; }
+    .landing-hero-grid { flex-direction: row; align-items: center; gap: 48px; }
+    .landing-hero-copy { flex: 1.1; }
+    .landing-hero-photo { order: 0; flex: 0.9; max-width: 420px; aspect-ratio: 3 / 4; margin: 0; }
+    .landing-hero-sub { margin-left: 0; }
+    .landing-cta { justify-content: flex-start; }
 }
 .landing-cta .btn-primary { padding: 12px 24px; font-size: 15px; }
 .landing-cta .btn-text { padding: 12px 16px; font-size: 15px; }
@@ -882,6 +906,58 @@ a { color: inherit; text-decoration: none; }
 .landing-vendor-text h2 { margin: 0 0 12px; font-size: 26px; }
 .landing-vendor-text p { font-size: 14.5px; line-height: 1.6; margin-bottom: 20px; }
 .landing-vendor-card { max-width: 280px; margin: 0 auto; }
+
+/* Pure-CSS 3D book mockup for the free recipe book teaser. */
+.book-mockup { display: flex; justify-content: center; align-items: center; perspective: 1200px; padding: 20px 0; }
+.book-cover {
+    position: relative;
+    width: 170px;
+    height: 230px;
+    transform-style: preserve-3d;
+    transform: rotateY(-28deg) rotateX(2deg);
+    transition: transform 0.4s ease;
+}
+.book-mockup:hover .book-cover { transform: rotateY(-18deg) rotateX(2deg); }
+.book-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 3px 8px 8px 3px;
+    background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 100%);
+    box-shadow: 12px 18px 34px rgba(10, 20, 14, 0.35), inset -3px 0 6px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 18px;
+    color: #fff;
+}
+.book-face svg { width: 34px; height: 34px; margin-bottom: 10px; }
+.book-face strong { font-size: 17px; letter-spacing: 0.3px; }
+.book-face span { font-size: 11px; margin-top: 6px; opacity: 0.85; line-height: 1.5; }
+.book-spine {
+    position: absolute;
+    left: -16px;
+    top: 3px;
+    bottom: 3px;
+    width: 16px;
+    background: var(--green-dark);
+    filter: brightness(0.75);
+    transform: rotateY(-90deg);
+    transform-origin: right center;
+    border-radius: 3px 0 0 3px;
+}
+.book-pages {
+    position: absolute;
+    right: -5px;
+    top: 4px;
+    bottom: 4px;
+    width: 8px;
+    background: repeating-linear-gradient(180deg, #fff 0, #fff 1px, #eee 1px, #eee 2px);
+    transform: rotateY(90deg);
+    transform-origin: left center;
+    border-radius: 0 2px 2px 0;
+}
 
 .landing-final-cta {
     text-align: center;

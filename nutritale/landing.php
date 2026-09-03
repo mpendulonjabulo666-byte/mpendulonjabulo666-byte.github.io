@@ -33,16 +33,21 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
 
 <main class="landing-main">
     <section class="landing-hero">
-        <h1>Cook what you have.<br>Plan what you need.</h1>
-        <p class="muted landing-hero-sub">
-            <?= APP_NAME ?> turns your pantry into recipe ideas, your week into a meal plan, and your plan into a
-            shopping list — with nutrition goals and ratings built in.
-        </p>
-        <div class="landing-cta">
-            <a href="register.php" class="btn btn-primary">Get started free</a>
-            <a href="login.php" class="btn btn-text">I already have an account</a>
+        <div class="landing-hero-grid">
+            <div class="landing-hero-copy">
+                <h1>Cook what you have.<br>Plan what you need.</h1>
+                <p class="muted landing-hero-sub">
+                    <?= APP_NAME ?> turns your pantry into recipe ideas, your week into a meal plan, and your plan into a
+                    shopping list — with nutrition goals and ratings built in.
+                </p>
+                <div class="landing-cta">
+                    <a href="register.php" class="btn btn-primary">Get started free</a>
+                    <a href="login.php" class="btn btn-text">I already have an account</a>
+                </div>
+                <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
+            </div>
+            <div class="landing-hero-photo" style="background-image:url('assets/img/banners/landing-hero-breakfast.jpg');"></div>
         </div>
-        <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
     </section>
 
     <section class="feature-grid">
@@ -70,6 +75,29 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
             <?= icon('star', 24) ?>
             <h3>Ratings &amp; reviews</h3>
             <p class="muted">Every recipe carries real ratings from people who've cooked it — no guessing if it's any good.</p>
+        </div>
+    </section>
+
+    <section class="landing-vendor">
+        <div class="landing-vendor-text">
+            <span class="tag mb-16"><?= icon('download', 12) ?> Free download</span>
+            <h2>The starter recipe book</h2>
+            <p class="muted">
+                8 balanced breakfasts, lunches and dinners — with ingredients, macros and step-by-step
+                method — bundled into one PDF. No account needed, yours free.
+            </p>
+            <a href="assets/downloads/nutritale-recipe-book.pdf" class="btn btn-primary" download>Download Now</a>
+        </div>
+        <div class="book-mockup">
+            <div class="book-cover">
+                <div class="book-spine"></div>
+                <div class="book-pages"></div>
+                <div class="book-face">
+                    <?= nutritale_logo_svg(34) ?>
+                    <strong><?= APP_NAME ?></strong>
+                    <span>8 Free Starter<br>Recipes</span>
+                </div>
+            </div>
         </div>
     </section>
 

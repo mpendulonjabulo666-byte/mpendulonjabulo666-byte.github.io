@@ -6,6 +6,8 @@ repository's other pages, cannot execute PHP).
 
 ## Deploying
 
+Quick version:
+
 1. Upload the `nutritale/` folder to your PHP host (e.g. via XAMPP locally,
    or your shared-hosting file manager / FTP).
 2. Edit `config/config.php` and set `DB_HOST`, `DB_NAME`, `DB_USER`,
@@ -14,6 +16,10 @@ repository's other pages, cannot execute PHP).
    missing) and seeds a starter set of recipes. Safe to re-run any time.
 4. Go to `register.php` to create your first account, then browse/search
    recipes and favorite them from `index.php`.
+
+For shared-hosting vs. VPS walkthroughs, HTTPS requirements, and the
+checklist for going live with real PayFast payments, see
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Structure
 
