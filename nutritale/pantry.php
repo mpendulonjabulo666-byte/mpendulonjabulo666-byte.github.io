@@ -2,11 +2,20 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/ai_pantry.php';
 
 $user = require_login();
 
 $usesLeft = max(0, PANTRY_FREE_USES - (int)$user['pantry_free_uses_used']);
 $isBlocked = !$user['is_premium_member'] && $usesLeft <= 0;
+
+$pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
+$pantryStmt->execute([$user['id']]);
+$pantry = $pantryStmt->fetchAll(PDO::FETCH_COLUMN);
+
+$dietPrefStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE user_id = ?');
+$dietPrefStmt->execute([$user['id']]);
+$dietPrefs = $dietPrefStmt->fetchAll(PDO::FETCH_COLUMN);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
@@ -24,18 +33,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $name]);
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
+    } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
+        $_SESSION['ai_pantry_ideas'] = gemini_pantry_ideas($pantry, $dietPrefs);
+        if (!$user['is_premium_member']) {
+            db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
+        }
     }
     redirect('pantry.php');
 }
 
-$pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
-$pantryStmt->execute([$user['id']]);
-$pantry = $pantryStmt->fetchAll(PDO::FETCH_COLUMN);
 $pantryNorm = array_map(fn($p) => mb_strtolower(trim($p)), $pantry);
-
-$dietPrefStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE user_id = ?');
-$dietPrefStmt->execute([$user['id']]);
-$dietPrefs = $dietPrefStmt->fetchAll(PDO::FETCH_COLUMN);
+$aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
+unset($_SESSION['ai_pantry_ideas']);
 
 $matches = [];
 if ($pantry) {
@@ -149,6 +158,49 @@ if ($pantry) {
     </div>
 
     <?php if ($pantry): ?>
+        <div class="card mb-16">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                    <h2 style="margin:0 0 2px;font-size:16px;"><?= icon('wand', 16) ?> AI meal ideas & shopping list</h2>
+                    <p class="muted" style="margin:0;font-size:12.5px;">3 fresh meal ideas built around what's in your pantry, plus what to buy for each.</p>
+                </div>
+                <?php if (!$isBlocked): ?>
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="ai_suggest">
+                        <button type="submit" class="btn btn-primary btn-small"><?= icon('wand', 14) ?> Get AI ideas</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($aiResult && !$aiResult['ok']): ?>
+                <p class="muted mt-16" style="font-size:13px;"><?= h($aiResult['error']) ?></p>
+            <?php elseif ($aiResult): ?>
+                <div class="mt-16" style="display:grid;gap:14px;">
+                    <?php foreach ($aiResult['meals'] as $meal): ?>
+                        <div class="shopping-list card" style="box-shadow:none;border:1px solid var(--border);margin:0;">
+                            <h3 style="margin-top:0;font-size:15px;"><?= h($meal['title'] ?? '') ?></h3>
+                            <p class="muted" style="font-size:13px;margin:0 0 8px;"><?= h($meal['description'] ?? '') ?></p>
+                            <?php if (!empty($meal['uses_from_pantry'])): ?>
+                                <p style="font-size:12.5px;margin:0;color:var(--green-dark);font-weight:600;">From your pantry: <?= h(implode(', ', $meal['uses_from_pantry'])) ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($meal['shopping_list'])): ?>
+                                <div class="shopping-category mt-16">
+                                    <h3>Shopping list</h3>
+                                    <?php foreach ($meal['shopping_list'] as $item): ?>
+                                        <div class="shopping-item">
+                                            <?= icon('plus', 12) ?>
+                                            <span><?= h($item['quantity'] ?? '') ?> <?= h($item['item'] ?? '') ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <h2 class="mb-16">Recipes you can make</h2>
         <?php if (!$matches): ?>
             <p class="muted">No recipes match what's in your pantry yet — try adding a few more ingredients.</p>

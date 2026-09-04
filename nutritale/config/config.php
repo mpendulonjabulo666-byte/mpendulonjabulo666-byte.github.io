@@ -27,6 +27,19 @@ define('PLATFORM_COMMISSION_PCT', 10);
 define('PREMIUM_MONTHLY_PRICE', 99.00);
 define('PANTRY_FREE_USES', 3);
 
+// Google Gemini API (https://aistudio.google.com/apikey) — powers the
+// "Get AI ideas" button on the pantry page (real AI-generated meal ideas
+// + shopping list, on top of the always-free rule-based recipe matcher
+// above it). Leave blank to disable the AI button entirely. Get a free
+// key at aistudio.google.com and paste it here on your server — never
+// commit a real key to git. GEMINI_MAX_OUTPUT_TOKENS caps how long each
+// response is allowed to be, and every call also counts against the
+// same PANTRY_FREE_USES trial limit as the rest of the pantry page, so
+// usage (and cost) stays bounded per free user.
+define('GEMINI_API_KEY', '');
+define('GEMINI_MODEL', 'gemini-2.5-flash');
+define('GEMINI_MAX_OUTPUT_TOKENS', 800);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
