@@ -110,5 +110,10 @@ default, no real money can move. Before accepting real payments:
   `config/config.php` is meant to be edited on the server, not in git)
 - Consider a daily `mysqldump` cron job — there's no backup automation
   built in
+- If any images under `assets/` come back 403 after upload, your SFTP/FTP
+  client likely set restrictive permissions — run `find assets -type f
+  -exec chmod 644 {} \;` and `find assets -type d -exec chmod 755 {} \;`
+  on the server (git doesn't track full permission bits, only the
+  executable flag, so this can't be baked into the repo)
 - Everything else (recipes, planner, admin panel, vendor dashboard) is
   ready to use as soon as `install.php` has run
