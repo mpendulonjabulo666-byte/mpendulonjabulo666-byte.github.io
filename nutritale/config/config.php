@@ -2,10 +2,14 @@
 // Fill these in with your own database's connection details before
 // running install.php. If you're on shared hosting, your host's control
 // panel (e.g. cPanel > MySQL Databases) will give you these values.
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'nutritale');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// On a platform that injects DB credentials as environment variables
+// (e.g. Railway's MySQL plugin, which sets MYSQLHOST/MYSQLPORT/etc.),
+// those are picked up automatically — no edit needed here.
+define('DB_HOST', getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: 'localhost'));
+define('DB_PORT', getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306'));
+define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'nutritale'));
+define('DB_USER', getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root'));
+define('DB_PASS', getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: ''));
 
 define('APP_NAME', 'NutriTale');
 

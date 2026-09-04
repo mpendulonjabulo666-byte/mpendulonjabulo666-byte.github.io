@@ -67,6 +67,43 @@ hosting or want your own box.
    (required — see HTTPS note above).
 7. **Configure and install** as in Path A steps 3–5.
 
+## Path C — Railway (for testing)
+
+Not recommended for production (see the note at the end of this
+section), but a good way to try the app on a real HTTPS URL — for
+free/cheap, no domain purchase needed — before committing to shared
+hosting or a VPS.
+
+1. **Push this repo to GitHub** (already done, if you're reading this
+   from the repo).
+2. **Create a Railway project** at [railway.app](https://railway.app)
+   and choose "Deploy from GitHub repo," pointing it at this repo with
+   `nutritale/` as the root directory. Railway will find the
+   `Dockerfile` in `nutritale/` and build from it automatically — it
+   runs PHP's built-in server (`php -S`), the same way this app has
+   been developed and tested throughout.
+3. **Add a MySQL database:** in the same Railway project, "+ New" →
+   "Database" → "Add MySQL." Railway provisions it and automatically
+   sets `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, and
+   `MYSQLPASSWORD` as environment variables — `config/config.php`
+   already reads these automatically, so **no code edit is needed** for
+   the database connection (this is different from Paths A/B, where you
+   edit `config/config.php` directly).
+4. **Generate a public domain:** on the web service (not the database),
+   Settings → Networking → "Generate Domain." This gives you a real
+   `https://something.up.railway.app` URL — HTTPS included, which
+   PayFast's ITN and secure cookies both require.
+5. **Install:** visit `https://your-app.up.railway.app/install.php` to
+   create the tables and seed starter recipes, same as any other path.
+6. **PayFast sandbox works as-is** here with zero changes — it's
+   already the default in `config/config.php`.
+
+**Why not for production:** Railway's free tier sleeps/limits usage and
+its pricing scales with usage in a way that's harder to predict than a
+flat-rate VPS or shared-hosting plan at NutriTale's scale — genuinely
+fine for kicking the tyres, but Path A or B is the better home once
+you're ready to actually launch.
+
 ## Going live with PayFast (real payments)
 
 `config/config.php` ships pointed at PayFast's **sandbox** — safe by
