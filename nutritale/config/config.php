@@ -40,10 +40,18 @@ define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 800);
 
+// Set to true only while actively debugging locally — it prints full PHP
+// errors (file paths, stack traces, sometimes query fragments) straight
+// into the browser, which is a real information leak on a live site.
+// Leave false in production; check your host's PHP error log instead
+// (errors are always logged regardless of this setting).
+define('APP_DEBUG', false);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+ini_set('display_errors', APP_DEBUG ? '1' : '0');
+ini_set('log_errors', '1');
 date_default_timezone_set('UTC');

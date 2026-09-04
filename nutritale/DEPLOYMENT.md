@@ -102,6 +102,10 @@ default, no real money can move. Before accepting real payments:
 
 - `config/config.php`: `DB_*`, `PAYFAST_*`, `PLATFORM_COMMISSION_PCT`,
   `PREMIUM_MONTHLY_PRICE`, `PANTRY_FREE_USES`
+- `config/config.php`: `APP_DEBUG` ships `false` (errors are logged, not
+  shown to visitors) — that's the correct production setting. Only flip
+  it to `true` temporarily while actively debugging on your own machine,
+  never on a live site.
 - `config/config.php`: `GEMINI_API_KEY` — optional. Powers the "Get AI
   ideas" button on the pantry page (real AI-generated meal ideas +
   shopping list, via Google's free-tier Gemini API). Leave blank to
