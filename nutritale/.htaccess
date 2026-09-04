@@ -1,0 +1,30 @@
+# NutriTale — deny direct web access to files and folders that are only
+# ever read from disk by PHP (require_once/file_get_contents), never
+# requested as a URL. Harmless if PHP-FPM/nginx is used instead (see
+# DEPLOYMENT.md Path B) — this file simply won't be read.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(config|sql|scripts|data)/ - [F,L]
+</IfModule>
+
+<FilesMatch "(\.sql|\.md|\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Dotfiles (.git, .env, .htaccess itself, etc.) — never serve these.
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

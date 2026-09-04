@@ -38,6 +38,10 @@ scale.
    harmless to leave (it no-ops when tables already exist) but there's
    no reason to leave a setup script world-reachable indefinitely.
 
+The included `.htaccess` already blocks direct browser access to
+`config/`, `sql/`, `scripts/`, `data/`, and dotfiles (`.git`, etc.) on
+Apache — nothing extra to configure for this on shared hosting.
+
 ## Path B — VPS (DigitalOcean, Linode, Hetzner, etc.)
 
 More control, marginally more setup. Use this if you outgrow shared
@@ -98,6 +102,12 @@ default, no real money can move. Before accepting real payments:
 
 - `config/config.php`: `DB_*`, `PAYFAST_*`, `PLATFORM_COMMISSION_PCT`,
   `PREMIUM_MONTHLY_PRICE`, `PANTRY_FREE_USES`
+- `config/config.php`: `GEMINI_API_KEY` — optional. Powers the "Get AI
+  ideas" button on the pantry page (real AI-generated meal ideas +
+  shopping list, via Google's free-tier Gemini API). Leave blank to
+  disable it — the rule-based recipe matcher on the same page has no
+  dependency on this and always works. Get a free key at
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 - Email sending: `send_notification_email()` in `includes/functions.php`
   currently uses PHP's `mail()`, which many hosts either block or
   silently drop — if recipe-review notification emails aren't
