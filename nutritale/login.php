@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        $stmt = db()->prepare('SELECT id, name, password_hash, failed_attempts, locked_until FROM users WHERE email = ?');
+        $stmt = db()->prepare('SELECT id, name, password_hash, failed_attempts, locked_until, is_admin FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$user['id']]);
             $_SESSION['user_id'] = (int)$user['id'];
-            redirect('index.php');
+            redirect($user['is_admin'] ? 'admin.php' : 'index.php');
         }
     }
 }

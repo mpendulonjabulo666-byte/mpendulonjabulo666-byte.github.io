@@ -6,8 +6,10 @@
 
     <input type="checkbox" id="nav-toggle" class="app-nav-toggle-input">
     <label for="nav-toggle" class="app-nav-toggle" aria-label="Toggle menu"><?= icon('list', 20) ?></label>
+    <label for="nav-toggle" class="app-nav-backdrop" aria-hidden="true"></label>
 
     <div class="app-nav-collapsible">
+        <label for="nav-toggle" class="app-nav-close" aria-label="Close menu"><?= icon('x', 18) ?></label>
         <nav class="app-nav-links">
             <a href="index.php"><?= icon('list', 18) ?> Recipes</a>
             <a href="pantry.php"><?= icon('wand', 18) ?> What Can I Make?</a>
