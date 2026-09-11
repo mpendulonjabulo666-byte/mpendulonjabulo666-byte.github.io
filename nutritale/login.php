@@ -77,8 +77,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </label>
                 <label class="field">
                     <span>Password</span>
-                    <input type="password" name="password" required>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" name="password" id="login-password" autocapitalize="off" autocorrect="off" spellcheck="false" required style="flex:1;">
+                        <button type="button" class="btn btn-text btn-small" id="toggle-password" style="white-space:nowrap;">Show</button>
+                    </div>
                 </label>
+                <script>
+                document.getElementById('toggle-password').addEventListener('click', function () {
+                    var field = document.getElementById('login-password');
+                    var showing = field.type === 'text';
+                    field.type = showing ? 'password' : 'text';
+                    this.textContent = showing ? 'Show' : 'Hide';
+                });
+                </script>
                 <button type="submit" class="btn btn-primary btn-block">Log in</button>
             </form>
             <a class="btn btn-text btn-block" href="forgot_password.php">Forgot password?</a>
