@@ -79,7 +79,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=2">
+<link rel="stylesheet" href="assets/css/style.css?v=3">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
