@@ -88,6 +88,7 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs): array
     }
 
     $data = json_decode($response, true);
+    $finishReason = $data['candidates'][0]['finishReason'] ?? null;
     $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
     if (!$text) {
         return ['ok' => false, 'error' => 'The AI service returned an unexpected response.'];
@@ -95,6 +96,9 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs): array
 
     $parsed = json_decode($text, true);
     if (!is_array($parsed) || empty($parsed['meals'])) {
+        if ($finishReason === 'MAX_TOKENS') {
+            return ['ok' => false, 'error' => 'The AI response got cut off before finishing — try again, or raise GEMINI_MAX_OUTPUT_TOKENS in config.php.'];
+        }
         return ['ok' => false, 'error' => 'Could not understand the AI service\'s response.'];
     }
 

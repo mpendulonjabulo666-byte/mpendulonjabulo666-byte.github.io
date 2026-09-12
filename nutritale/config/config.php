@@ -42,7 +42,7 @@ define('PANTRY_FREE_USES', 3);
 // usage (and cost) stays bounded per free user.
 define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
-define('GEMINI_MAX_OUTPUT_TOKENS', 800);
+define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 
 // Set to true only while actively debugging locally — it prints full PHP
 // errors (file paths, stack traces, sometimes query fragments) straight
