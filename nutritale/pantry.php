@@ -6,8 +6,9 @@ require_once __DIR__ . '/includes/ai_pantry.php';
 
 $user = require_login();
 
+$isPremiumOrAdmin = $user['is_premium_member'] || $user['is_admin'];
 $usesLeft = max(0, PANTRY_FREE_USES - (int)$user['pantry_free_uses_used']);
-$isBlocked = !$user['is_premium_member'] && $usesLeft <= 0;
+$isBlocked = !$isPremiumOrAdmin && $usesLeft <= 0;
 
 $pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
 $pantryStmt->execute([$user['id']]);
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         if ($name !== '' && !$isBlocked) {
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
             $stmt->execute([$user['id'], $name]);
-            if ($stmt->rowCount() > 0 && !$user['is_premium_member']) {
+            if ($stmt->rowCount() > 0 && !$isPremiumOrAdmin) {
                 db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
             }
         }
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
     } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
         $_SESSION['ai_pantry_ideas'] = gemini_pantry_ideas($pantry, $dietPrefs);
-        if (!$user['is_premium_member']) {
+        if (!$isPremiumOrAdmin) {
             db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
         }
     }
@@ -99,7 +100,7 @@ if ($pantry) {
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=2">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -112,7 +113,7 @@ if ($pantry) {
         </div>
     </div>
 
-    <?php if (!$user['is_premium_member']): ?>
+    <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
             <?= $usesLeft > 0 ? "$usesLeft free ingredient" . ($usesLeft === 1 ? '' : 's') . ' left on your trial.' : 'Your free trial is used up.' ?>
             <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for unlimited use.

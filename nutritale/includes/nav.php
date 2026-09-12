@@ -22,7 +22,7 @@
             <?php endif; ?>
         </nav>
         <div class="app-nav-user">
-            <?php if (empty($user['is_premium_member'])): ?>
+            <?php if (empty($user['is_premium_member']) && empty($user['is_admin'])): ?>
                 <a href="premium.php" class="btn btn-text btn-small" style="color:var(--green-dark);font-weight:600;"><?= icon('wand', 14) ?> Go Premium</a>
             <?php endif; ?>
             <?= render_theme_toggle() ?>
