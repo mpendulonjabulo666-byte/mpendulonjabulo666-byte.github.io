@@ -4,7 +4,10 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/recipe_card.php';
 
-$user = require_login();
+$user = current_user();
+if (!$user) {
+    redirect('landing.php');
+}
 
 if (empty($user['onboarded_at'])) {
     redirect('onboarding.php');
@@ -121,6 +124,12 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <title>Recipes · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2fae66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css?v=3">
 <script src="assets/js/theme-toggle.js" defer></script>

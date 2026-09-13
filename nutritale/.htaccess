@@ -18,6 +18,12 @@
     </IfModule>
 </FilesMatch>
 
+<FilesMatch "^manifest\.json$">
+    <IfModule mod_mime.c>
+        ForceType application/manifest+json
+    </IfModule>
+</FilesMatch>
+
 # Dotfiles (.git, .env, .htaccess itself, etc.) — never serve these.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

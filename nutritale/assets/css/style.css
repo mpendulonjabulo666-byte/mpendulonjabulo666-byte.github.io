@@ -254,8 +254,11 @@ a { color: inherit; text-decoration: none; }
     font-size: 14px;
     color: var(--muted);
     font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 .app-nav-links a:hover { color: var(--green-dark); }
+.app-nav-links a.is-active { color: var(--green-dark); }
+.app-nav-divider { height: 1px; background: var(--border); margin: 10px 4px; }
 .app-nav-user {
     display: flex;
     align-items: center;
@@ -861,14 +864,20 @@ a { color: inherit; text-decoration: none; }
         overflow-y: auto;
     }
     .app-nav-toggle-input:checked ~ .app-nav-collapsible { transform: translateX(0); }
-    .app-nav-links { flex-direction: column; gap: 12px; }
+    .app-nav-links { flex-direction: column; gap: 4px; }
+    .app-nav-links a { padding: 10px 12px; border-radius: 8px; }
+    .app-nav-links a:hover, .app-nav-links a.is-active { background: var(--green-light); }
+    .app-nav-links a.is-active { font-weight: 700; }
     .app-nav-user { flex-direction: column; align-items: stretch; gap: 12px; }
 }
 
 /* Persistent left sidebar on wide screens — the mobile drawer above
    handles narrow viewports; this is a separate, always-visible layout. */
 @media (min-width: 901px) {
-    .app-nav {
+    /* :not(.landing-nav) - the public landing page reuses .app-nav for its
+       simple top bar and must stay a top bar, not become the logged-in
+       app's fixed sidebar. */
+    .app-nav:not(.landing-nav) {
         position: fixed;
         top: 0;
         left: 0;
@@ -895,7 +904,9 @@ a { color: inherit; text-decoration: none; }
     .app-nav-links { flex-direction: column; gap: 2px; }
     .app-nav-links a { padding: 10px 12px; border-radius: 8px; }
     .app-nav-links a:hover { background: var(--green-light); }
-    .app-nav-user {
+    .app-nav-links a.is-active { background: var(--green-light); font-weight: 700; box-shadow: inset 3px 0 0 var(--green); }
+    .app-nav-divider { margin: 10px 12px; }
+    .app-nav:not(.landing-nav) .app-nav-user {
         margin-top: auto;
         flex-direction: column;
         align-items: stretch;

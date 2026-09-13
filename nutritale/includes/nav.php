@@ -1,5 +1,11 @@
 <?php
 /** @var array $user Expects $user to be set by the including page. */
+$navCurrent = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+$navLink = function (string $page, string $iconName, string $label) use ($navCurrent) {
+    $active = $navCurrent === $page;
+    echo '<a href="' . h($page) . '"' . ($active ? ' class="is-active" aria-current="page"' : '') . '>'
+        . icon($iconName, 18) . ' ' . h($label) . '</a>';
+};
 ?>
 <header class="app-nav">
     <a class="app-nav-brand" href="index.php"><?= nutritale_logo_svg(28) ?> <span><?= APP_NAME ?></span></a>
@@ -11,14 +17,17 @@
     <div class="app-nav-collapsible">
         <label for="nav-toggle" class="app-nav-close" aria-label="Close menu"><?= icon('x', 18) ?></label>
         <nav class="app-nav-links">
-            <a href="index.php"><?= icon('list', 18) ?> Recipes</a>
-            <a href="pantry.php"><?= icon('wand', 18) ?> What Can I Make?</a>
-            <a href="favorites.php"><?= icon('heart', 18) ?> Favorites</a>
-            <a href="planner.php"><?= icon('calendar', 18) ?> Planner</a>
-            <a href="my_recipes.php"><?= icon('plus', 18) ?> My Recipes</a>
-            <a href="marketplace.php"><?= icon('shopping-cart', 18) ?> Marketplace</a>
+            <?php
+            $navLink('index.php', 'list', 'Recipes');
+            $navLink('pantry.php', 'wand', 'What Can I Make?');
+            $navLink('favorites.php', 'heart', 'Favorites');
+            $navLink('planner.php', 'calendar', 'Planner');
+            $navLink('my_recipes.php', 'plus', 'My Recipes');
+            $navLink('marketplace.php', 'shopping-cart', 'Marketplace');
+            ?>
             <?php if (!empty($user['is_admin'])): ?>
-                <a href="admin.php"><?= icon('shield', 18) ?> Admin</a>
+                <div class="app-nav-divider"></div>
+                <?php $navLink('admin.php', 'shield', 'Admin'); ?>
             <?php endif; ?>
         </nav>
         <div class="app-nav-user">

@@ -18,12 +18,18 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
 <title><?= APP_NAME ?> — Cook what you have, plan what you need</title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2fae66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css?v=3">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
-<header class="app-nav">
+<header class="app-nav landing-nav">
     <a class="app-nav-brand" href="landing.php"><?= nutritale_logo_svg(28) ?> <span><?= APP_NAME ?></span></a>
     <div class="app-nav-user">
         <?= render_theme_toggle() ?>

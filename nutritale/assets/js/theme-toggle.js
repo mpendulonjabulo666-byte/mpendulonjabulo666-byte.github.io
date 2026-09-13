@@ -13,3 +13,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+// Lets the browser offer "Add to Home Screen" / "Install app" on Android and
+// desktop, and makes the app open standalone (no browser chrome) once
+// installed on any platform, iOS included.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {
+            // Offline shell just won't be cached - the site still works online.
+        });
+    });
+}
