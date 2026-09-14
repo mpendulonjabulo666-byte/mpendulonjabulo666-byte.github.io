@@ -31,13 +31,22 @@ try {
     $migrations = require __DIR__ . '/sql/migrations.php';
     $alreadyApplied = $pdo->query('SELECT version FROM schema_migrations')->fetchAll(PDO::FETCH_COLUMN);
     $newlyApplied = 0;
-    foreach ($migrations as $version => $migrationSql) {
+    foreach ($migrations as $version => $migration) {
         if (in_array($version, $alreadyApplied, true)) {
             continue;
         }
-        foreach (array_filter(array_map('trim', explode(';', $migrationSql))) as $statement) {
-            if ($statement === '') continue;
-            $pdo->exec($statement);
+        // A migration is either a ';'-separated SQL string (the common
+        // case) or a callable taking the PDO connection, for the rarer
+        // case of seeding structured data with real parameter binding
+        // instead of hand-escaped SQL text - see the ingredient taxonomy
+        // migration below for why that's worth it.
+        if (is_callable($migration)) {
+            $migration($pdo);
+        } else {
+            foreach (array_filter(array_map('trim', explode(';', $migration))) as $statement) {
+                if ($statement === '') continue;
+                $pdo->exec($statement);
+            }
         }
         $pdo->prepare('INSERT INTO schema_migrations (version) VALUES (?)')->execute([$version]);
         $newlyApplied++;

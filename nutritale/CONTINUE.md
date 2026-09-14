@@ -79,15 +79,67 @@ Known limits, deliberately accepted: coconut is not treated as a tree nut, and
 an "X-free" claim from the model buys trust for at most the two words that
 follow it. Both are documented at the point of decision in `allergens.php`.
 
-### 2.2 — Ingredient matching is naive substring comparison
+### 2.2 — Ingredient matching is naive substring comparison ✅ DONE (Step 6)
 
-`pantry.php:70` does `str_contains($ingNorm, $p) || str_contains($p, $ingNorm)`.
-So pantry "ice" matches recipe "rice" and "juice"; "oil" matches "boiled eggs".
-And nothing maps "tomatos" → "tomato" or "passata" → "tomato".
+Was: `pantry.php:70` did `str_contains($ingNorm, $p) || str_contains($p, $ingNorm)`
+on the whole, untokenized phrase. Pantry "ice" matched recipe "rice" and
+"juice"; "oil" matched "boiled eggs"; nothing mapped "tomatos" → "tomato" or
+"passata" → "tomato". `00-START-HERE.md` calls this *"the single most
+underestimated part of every recipe app ever built"* and it was right.
 
-`00-START-HERE.md` calls this *"the single most underestimated part of every
-recipe app ever built"* and it's right. Needs a canonical-ingredient table plus
-an alias table, and word-boundary matching instead of substring.
+Now, `includes/ingredient_matching.php`, two independent layers (same shape
+as the allergen work in Step 1 — mechanical layer first, semantic layer on
+top):
+
+- **Word-boundary tokenization** — split into words, compare whole words.
+  Fixes the ice/rice and oil/boiled-eggs class of bug on its own, no seed
+  data needed. A small mechanical depluralizer (`singularize_token()`) rides
+  along and catches most spelling-only mismatches ("tomatos", "tomatoes" →
+  "tomato") the same way, also with no seed data.
+- **`ingredients` + `ingredient_aliases`** (seeded in `sql/migrations.php`)
+  — for the mismatches that aren't mechanical: a genuine synonym ("passata"
+  is tomato, "capsicum" is a bell pepper, "mince" → "turkey" — the only
+  ground-meat ingredient this app ships with, a deliberate compromise
+  documented at the seed data) or an irregular spelling the depluralizer
+  would get wrong (South African "baby marrow" for zucchini, seeded as a
+  two-word alias so "baby" alone isn't mis-aliased and breaks "baby
+  spinach"). Only ingredients that actually need one of those got a row —
+  "chicken", "rice", "onion" etc. need nothing and resolve through the
+  tokenizer alone.
+
+A recipe ingredient counts as "in the pantry" if **at least one** meaningful
+token is shared, not all of them — deliberate, since this is a casual "what
+can I roughly make" helper, not a strict inventory check. Generic pantry
+"chicken" still satisfies a recipe that calls for "chicken breast", and
+"cherry tomatoes" doesn't need its own alias since the shared "tomato" token
+is enough.
+
+Tests: `tests/ingredient_matching_test.php` (28), pure functions, no
+database. The DB-touching `load_ingredient_alias_map()` is verified against
+the live database instead — see below.
+
+Verified against the live database, using two real pantry rows this app
+already had (not fixtures): user 1's pantry, saved as the single free-text
+row `"rice and chicken"`, now correctly resolves to *both* ingredients — a
+regression risk this app's own data would have caught, since one pantry row
+being more than one ingredient is exactly the "rice and chicken" case cited
+above. Confirmed two concrete false negatives fixed: user 1 (pantry "rice
+and chicken") now correctly matches **Grilled Chicken & Quinoa Bowl** (via
+"Chicken breast"), which the old substring test missed entirely because the
+words appear in a different order across the two phrases; user 2 (pantry
+"meat mince") now correctly matches **One-Pot Turkey Chili** (via the
+`mince` → `turkey` alias). Also re-confirmed the original ice/rice and
+oil/boiled-eggs examples stay fixed with the live, non-empty alias map
+loaded, not just against an empty fixture.
+
+Known limits, deliberately accepted: `mince` resolves to `turkey` only
+because that's the one ground-meat ingredient currently seeded — revisit
+if a beef- or pork-based recipe ships. The pantry "Add" field still accepts
+free text with no splitting on save (see the new §2.9 below) — matching
+copes with a multi-ingredient row like "rice and chicken" by resolving it
+to a set, but the row itself staying unsplit in `user_pantry_items` means
+`shopping_list.php`/`planner.php`, if they ever key off pantry item identity
+rather than just matching, would inherit the same ambiguity.
 
 ### 2.3 — No disclaimers anywhere
 
@@ -195,6 +247,35 @@ it silently. Already noted in `DEPLOYMENT.md`; repeated here because review
 notifications quietly not arriving is the kind of thing nobody notices for
 weeks.
 
+### 2.9 — Pantry "Add" accepts more than one ingredient as one row
+
+Found while doing Step 6, not fixed inline per §4's own rule. `pantry.php`'s
+add form has one text input and a placeholder reading "e.g. chicken,
+spinach, rice..." — which reads like comma-separated multi-add, but the
+handler (`pantry.php`, `action === 'add'`) inserts the *entire* typed string
+as a single `user_pantry_items` row, no splitting. This app's own live data
+has both shapes already: `"rice and chicken"` and `"meat mince"` are each one
+row that's arguably two or three real ingredients.
+
+Step 6's matcher copes — `canonical_ingredient_set()` resolves a row to
+however many canonical ingredients its text contains, so matching isn't
+wrong — but the underlying data stays one denormalized row per Add click
+that happened to contain several ingredients, which:
+
+- can't be removed individually (the "×" chip removes the whole row —
+  clearing "rice and chicken" loses both, there's no way to keep one)
+- gives `str_contains`-style substring bugs a new place to hide if any
+  *other* feature ever reads `user_pantry_items.ingredient_name` expecting
+  one ingredient per row (nothing does yet, but `shopping_list.php` /
+  `planner.php` are worth checking before this becomes load-bearing)
+
+Fix is UI-side, not matching-side: split on `,`/`and`/`&`/newline at Add
+time and insert one row per resulting ingredient (each through the same
+`canonical_ingredient_set()` tokenizer already written, so "chicken, rice"
+becomes two rows instead of one), or move to a proper multi-chip input.
+Small, but it's a data-entry fix, not a matching-algorithm fix, so it's its
+own step rather than folded into Step 6.
+
 ---
 
 ## 3. The order to do it in
@@ -235,10 +316,16 @@ Each step is independently shippable. Don't batch them.
       browser. Low risk — both follow the exact `$aiResult[...]` pattern the
       discarded-count line next to them already uses — but unconfirmed until
       someone with a key clicks "Get AI ideas" twice in a row.
-- [ ] **Step 6 — Ingredient normalisation** (§2.2)
-      `ingredients` canonical table + `ingredient_aliases`, seeded. Replace
-      substring matching. Biggest quality win, biggest effort — do it once the
-      safety work is behind you.
+- [x] **Step 6 — Ingredient normalisation** (§2.2) — done
+      `includes/ingredient_matching.php` (new), `ingredients` +
+      `ingredient_aliases` (via migration, callable-style — see `setup.php`'s
+      runner, extended this step to accept a callable alongside raw SQL),
+      `pantry.php` matcher rewritten. `tests/ingredient_matching_test.php`
+      (28). Verified against the live database using this app's own real
+      pantry rows — see §2.2 for the two concrete false negatives fixed
+      (admin's "Chicken breast", varrick's "Ground turkey"). Turned up a
+      related but distinct data-entry gap, filed as §2.9/Step 10 rather than
+      fixed inline.
 - [ ] **Step 7 — Payment hardening** (§2.5)
       IP allowlist, renewal amount check, `current_period_end` on
       subscriptions with expiry enforcement.
@@ -248,8 +335,12 @@ Each step is independently shippable. Don't batch them.
 - [ ] **Step 9 — Launch checklist**
       `DEPLOYMENT.md` § "Going live with PayFast", real credentials, SMTP,
       accessibility pass, `mysqldump` cron.
+- [ ] **Step 10 — Split multi-ingredient pantry rows** (§2.9)
+      Split on `,`/`and`/`&`/newline at Add time instead of storing one
+      free-text row per click. Small; found while doing Step 6, not the same
+      kind of fix so kept separate.
 
-Steps 1–3 are roughly a session. Step 6 is the long one.
+Steps 1–3 are roughly a session. Step 6 was the long one.
 
 ---
 

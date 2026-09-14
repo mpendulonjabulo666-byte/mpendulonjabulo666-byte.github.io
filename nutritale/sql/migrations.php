@@ -18,7 +18,8 @@
 //     (YYYY_MM_DD) so the order is legible, but don't rename it later.
 //   - A value may hold more than one ';'-separated statement; each is run
 //     in order and the whole entry is marked applied only once all of
-//     them succeed.
+//     them succeed. It may instead be a callable taking the PDO connection,
+//     for seeding structured data with real parameter binding.
 return [
     // CONTINUE.md step 5: lets the pantry page cache an AI result for an
     // identical request (see ai_pantry_hash() in includes/ai_pantry.php)
@@ -39,4 +40,55 @@ return [
             INDEX idx_user_created (user_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // CONTINUE.md step 6: canonical ingredient identities + synonyms for
+    // includes/ingredient_matching.php, replacing pantry.php's old
+    // substring matcher. Only ingredients that need an actual synonym or
+    // an irregular spelling get a row here - a regular plural or a word
+    // nobody needs to rename already resolves through that file's
+    // tokenizer/depluralizer with no seed data at all. See its header
+    // comment for the full reasoning.
+    '2026_09_14_ingredient_taxonomy' => function (PDO $pdo): void {
+        $pdo->exec("CREATE TABLE ingredients (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            canonical_name VARCHAR(100) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE ingredient_aliases (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            ingredient_id INT UNSIGNED NOT NULL,
+            alias VARCHAR(100) NOT NULL UNIQUE,
+            FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // alias => 'mince' deserves a note: the only ground-meat ingredient
+        // this app ships with is "Ground turkey", and a real pantry row in
+        // this app's own data is literally "meat mince" (CONTINUE.md
+        // §2.2). Mapping the generic term to the one specific meat we have
+        // is a compromise, not a fact - mince is usually beef, not turkey.
+        // Revisit (probably by giving "mince" its own canonical ingredient)
+        // if a second ground-meat recipe with a different meat ships.
+        $seed = [
+            'tomato' => ['passata'],
+            'pepper' => ['capsicum', 'capsicums'],
+            'chickpea' => ['garbanzo', 'chick pea'],
+            'yogurt' => ['yoghurt'],
+            'turkey' => ['mince'],
+            'stock' => ['broth', 'bouillon'],
+            'soy' => ['soya'],
+            'oat' => ['oatmeal'],
+            'zucchini' => ['courgette', 'courgettes', 'baby marrow', 'baby marrows'],
+            'chili' => ['chilli'],
+        ];
+        $insertIngredient = $pdo->prepare('INSERT INTO ingredients (canonical_name) VALUES (?)');
+        $insertAlias = $pdo->prepare('INSERT INTO ingredient_aliases (ingredient_id, alias) VALUES (?, ?)');
+        foreach ($seed as $canonical => $aliases) {
+            $insertIngredient->execute([$canonical]);
+            $id = (int)$pdo->lastInsertId();
+            foreach ($aliases as $alias) {
+                $insertAlias->execute([$id, $alias]);
+            }
+        }
+    },
 ];

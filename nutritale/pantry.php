@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
+require_once __DIR__ . '/includes/ingredient_matching.php';
 
 $user = require_login();
 
@@ -61,13 +62,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     redirect('pantry.php');
 }
 
-$pantryNorm = array_map(fn($p) => mb_strtolower(trim($p)), $pantry);
 $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
 
 $matches = [];
 $hiddenByAllergens = 0;
 if ($pantry) {
+    // See includes/ingredient_matching.php for why this replaced a
+    // substring test (CONTINUE.md §2.2) - pantry "ice" matching recipe
+    // "rice" is the canonical example. $pantryCanonical is the set of
+    // canonical ingredient identities across the *whole* pantry - a
+    // pantry row can resolve to more than one (a real example already in
+    // this app's data is a single row literally saved as "rice and
+    // chicken"), so it's built once here rather than per pantry item.
+    $aliasMap = load_ingredient_alias_map();
+    $pantryCanonical = [];
+    foreach ($pantry as $item) {
+        $pantryCanonical = array_merge($pantryCanonical, canonical_ingredient_set($item, $aliasMap));
+    }
+    $pantryCanonical = array_values(array_unique($pantryCanonical));
+
     $recipeStmt = db()->query(
         'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
          GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
@@ -99,15 +113,11 @@ if ($pantry) {
         $have = [];
         $missing = [];
         foreach ($ingredients as $ing) {
-            $ingNorm = mb_strtolower(trim($ing));
-            $found = false;
-            foreach ($pantryNorm as $p) {
-                if ($p !== '' && (str_contains($ingNorm, $p) || str_contains($p, $ingNorm))) {
-                    $found = true;
-                    break;
-                }
+            if (pantry_has_ingredient($ing, $pantryCanonical, $aliasMap)) {
+                $have[] = $ing;
+            } else {
+                $missing[] = $ing;
             }
-            if ($found) $have[] = $ing; else $missing[] = $ing;
         }
 
         if (!$have) continue;
