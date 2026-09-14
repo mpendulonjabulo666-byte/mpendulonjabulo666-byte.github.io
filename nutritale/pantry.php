@@ -3,6 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/ai_pantry.php';
+require_once __DIR__ . '/includes/ai_cache.php';
 
 $user = require_login();
 
@@ -37,9 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
     } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
-        $_SESSION['ai_pantry_ideas'] = gemini_pantry_ideas($pantry, $dietPrefs, $userAllergens);
-        if (!$isPremiumOrAdmin) {
-            db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
+        $pantryHash = ai_pantry_hash($pantry, $dietPrefs, $userAllergens);
+        $cached = ai_cache_lookup((int)$user['id'], $pantryHash, AI_PANTRY_CACHE_DAYS);
+        if ($cached !== null) {
+            // Nothing new was generated, so nothing new is charged for:
+            // no trial use spent, no daily-cap count added.
+            $_SESSION['ai_pantry_ideas'] = $cached + ['from_cache' => true];
+        } elseif ($isPremiumOrAdmin && ai_daily_attempt_count((int)$user['id']) >= AI_PANTRY_DAILY_CAP) {
+            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached today's AI suggestion limit ("
+                . AI_PANTRY_DAILY_CAP . '). Try again tomorrow.'];
+        } else {
+            $result = gemini_pantry_ideas($pantry, $dietPrefs, $userAllergens);
+            if (($result['attempts'] ?? 0) > 0) {
+                ai_log_generation((int)$user['id'], $pantryHash, $result);
+            }
+            $_SESSION['ai_pantry_ideas'] = $result;
+            if (!$isPremiumOrAdmin) {
+                db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
+            }
         }
     }
     redirect('pantry.php');
@@ -206,6 +222,12 @@ if ($pantry) {
             <?php if ($aiResult && !$aiResult['ok']): ?>
                 <p class="muted mt-16" style="font-size:13px;"><?= h($aiResult['error']) ?></p>
             <?php elseif ($aiResult): ?>
+                <?php if (!empty($aiResult['from_cache'])): ?>
+                    <p class="muted mt-16" style="font-size:12.5px;">
+                        <?= icon('check', 12) ?> Showing your saved ideas for this exact pantry
+                        (generated within the last <?= (int)AI_PANTRY_CACHE_DAYS ?> days).
+                    </p>
+                <?php endif; ?>
                 <?php if (!empty($aiResult['discarded'])): ?>
                     <p class="muted mt-16" style="font-size:12.5px;">
                         <?= icon('shield', 12) ?>

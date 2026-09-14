@@ -28,13 +28,13 @@ scale.
    Manager or FTP/SFTP.
 3. **Configure.** Edit `config/config.php` on the server and set
    `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` to the values from step 1.
-4. **Install.** Visit `https://yourdomain.com/nutritale/install.php` in
+4. **Install.** Visit `https://yourdomain.com/nutritale/setup.php` in
    a browser. It creates the tables and seeds starter recipes. Safe to
    re-run any time — it only creates what's missing.
 5. **Register the first account.** The first account created via
    `register.php` is automatically an admin (see the `$isFirstUser`
    check in `register.php`).
-6. **Delete or lock down `install.php`** once setup is done — it's
+6. **Delete or lock down `setup.php`** once setup is done — it's
    harmless to leave (it no-ops when tables already exist) but there's
    no reason to leave a setup script world-reachable indefinitely.
 
@@ -93,7 +93,7 @@ hosting or a VPS.
    Settings → Networking → "Generate Domain." This gives you a real
    `https://something.up.railway.app` URL — HTTPS included, which
    PayFast's ITN and secure cookies both require.
-5. **Install:** visit `https://your-app.up.railway.app/install.php` to
+5. **Install:** visit `https://your-app.up.railway.app/setup.php` to
    create the tables and seed starter recipes, same as any other path.
 6. **PayFast sandbox works as-is** here with zero changes — it's
    already the default in `config/config.php`.
@@ -167,4 +167,4 @@ default, no real money can move. Before accepting real payments:
   on the server (git doesn't track full permission bits, only the
   executable flag, so this can't be baked into the repo)
 - Everything else (recipes, planner, admin panel, vendor dashboard) is
-  ready to use as soon as `install.php` has run
+  ready to use as soon as `setup.php` has run

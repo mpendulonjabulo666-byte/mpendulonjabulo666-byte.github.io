@@ -1,4 +1,16 @@
 -- NutriTale schema
+--
+-- This file only ever CREATEs. It's re-run by setup.php on every
+-- deploy, so a statement here must be safe to execute against a database
+-- that already has the table (hence IF NOT EXISTS everywhere). That's
+-- fine for a brand new table, but an ALTER on an existing one has no such
+-- safe-to-repeat form - those go in sql/migrations.php instead, tracked
+-- one-time in schema_migrations below. See CONTINUE.md step 4.
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version VARCHAR(190) PRIMARY KEY,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

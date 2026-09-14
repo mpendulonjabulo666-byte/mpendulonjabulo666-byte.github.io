@@ -102,19 +102,44 @@ an alias table, and word-boundary matching instead of substring.
 
 Three small components. Removes a whole category of risk.
 
-### 2.4 — AI cost is unbounded for paying users
+### 2.4 — AI cost is unbounded for paying users ✅ DONE (Steps 3 & 5)
 
-`pantry.php:37-41`: free users burn one of `PANTRY_FREE_USES` (3) per AI call.
-Premium and admin users are checked by `$isBlocked` — which is false for them —
-so there is **no ceiling at all**. No cache, no per-day cap, no logging of what
-was spent.
+Was: free users burned one of `PANTRY_FREE_USES` (3) per AI call, but also one
+per pantry ingredient *added* (a bug — fixed in Step 3). Premium and admin
+users were checked by `$isBlocked`, which is false for them, so there was no
+ceiling at all: no cache, no per-day cap, no logging of what was spent.
 
-There's also a smaller bug right above it: `pantry.php:28-30` increments the
-same counter when a free user merely **adds a pantry ingredient**. Adding three
-ingredients exhausts the AI trial before they ever press the button. That is
-almost certainly not intended.
+Now (Step 5): a new `ai_generations` table (`sql/migrations.php`) logs every
+request that reached Gemini at least once — user, a hash of the request
+(`ai_pantry_hash()` in `ai_pantry.php`), outcome, how many Gemini calls it
+took, and the result. Two things read it, both in `includes/ai_cache.php`:
 
-No table records generations, so cost can't be measured even retrospectively.
+- **Cache** — an identical request (same pantry, diet prefs, *and allergens*)
+  within `AI_PANTRY_CACHE_DAYS` (3) is served from the stored result instead
+  of calling Gemini again. Costs nobody a trial use or a cap count, since
+  nothing new was generated. Allergens are part of the cache key deliberately,
+  not just the pantry — a cache hit skips `gemini_pantry_ideas()` entirely, so
+  it must never serve back meals checked against an allergen list the account
+  has since changed.
+- **Daily cap** — `AI_PANTRY_DAILY_CAP` (30), applied to premium *and* admin
+  (the spec's own wording only names premium, but both were equally unmetered
+  before this, and "admin" isn't the same guarantee as "trusted operator" on
+  every deployment — widened deliberately). Counts Gemini calls (attempts),
+  not button presses: an allergen-triggered regeneration still costs one, per
+  the comment already left in `ai_pantry.php` at Step 1.
+
+A failed request is logged (for visibility) but never cached, so a transient
+error gets a fresh attempt next time rather than a replayed error.
+
+Tests: `ai_pantry_hash()` (order/case-insensitive, changes with pantry/diet/
+allergens) and the `attempts` field (including the off-by-one the loop's own
+counter has on the exhausted-retries path) are in `tests/ai_pantry_test.php`.
+`ai_cache.php`'s DB-touching functions aren't unit-tested — same call as
+Step 1's DB code — instead verified against the live database: logged a
+result, read the cache hit back, confirmed a different allergen list misses,
+confirmed a backdated row falls outside a 3-day window but inside a 7-day
+one, confirmed a failed request is never cached, confirmed the daily count
+sums `attempts` across rows rather than counting rows.
 
 ### 2.5 — Payment hardening left for go-live
 
@@ -136,12 +161,32 @@ in the platform's PayFast account and there is no payout record, no payout
 status, no mechanism. Sell one recipe for real and you owe a vendor money with
 nothing tracking it. Decide the model before real payments go live.
 
-### 2.7 — `install.php` can create but never upgrade
+### 2.7 — `setup.php` can create but never upgrade ✅ DONE (Step 4)
 
-`sql/schema.sql` is all `CREATE TABLE IF NOT EXISTS` and `install.php` has no
-`ALTER` statements. Every schema change in §2.1–2.5 below will apply cleanly to
-a fresh install and silently do nothing to a deployed one. A migration path is
-needed before the first schema change ships.
+Was: `sql/schema.sql` is all `CREATE TABLE IF NOT EXISTS` and `setup.php` had
+no `ALTER` statements. A new *table* would have been fine — `IF NOT EXISTS`
+creates it on a deployed site same as a fresh one — but a change to an
+*existing* table has no such safe-to-repeat form, and nothing would have run
+it on a site that already exists.
+
+Now: `sql/migrations.php` holds an ordered, keyed list of schema changes.
+`setup.php` tracks which keys have run in a new `schema_migrations` table
+(added to `schema.sql`, since that part *is* just a new table) and applies
+only the ones it hasn't seen, in order, every time it's run. `ai_generations`
+(Step 5) is the first entry, both delivering that table and proving the
+runner against a real, already-deployed database rather than only a fresh
+one — see the verification note below.
+
+Rules for adding future migrations are written at the top of
+`sql/migrations.php` itself: append-only, never edit or reorder a shipped
+entry (a deployed site remembers it by key, and a shipped key must keep
+meaning what it already ran).
+
+Verified against the live database, not just a fresh one: ran `setup.php`
+against the existing dev DB (8 seeded recipes, real user rows) with neither
+`schema_migrations` nor `ai_generations` present — first run created both and
+logged "Applied 1 new schema migration"; second run logged "Schema migrations
+already up to date" and did not re-run it.
 
 ### 2.8 — Email delivery is best-effort
 
@@ -173,13 +218,23 @@ Each step is independently shippable. Don't batch them.
       `pantry.php` add-ingredient no longer increments
       `pantry_free_uses_used`; only `ai_suggest` does. Users already burned by
       the old bug keep their inflated count — no data fix applied.
-- [ ] **Step 4 — Migration runner** (§2.7)
-      Needed before any further schema change. A `schema_migrations` table and
-      an ordered list of statements `install.php` applies once each.
-- [ ] **Step 5 — AI generation log + cache + daily cap** (§2.4)
-      New `ai_generations` table (user, pantry hash, outcome, timestamp).
-      Same pantry + same prefs within N days serves the stored result. Hard
-      daily cap for premium. Makes cost visible and bounded.
+- [x] **Step 4 — Migration runner** (§2.7) — done
+      `sql/migrations.php` (new), `schema_migrations` table in `schema.sql`,
+      runner in `setup.php`. Verified against the live dev database
+      (idempotent: second run applies nothing).
+- [ ] **Step 5 — AI generation log + cache + daily cap** (§2.4) — in code,
+      DB-verified, awaiting a browser check with a real Gemini key
+      `ai_generations` (via the new migration), `includes/ai_cache.php` (new),
+      `ai_pantry_hash()` + `attempts` tracking in `ai_pantry.php`, wired into
+      `pantry.php`. Cap widened to admin too, not just premium — see §2.4.
+      Verified against the live database (cache hit/miss, day-window
+      boundary, error-never-cached, daily sum) and by unit test (hash,
+      attempts) — but this dev config has no `GEMINI_API_KEY` set, so the two
+      new lines of pantry.php UI (the "showing your saved ideas" note, the
+      cap-reached message) have not actually been seen rendered in a
+      browser. Low risk — both follow the exact `$aiResult[...]` pattern the
+      discarded-count line next to them already uses — but unconfirmed until
+      someone with a key clicks "Get AI ideas" twice in a row.
 - [ ] **Step 6 — Ingredient normalisation** (§2.2)
       `ingredients` canonical table + `ingredient_aliases`, seeded. Replace
       substring matching. Biggest quality win, biggest effort — do it once the

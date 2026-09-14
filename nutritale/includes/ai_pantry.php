@@ -20,6 +20,27 @@ require_once __DIR__ . '/allergens.php';
 
 const AI_PANTRY_MAX_ATTEMPTS = 3;
 
+// A stable key for "this exact request" — same pantry, same diet prefs,
+// same allergens — used by includes/ai_cache.php to serve a repeat
+// request without calling Gemini again (CONTINUE.md step 5).
+//
+// Allergens are part of the key on purpose, even though they don't change
+// the pantry itself: a cache hit skips gemini_pantry_ideas() entirely, so
+// Layer 2 (text_allergen_hits()) never re-runs on it. If the key ignored
+// allergens, adding a new allergy after an earlier generation could serve
+// back meals that were only ever checked against the old, shorter list.
+// Order and case don't matter to the user, so both are normalised out
+// before hashing — "Rice, Chicken" and "chicken, rice" must collide.
+function ai_pantry_hash(array $pantryItems, array $dietPrefs, array $allergens): string
+{
+    $canon = function (array $items): string {
+        $items = array_unique(array_map(fn($i) => mb_strtolower(trim($i)), $items));
+        sort($items);
+        return implode(',', $items);
+    };
+    return hash('sha256', $canon($pantryItems) . '|' . $canon($dietPrefs) . '|' . $canon($allergens));
+}
+
 // $generator exists so the filtering and retry logic can be tested
 // without a network call or an API key (see tests/allergen_test.php).
 // Production callers leave it null and get gemini_generate_meals().
@@ -28,10 +49,10 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs, array $allerg
     $generator = $generator ?? 'gemini_generate_meals';
 
     if ($generator === 'gemini_generate_meals' && GEMINI_API_KEY === '') {
-        return ['ok' => false, 'error' => 'AI suggestions aren\'t set up on this server yet.'];
+        return ['ok' => false, 'error' => 'AI suggestions aren\'t set up on this server yet.', 'attempts' => 0];
     }
     if (!$pantryItems) {
-        return ['ok' => false, 'error' => 'Add a few ingredients first.'];
+        return ['ok' => false, 'error' => 'Add a few ingredients first.', 'attempts' => 0];
     }
 
     $prompt = gemini_pantry_prompt($pantryItems, $dietPrefs, $allergens);
@@ -47,7 +68,7 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs, array $allerg
         $call = $generator($prompt);
         if (!$call['ok']) {
             // Config, network or quota problem — retrying won't fix it.
-            return $call;
+            return $call + ['attempts' => $attempt];
         }
 
         $attemptViolations = [];
@@ -79,12 +100,18 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs, array $allerg
             . 'in the meal names, descriptions or shopping lists.';
     }
 
+    // $attempt overshoots by one when the loop ran out rather than
+    // breaking early (the for-loop's own increment fires before its
+    // condition fails) - clamp so this always reports calls actually
+    // made, matching what tests/ai_pantry_test.php counts on the stub.
+    $callsMade = min($attempt, AI_PANTRY_MAX_ATTEMPTS);
+
     if (!$clean) {
         if ($allergens) {
             return ['ok' => false, 'error' => 'We couldn\'t come up with meal ideas that avoid your allergens ('
-                . implode(', ', $allergens) . '). Try adding a few more ingredients to your pantry.'];
+                . implode(', ', $allergens) . '). Try adding a few more ingredients to your pantry.', 'attempts' => $callsMade];
         }
-        return ['ok' => false, 'error' => 'The AI service didn\'t return any usable ideas — try again.'];
+        return ['ok' => false, 'error' => 'The AI service didn\'t return any usable ideas — try again.', 'attempts' => $callsMade];
     }
 
     return [
@@ -92,6 +119,7 @@ function gemini_pantry_ideas(array $pantryItems, array $dietPrefs, array $allerg
         'meals' => array_slice($clean, 0, 3),
         'discarded' => $discarded,
         'allergens_enforced' => $allergens,
+        'attempts' => $callsMade,
     ];
 }
 

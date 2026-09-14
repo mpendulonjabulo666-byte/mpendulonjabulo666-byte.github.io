@@ -1,6 +1,6 @@
 <?php
 // Fill these in with your own database's connection details before
-// running install.php. If you're on shared hosting, your host's control
+// running setup.php. If you're on shared hosting, your host's control
 // panel (e.g. cPanel > MySQL Databases) will give you these values.
 // On a platform that injects DB credentials as environment variables
 // (e.g. Railway's MySQL plugin, which sets MYSQLHOST/MYSQLPORT/etc.),
@@ -43,6 +43,24 @@ define('PANTRY_FREE_USES', 3);
 define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
+
+// Free users are already bounded by PANTRY_FREE_USES above, but premium
+// and admin accounts skip that counter entirely (see pantry.php) and
+// were previously unmetered - see CONTINUE.md §2.4. These two bound them:
+//
+//   AI_PANTRY_CACHE_DAYS — an identical request (same pantry, diet prefs
+//   and allergens - see ai_pantry_hash() in includes/ai_pantry.php) within
+//   this many days is served from ai_generations instead of calling
+//   Gemini again. Costs nobody a trial use or a daily-cap count, since
+//   nothing new was generated.
+//
+//   AI_PANTRY_DAILY_CAP — applied to premium AND admin accounts, not just
+//   premium: both were equally unmetered before this, and "admin" isn't
+//   the same guarantee as "trusted operator" on every deployment. Counts
+//   Gemini calls (attempts), not button presses - a retry that regenerates
+//   because of an allergen violation still costs one. See includes/ai_cache.php.
+define('AI_PANTRY_CACHE_DAYS', 3);
+define('AI_PANTRY_DAILY_CAP', 30);
 
 // Set to true only while actively debugging locally — it prints full PHP
 // errors (file paths, stack traces, sometimes query fragments) straight

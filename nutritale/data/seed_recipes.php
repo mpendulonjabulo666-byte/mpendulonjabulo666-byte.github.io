@@ -1,5 +1,5 @@
 <?php
-// Starter recipe catalog used by install.php to seed the `recipes` table
+// Starter recipe catalog used by setup.php to seed the `recipes` table
 // (and its related tag/ingredient/instruction tables) on first run.
 
 function nutritale_seed_recipes(): array

@@ -109,6 +109,48 @@ check('API error is not retried', $calls6 === 1);
 $gen = scripted([['ok' => true, 'meals' => [meal('Anything')]]], $calls7);
 $result = gemini_pantry_ideas([], [], [], $gen);
 check('empty pantry makes no call at all', $result['ok'] === false && $calls7 === 0);
+check('rejected-before-any-call reports zero attempts', ($result['attempts'] ?? null) === 0);
+
+// --- 'attempts' always matches the generator's actual call count --------
+// Regression check for an off-by-one: the for-loop's own increment fires
+// once more than the body runs, so a naive read of the loop variable
+// overshoots by one on exactly this path (exhausted retries, never
+// breaks early) - see the $callsMade clamp in gemini_pantry_ideas().
+$gen = scripted([
+    ['ok' => true, 'meals' => [meal('Peanut stew')]],
+], $calls8);
+$result = gemini_pantry_ideas(['rice'], [], ['nuts'], $gen);
+check('exhausted retries report attempts == actual calls, not calls + 1', ($result['attempts'] ?? null) === $calls8);
+check('sanity: that is 3', $calls8 === AI_PANTRY_MAX_ATTEMPTS);
+
+$gen = scripted([
+    ['ok' => true, 'meals' => [meal('Rice bowl'), meal('Chicken salad'), meal('Vegetable soup')]],
+], $calls9);
+$result = gemini_pantry_ideas(['rice'], [], [], $gen);
+check('a clean first attempt reports attempts == 1', ($result['attempts'] ?? null) === 1);
+
+$gen = scripted([
+    ['ok' => false, 'error' => 'rate limited'],
+], $calls10);
+$result = gemini_pantry_ideas(['rice'], [], [], $gen);
+check('an API error reports the one attempt it took', ($result['attempts'] ?? null) === 1);
+
+// --- ai_pantry_hash(): the cache key behind CONTINUE.md step 5 ----------
+// Order and case must not matter - a user re-typing the same pantry in a
+// different order must be treated as the same request.
+check('hash ignores item order', ai_pantry_hash(['rice', 'chicken'], [], []) === ai_pantry_hash(['chicken', 'rice'], [], []));
+check('hash ignores case', ai_pantry_hash(['Rice'], [], []) === ai_pantry_hash(['rice'], [], []));
+check('hash ignores surrounding whitespace', ai_pantry_hash([' rice '], [], []) === ai_pantry_hash(['rice'], [], []));
+
+// A different pantry, different diet prefs, or - critically - a different
+// allergen list must each produce a different key. See the comment on
+// ai_pantry_hash() for why allergens are safety-relevant here, not just
+// personalisation: a cache hit skips the code-side allergen check.
+check('hash changes with a different pantry', ai_pantry_hash(['rice'], [], []) !== ai_pantry_hash(['rice', 'egg'], [], []));
+check('hash changes with a different diet pref', ai_pantry_hash(['rice'], ['vegan'], []) !== ai_pantry_hash(['rice'], [], []));
+check('hash changes when an allergen is added', ai_pantry_hash(['rice'], [], ['nuts']) !== ai_pantry_hash(['rice'], [], []));
+check('hash changes between two different allergens', ai_pantry_hash(['rice'], [], ['nuts']) !== ai_pantry_hash(['rice'], [], ['dairy']));
+check('hash is stable for identical input', ai_pantry_hash(['rice', 'egg'], ['vegan'], ['nuts']) === ai_pantry_hash(['rice', 'egg'], ['vegan'], ['nuts']));
 
 echo "\n$pass passed, $fail failed\n";
 exit($fail > 0 ? 1 : 0);

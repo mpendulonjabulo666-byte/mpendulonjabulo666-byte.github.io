@@ -24,6 +24,28 @@ try {
     }
     $log[] = 'Tables created (or already existed).';
 
+    // Schema changes that can't be expressed as a safe-to-repeat CREATE
+    // (an ALTER on a table that might already have it, say) live in
+    // sql/migrations.php instead, tracked one-time here so a redeploy
+    // never re-runs one that already succeeded. See CONTINUE.md step 4.
+    $migrations = require __DIR__ . '/sql/migrations.php';
+    $alreadyApplied = $pdo->query('SELECT version FROM schema_migrations')->fetchAll(PDO::FETCH_COLUMN);
+    $newlyApplied = 0;
+    foreach ($migrations as $version => $migrationSql) {
+        if (in_array($version, $alreadyApplied, true)) {
+            continue;
+        }
+        foreach (array_filter(array_map('trim', explode(';', $migrationSql))) as $statement) {
+            if ($statement === '') continue;
+            $pdo->exec($statement);
+        }
+        $pdo->prepare('INSERT INTO schema_migrations (version) VALUES (?)')->execute([$version]);
+        $newlyApplied++;
+    }
+    $log[] = $newlyApplied > 0
+        ? "Applied $newlyApplied new schema migration" . ($newlyApplied === 1 ? '' : 's') . '.'
+        : 'Schema migrations already up to date.';
+
     $count = (int)$pdo->query('SELECT COUNT(*) FROM recipes')->fetchColumn();
     if ($count === 0) {
         require_once __DIR__ . '/data/seed_recipes.php';
@@ -98,7 +120,7 @@ try {
                 <a class="btn btn-text btn-block" href="login.php">I already have an account</a>
             <?php endif; ?>
         </div>
-        <p class="muted mt-16" style="font-size:12.5px;">You can re-run install.php any time — it only creates what's missing.</p>
+        <p class="muted mt-16" style="font-size:12.5px;">You can re-run setup.php any time — it only creates what's missing.</p>
     </div>
 </div>
 </body>
