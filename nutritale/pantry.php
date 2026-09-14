@@ -28,10 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         $name = trim($_POST['ingredient_name'] ?? '');
         if ($name !== '' && !$isBlocked) {
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
+            // Adding ingredients is free. Only an AI generation spends a trial use.
             $stmt->execute([$user['id'], $name]);
-            if ($stmt->rowCount() > 0 && !$isPremiumOrAdmin) {
-                db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
-            }
         }
     } elseif ($action === 'remove') {
         $name = $_POST['ingredient_name'] ?? '';
@@ -125,7 +123,7 @@ if ($pantry) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=3">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -193,6 +191,7 @@ if ($pantry) {
                         <p style="margin:4px 0 0;font-size:12.5px;color:var(--green-dark);font-weight:600;">
                             <?= icon('check', 12) ?> Avoiding <?= h(implode(', ', $userAllergens)) ?>
                         </p>
+                        <?= disclaimer('allergens') ?>
                     <?php endif; ?>
                 </div>
                 <?php if (!$isBlocked): ?>
@@ -241,13 +240,14 @@ if ($pantry) {
 
         <h2 class="mb-16">Recipes you can make</h2>
         <?php if ($hiddenByAllergens): ?>
-            <p class="muted mb-16" style="font-size:12.5px;">
+            <p class="muted" style="font-size:12.5px;margin-bottom:0;">
                 <?= icon('shield', 12) ?>
                 <?= $hiddenByAllergens ?> recipe<?= $hiddenByAllergens === 1 ? '' : 's' ?>
                 hidden because <?= $hiddenByAllergens === 1 ? 'it contains' : 'they contain' ?>
                 allergens you've asked to avoid.
                 <a href="profile.php" style="color:var(--green-dark);font-weight:600;">Change</a>
             </p>
+            <div class="mb-16"><?= disclaimer('allergens') ?></div>
         <?php endif; ?>
         <?php if (!$matches): ?>
             <p class="muted">No recipes match what's in your pantry yet — try adding a few more ingredients.</p>

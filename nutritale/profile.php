@@ -119,7 +119,7 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=3">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -205,6 +205,7 @@ $goals = $goalStmt->fetch() ?: [];
                         </label>
                     <?php endforeach; ?>
                 </div>
+                <?= disclaimer('allergens') ?>
             </div>
 
             <button type="submit" class="btn btn-primary">Save preferences</button>
@@ -214,6 +215,7 @@ $goals = $goalStmt->fetch() ?: [];
     <div class="card mt-16">
         <h2 style="font-size:16px;margin-top:0;">Daily nutrition goals</h2>
         <p class="muted" style="margin-top:0;font-size:13px;">Optional targets used to show progress bars against your planned meals for today.</p>
+        <?= disclaimer('medical') ?>
         <form method="post">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="form" value="goals">

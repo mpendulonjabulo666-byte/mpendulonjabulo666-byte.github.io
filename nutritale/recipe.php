@@ -112,7 +112,7 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=3">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -179,6 +179,7 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
                 <div class="macro-pill"><strong><?= (int)$recipe['fat_g'] ?>g</strong><span>Fat</span></div>
                 <div class="macro-pill"><strong><?= (int)$recipe['fiber_g'] ?>g</strong><span>Fiber</span></div>
             </div>
+            <?= disclaimer('nutrition') ?>
 
             <?php if ($dietTags): ?>
                 <div class="tag-row mb-16">
@@ -188,6 +189,9 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
 
             <?php if ($allergens): ?>
                 <p class="muted">Contains: <?= h(implode(', ', $allergens)) ?></p>
+            <?php endif; ?>
+            <?php if ($allergens || $allergenConflicts): ?>
+                <?= disclaimer('allergens') ?>
             <?php endif; ?>
 
             <?php if ((int)$recipe['created_by'] === (int)$user['id']): ?>

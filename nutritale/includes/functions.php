@@ -90,6 +90,22 @@ function csrf_check(): bool
         && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
 }
 
+// Standing safety notices. Each one belongs next to the thing it qualifies,
+// not in a footer - see CONTINUE.md §2.3 for where each is placed.
+const DISCLAIMERS = [
+    'nutrition' => 'Nutrition figures are estimates and are not intended for medical use.',
+    'allergens' => 'Allergen filtering is not a guarantee. Always check ingredient labels, especially for severe allergies.',
+    'medical'   => 'NutriTale does not give medical advice. Speak to a doctor or registered dietitian before changing your diet for health reasons.',
+];
+
+function disclaimer(string $kind): string
+{
+    if (!isset(DISCLAIMERS[$kind])) {
+        throw new InvalidArgumentException("Unknown disclaimer: $kind");
+    }
+    return '<p class="disclaimer" role="note">' . h(DISCLAIMERS[$kind]) . '</p>';
+}
+
 function send_notification_email(string $to, string $subject, string $body): void
 {
     // No SMTP is configured for this app by default. This is a best-effort

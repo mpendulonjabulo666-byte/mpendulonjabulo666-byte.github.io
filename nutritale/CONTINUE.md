@@ -161,12 +161,18 @@ Each step is independently shippable. Don't batch them.
       plus `tests/allergen_test.php` and `tests/ai_pantry_test.php`.
       Verified against the live database: the sesame-tagged recipe is excluded
       for an account flagged sesame + shellfish, and the page reports it.
-- [ ] **Step 2 — Disclaimers** (§2.3)
-      One `disclaimer()` helper in `includes/functions.php`, three variants,
-      placed as listed. Pairs naturally with Step 1.
-- [ ] **Step 3 — Fix the trial counter** (§2.4, second half)
-      Stop charging a use for adding an ingredient. Charge only `ai_suggest`.
-      Small, self-contained, currently costing real users their trial.
+- [ ] **Step 2 — Disclaimers** (§2.3) — in code, awaiting browser check
+      `disclaimer()` + `DISCLAIMERS` in `includes/functions.php`, `.disclaimer`
+      style (stylesheet bumped to `v=4`). Nutrition under the macros in
+      `recipe.php`; allergens under the "Contains" line in `recipe.php`, both
+      allergen pickers (`onboarding.php`, `profile.php`) and the two pantry
+      allergen notes; medical under diet prefs in `onboarding.php` and the
+      daily goals card in `profile.php` (there is no health-goal step in
+      onboarding — goals live in the profile).
+- [ ] **Step 3 — Fix the trial counter** (§2.4, second half) — in code, awaiting browser check
+      `pantry.php` add-ingredient no longer increments
+      `pantry_free_uses_used`; only `ai_suggest` does. Users already burned by
+      the old bug keep their inflated count — no data fix applied.
 - [ ] **Step 4 — Migration runner** (§2.7)
       Needed before any further schema change. A `schema_migrations` table and
       an ordered list of statements `install.php` applies once each.
