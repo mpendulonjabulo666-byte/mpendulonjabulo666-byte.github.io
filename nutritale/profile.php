@@ -2,11 +2,14 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/allergens.php';
 
 $user = require_login();
 
 $dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
-$allergenOptions = ['dairy', 'eggs', 'gluten', 'nuts', 'soy', 'fish', 'sesame', 'shellfish'];
+// Single source of truth - includes/allergens.php also maps each of
+// these to the keywords that detect it in AI-written text.
+$allergenOptions = ALLERGEN_OPTIONS;
 
 $errors = [];
 

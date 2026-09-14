@@ -18,6 +18,10 @@ $dietPrefStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE
 $dietPrefStmt->execute([$user['id']]);
 $dietPrefs = $dietPrefStmt->fetchAll(PDO::FETCH_COLUMN);
 
+// Drives both the AI prompt and the code-side check on what it returns,
+// and filters the rule-based matcher below.
+$userAllergens = user_allergens((int)$user['id']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
     if ($action === 'add') {
@@ -35,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
     } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
-        $_SESSION['ai_pantry_ideas'] = gemini_pantry_ideas($pantry, $dietPrefs);
+        $_SESSION['ai_pantry_ideas'] = gemini_pantry_ideas($pantry, $dietPrefs, $userAllergens);
         if (!$isPremiumOrAdmin) {
             db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
         }
@@ -48,17 +52,32 @@ $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
 
 $matches = [];
+$hiddenByAllergens = 0;
 if ($pantry) {
     $recipeStmt = db()->query(
         'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
-         GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags
-         FROM recipes r LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
+         GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
+         GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
+         FROM recipes r
+         LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
+         LEFT JOIN recipe_allergens al ON al.recipe_id = r.id
          GROUP BY r.id ORDER BY r.title'
     );
     $recipes = $recipeStmt->fetchAll();
 
     $ingStmt = db()->prepare('SELECT name FROM recipe_ingredients WHERE recipe_id = ? ORDER BY order_index');
     foreach ($recipes as $recipe) {
+        // This page answers "what can I make?", so a recipe the user is
+        // allergic to isn't an answer — it's dropped rather than badged.
+        // (index.php and favorites.php badge instead, because there the
+        // user asked to see the recipe.) The count is surfaced in the UI
+        // so the omission is visible rather than silent.
+        $recipeAllergens = array_filter(explode(',', $recipe['allergens'] ?? ''));
+        if (array_intersect($recipeAllergens, $userAllergens)) {
+            $hiddenByAllergens++;
+            continue;
+        }
+
         $ingStmt->execute([$recipe['id']]);
         $ingredients = $ingStmt->fetchAll(PDO::FETCH_COLUMN);
         if (!$ingredients) continue;
@@ -170,6 +189,11 @@ if ($pantry) {
                 <div>
                     <h2 style="margin:0 0 2px;font-size:16px;"><?= icon('wand', 16) ?> AI meal ideas & shopping list</h2>
                     <p class="muted" style="margin:0;font-size:12.5px;">3 fresh meal ideas built around what's in your pantry, plus what to buy for each.</p>
+                    <?php if ($userAllergens): ?>
+                        <p style="margin:4px 0 0;font-size:12.5px;color:var(--green-dark);font-weight:600;">
+                            <?= icon('check', 12) ?> Avoiding <?= h(implode(', ', $userAllergens)) ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
                 <?php if (!$isBlocked): ?>
                     <form method="post">
@@ -183,6 +207,13 @@ if ($pantry) {
             <?php if ($aiResult && !$aiResult['ok']): ?>
                 <p class="muted mt-16" style="font-size:13px;"><?= h($aiResult['error']) ?></p>
             <?php elseif ($aiResult): ?>
+                <?php if (!empty($aiResult['discarded'])): ?>
+                    <p class="muted mt-16" style="font-size:12.5px;">
+                        <?= icon('shield', 12) ?>
+                        <?= (int)$aiResult['discarded'] ?> suggestion<?= (int)$aiResult['discarded'] === 1 ? '' : 's' ?>
+                        removed for containing your allergens.
+                    </p>
+                <?php endif; ?>
                 <div class="mt-16" style="display:grid;gap:14px;">
                     <?php foreach ($aiResult['meals'] as $meal): ?>
                         <div class="shopping-list card" style="box-shadow:none;border:1px solid var(--border);margin:0;">
@@ -209,6 +240,15 @@ if ($pantry) {
         </div>
 
         <h2 class="mb-16">Recipes you can make</h2>
+        <?php if ($hiddenByAllergens): ?>
+            <p class="muted mb-16" style="font-size:12.5px;">
+                <?= icon('shield', 12) ?>
+                <?= $hiddenByAllergens ?> recipe<?= $hiddenByAllergens === 1 ? '' : 's' ?>
+                hidden because <?= $hiddenByAllergens === 1 ? 'it contains' : 'they contain' ?>
+                allergens you've asked to avoid.
+                <a href="profile.php" style="color:var(--green-dark);font-weight:600;">Change</a>
+            </p>
+        <?php endif; ?>
         <?php if (!$matches): ?>
             <p class="muted">No recipes match what's in your pantry yet — try adding a few more ingredients.</p>
         <?php else: ?>
