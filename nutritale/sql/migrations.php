@@ -91,4 +91,16 @@ return [
             }
         }
     },
+
+    // CONTINUE.md step 7: without this, is_premium_member flips on at
+    // first payment and stays on forever until an explicit CANCELLED ITN
+    // arrives - a renewal that silently fails to charge (or a notify_url
+    // outage at the wrong moment) leaves someone premium for free with no
+    // mechanism to ever notice. NULL for every row that exists before this
+    // migration runs - deliberately not backfilled, since we don't know
+    // any pre-migration subscription's real paid-through date and a wrong
+    // guess could downgrade someone who's still legitimately paying. See
+    // premium_enforce_expiry() in includes/functions.php, which treats
+    // NULL as "not tracked yet, don't touch" rather than "expired."
+    '2026_09_15_premium_period_end' => 'ALTER TABLE premium_subscriptions ADD COLUMN current_period_end DATETIME NULL AFTER status',
 ];

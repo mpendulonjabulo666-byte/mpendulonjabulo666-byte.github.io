@@ -16,7 +16,47 @@ function current_user(): ?array
         $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, is_premium_member, pantry_free_uses_used, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
+        if ($user && $user['is_premium_member']) {
+            $user = premium_enforce_expiry($user);
+        }
     }
+    return $user;
+}
+
+// Closes CONTINUE.md §2.5's "stays premium forever" gap, lazily: called
+// once per request, for any user currently flagged premium, from the one
+// place (current_user()) every page already goes through. If their latest
+// active subscription's paid-through date has passed, downgrades them
+// immediately rather than waiting for a cancellation ITN that a silently
+// failed renewal may never send - payfast_notify.php extends
+// current_period_end by one billing period on every successful charge (see
+// its subscription branch), so a lapsed one means the last real charge was
+// over a month ago with no successful renewal since.
+//
+// A NULL period-end (no active subscription row, or one created before
+// sql/migrations.php's 2026_09_15_premium_period_end ran and never
+// renewed since) is left alone, not treated as expired - we don't know
+// that subscription's real paid-through date, and guessing "expired"
+// would downgrade someone who may still be legitimately paying. It starts
+// being enforced from that subscription's next successful charge, same as
+// any pre-migration row.
+function premium_enforce_expiry(array $user): array
+{
+    $stmt = db()->prepare(
+        "SELECT current_period_end FROM premium_subscriptions
+         WHERE user_id = ? AND status = 'active'
+         ORDER BY current_period_end DESC LIMIT 1"
+    );
+    $stmt->execute([$user['id']]);
+    $periodEnd = $stmt->fetchColumn();
+
+    if (!$periodEnd || strtotime($periodEnd) >= time()) {
+        return $user;
+    }
+
+    db()->prepare('UPDATE users SET is_premium_member = 0 WHERE id = ?')->execute([$user['id']]);
+    db()->prepare("UPDATE premium_subscriptions SET status = 'expired' WHERE user_id = ? AND status = 'active'")->execute([$user['id']]);
+    $user['is_premium_member'] = 0;
     return $user;
 }
 

@@ -129,11 +129,14 @@ default, no real money can move. Before accepting real payments:
    Premium subscription, and an ingredient order) and confirm each
    lands as `paid` in `recipe_purchases` / `premium_subscriptions` /
    `ingredient_orders` and the ITN hit `payfast_notify.php` correctly.
-6. `payfast_notify.php` currently trusts any POST that carries a valid
-   signature and confirms with PayFast's validate endpoint — the
-   comment at the top of that file flags that verifying the caller is
-   in PayFast's published IP range is the one hardening step this
-   build intentionally leaves for you before handling real money.
+6. `payfast_notify.php` checks the source IP against PayFast's published
+   hostnames (resolved via DNS, not a hardcoded list), the signature, and
+   confirms with PayFast's validate endpoint — nothing manual needed here.
+   That IP check assumes the app is reached directly with no reverse
+   proxy/CDN in front (true of Paths A and B above; not true of Railway,
+   already not recommended for production) — see the comment on
+   `payfast_request_is_from_payfast()` in `includes/payfast.php` if you're
+   deploying behind one anyway.
 
 ## Environment-specific values to double check
 

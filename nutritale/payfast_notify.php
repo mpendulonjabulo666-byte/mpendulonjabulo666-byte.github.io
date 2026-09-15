@@ -5,10 +5,6 @@
 // billing (both the first charge and every monthly renewal). This is
 // called server-to-server by PayFast, not by a logged-in browser — no
 // session/CSRF here, and it must always respond 200 quickly.
-//
-// Production hardening this file intentionally skips for the sandbox
-// build: verifying the request came from a genuine PayFast IP range.
-// Do that before accepting real money.
 
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
@@ -18,6 +14,14 @@ http_response_code(200);
 
 $post = $_POST;
 if (!$post || !isset($post['signature'])) {
+    exit;
+}
+
+// Cheapest check first, before touching the DB or calling PayFast at all
+// — see payfast_request_is_from_payfast()'s own comment for what this
+// does and doesn't cover.
+if (!payfast_request_is_from_payfast($_SERVER['REMOTE_ADDR'] ?? '')) {
+    error_log('PayFast ITN: request did not come from a PayFast IP (' . ($_SERVER['REMOTE_ADDR'] ?? '?') . ') for m_payment_id ' . ($post['m_payment_id'] ?? '?'));
     exit;
 }
 
@@ -61,8 +65,30 @@ if (!$sub && $pfToken) {
 
 if ($sub) {
     if ($newStatus === 'paid') {
-        db()->prepare('UPDATE premium_subscriptions SET status = ?, pf_token = ? WHERE id = ?')
-            ->execute(['active', $pfToken ?? $sub['pf_token'], $sub['id']]);
+        // Same check the once-off branches below already do, extended
+        // here to cover a renewal charge too, not just the first one
+        // (CONTINUE.md §2.5). $sub['amount'] is fixed at signup and this
+        // app has no per-user pricing, so it's the correct amount for
+        // every renewal of this subscription too, not just its first
+        // charge.
+        $expectedAmount = number_format((float)$sub['amount'], 2, '.', '');
+        $receivedAmount = number_format((float)($post['amount_gross'] ?? $post['amount'] ?? 0), 2, '.', '');
+        if ($expectedAmount !== $receivedAmount) {
+            error_log("PayFast ITN: subscription amount mismatch for m_payment_id $mPaymentId (subscription {$sub['id']}) expected $expectedAmount got $receivedAmount");
+            exit;
+        }
+
+        // Extend from whichever is later: the existing period-end (a
+        // renewal that fired a little early shouldn't lose those days) or
+        // now (a late-recovered renewal after a lapse shouldn't backdate
+        // from a stale expiry). See premium_enforce_expiry() in
+        // includes/functions.php for the other half of this - what
+        // happens once this date passes with no further successful charge.
+        $extendFrom = max(strtotime($sub['current_period_end'] ?? 'now') ?: time(), time());
+        $newPeriodEnd = date('Y-m-d H:i:s', strtotime('+1 month', $extendFrom));
+
+        db()->prepare('UPDATE premium_subscriptions SET status = ?, pf_token = ?, current_period_end = ? WHERE id = ?')
+            ->execute(['active', $pfToken ?? $sub['pf_token'], $newPeriodEnd, $sub['id']]);
         db()->prepare('UPDATE users SET is_premium_member = 1 WHERE id = ?')->execute([$sub['user_id']]);
     } elseif ($newStatus === 'failed') {
         db()->prepare('UPDATE premium_subscriptions SET status = ? WHERE id = ?')->execute(['past_due', $sub['id']]);

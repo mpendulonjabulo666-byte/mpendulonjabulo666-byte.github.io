@@ -193,18 +193,80 @@ confirmed a backdated row falls outside a 3-day window but inside a 7-day
 one, confirmed a failed request is never cached, confirmed the daily count
 sums `attempts` across rows rather than counting rows.
 
-### 2.5 — Payment hardening left for go-live
+### 2.5 — Payment hardening left for go-live ✅ DONE (Step 7), one item remains
 
-Self-documented at `payfast_notify.php:9-11`, and correct as far as it goes:
+Self-documented at `payfast_notify.php`'s old header comment, and correct as
+far as it goes:
 
-- No PayFast source-IP allowlist on the ITN endpoint
-- Subscription renewals skip the amount check that once-off purchases get
-  (`payfast_notify.php:82-87` and `102-107` verify `amount_gross`; the
-  subscription branch at `62-74` does not)
-- `premium_subscriptions` has no period-end column — `is_premium_member` flips
-  on and stays on until a cancellation ITN arrives. A silently failed renewal
-  leaves someone premium forever
-- Config still ships sandbox credentials (correct default, must change)
+- ~~No PayFast source-IP allowlist on the ITN endpoint~~ — `includes/payfast.php`'s
+  `payfast_request_is_from_payfast()` resolves PayFast's published hostnames
+  (`www.payfast.co.za`, `sandbox.payfast.co.za`, `w1w.payfast.co.za`,
+  `w2w.payfast.co.za`) via DNS at request time and checks `REMOTE_ADDR`
+  against the result — a static IP list would eventually go stale, and this
+  is the same approach long-standing third-party PayFast integrations use
+  (confirmed against the WooCommerce and ClientExec PayFast gateways' own
+  source). Fails **open** only when DNS resolution is totally unavailable
+  (a local resolver hiccup shouldn't drop every real payment — the
+  signature + PayFast VALID-confirmation checks are the primary defence,
+  this is on top of them), fails **closed** otherwise. Assumes no reverse
+  proxy/CDN in front rewriting `REMOTE_ADDR` — true of `DEPLOYMENT.md`'s
+  two recommended production paths (shared hosting, a plain VPS), not true
+  of Railway (already marked not-for-production there for unrelated
+  reasons). Unit-tested with a stubbed resolver (`tests/payfast_test.php`,
+  8 checks) — no real DNS lookup needed to run the tests.
+- ~~Subscription renewals skip the amount check that once-off purchases
+  get~~ — the subscription branch in `payfast_notify.php` now checks
+  `amount_gross` against `$sub['amount']` before treating a `paid`
+  notification as real, same as the recipe-purchase and ingredient-order
+  branches already did.
+- ~~`premium_subscriptions` has no period-end column~~ — added via
+  migration (`current_period_end`, NULL for any row that predates it,
+  deliberately not backfilled — we don't know a pre-migration
+  subscription's real paid-through date). Extended by one month on every
+  successful charge, from whichever is later: the existing period-end (an
+  early renewal doesn't lose days) or now (a late-recovered renewal
+  doesn't backdate from a stale expiry). Enforced **lazily**: no cron —
+  `premium_enforce_expiry()` in `includes/functions.php` runs from
+  `current_user()`, the one place every page already goes through, and
+  downgrades on the spot if the date's passed. A NULL period-end is left
+  alone rather than treated as expired, so this ships with zero effect on
+  anyone currently, legitimately premium.
+- Config still ships sandbox credentials — unchanged, correct default,
+  not a code fix; stays on the `DEPLOYMENT.md` go-live checklist (Step 9).
+
+Verified against the live database with a synthetic subscription (created
+and cleaned up, not left behind): a lapsed period-end downgrades
+`is_premium_member` and marks the subscription row `expired`; a
+still-future one is left untouched; a NULL one (simulating a pre-migration
+row) is also left untouched, not wrongly treated as expired. The renewal
+amount check and the early-vs-late period extension arithmetic were
+exercised directly against a real row too. Ran the new migration against
+the live dev database and confirmed the `schema_migrations` bookkeeping is
+consistent with the two that shipped in Step 5 and Step 6.
+
+Two things this step found but didn't fix, same rule as §2.9 — noted here
+rather than fixed inline, since both need a decision or verification this
+step didn't have:
+
+- **Unverified hypothesis, not applied**: the once-off amount check
+  (`recipe_purchases` / `ingredient_orders` branches) runs *before*
+  checking `$newStatus`, so a `FAILED`/`CANCELLED` notification whose
+  `amount_gross` doesn't match — plausible if PayFast doesn't populate it
+  the same way for a non-`COMPLETE` status — would silently fail to
+  record that status too, leaving the row stuck `pending` forever. The
+  new subscription check deliberately does *not* copy this shape — it's
+  scoped to `$newStatus === 'paid'` only, which is correct regardless of
+  whether the older pattern has this bug. Left the two once-off branches
+  as they were rather than change based on an unconfirmed hypothesis;
+  confirm against a real PayFast `FAILED` ITN payload before touching them.
+- **No self-serve subscription cancellation.** `premium_cancel.php` only
+  handles a `pending` row abandoned mid-checkout — there is no "cancel my
+  subscription" action anywhere in the app for an *active* one. The only
+  way one currently ends is PayFast's own cancellation ITN (from the user
+  managing it on PayFast's side) or letting it lapse. Not attempted here —
+  it needs PayFast's subscription-cancellation API, a UI in `profile.php`,
+  and a decision on immediate-vs-end-of-period revocation, which is a
+  small feature, not a hardening fix.
 
 ### 2.6 — Vendors can see earnings but cannot be paid
 
@@ -326,15 +388,29 @@ Each step is independently shippable. Don't batch them.
       (admin's "Chicken breast", varrick's "Ground turkey"). Turned up a
       related but distinct data-entry gap, filed as §2.9/Step 10 rather than
       fixed inline.
-- [ ] **Step 7 — Payment hardening** (§2.5)
-      IP allowlist, renewal amount check, `current_period_end` on
-      subscriptions with expiry enforcement.
+- [x] **Step 7 — Payment hardening** (§2.5) — done
+      IP allowlist (`includes/payfast.php`, DNS-resolved, not hardcoded),
+      renewal amount check and `current_period_end` with lazy expiry
+      enforcement (`payfast_notify.php`, `includes/functions.php`), new
+      migration. `tests/payfast_test.php` (8, stubbed DNS). Verified
+      against the live database with a synthetic subscription, cleaned up
+      after. Found two more gaps, filed rather than fixed — see §2.5.
 - [ ] **Step 8 — Vendor payouts** (§2.6)
       Decide the model first (manual EFT with a tracked ledger is a legitimate
       v1). Then build to that decision.
 - [ ] **Step 9 — Launch checklist**
       `DEPLOYMENT.md` § "Going live with PayFast", real credentials, SMTP,
       accessibility pass, `mysqldump` cron.
+- [ ] **Step 11 — Once-off ITN amount check may block failed/cancelled
+      status updates** (§2.5)
+      Unverified hypothesis from Step 7 — confirm against a real PayFast
+      `FAILED` ITN payload before touching `recipe_purchases` /
+      `ingredient_orders`'s branches.
+- [ ] **Step 12 — Self-serve subscription cancellation** (§2.5)
+      No in-app way to cancel an active subscription; only PayFast's own
+      cancellation ITN ends one today. Needs PayFast's subscription-cancel
+      API, `profile.php` UI, and a decision on immediate vs.
+      end-of-period revocation.
 - [ ] **Step 10 — Split multi-ingredient pantry rows** (§2.9)
       Split on `,`/`and`/`&`/newline at Add time instead of storing one
       free-text row per click. Small; found while doing Step 6, not the same
