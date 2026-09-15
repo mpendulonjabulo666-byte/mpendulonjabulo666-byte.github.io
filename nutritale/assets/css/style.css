@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
 
 :root {
     color-scheme: light;
@@ -32,6 +32,14 @@
     --landing-photo-ring: rgba(255, 255, 255, 0.7);
     --emphasis-bg: #1c2521;
     --emphasis-fg: #ffffff;
+    /* The "NutriTale" wordmark's own two-tone treatment (from the 2026-09
+       brand illustration: a deep forest green "Nutri" and a metallic gold
+       "Tale"), kept apart from --green/--green-dark - those still drive
+       every button, tag, and accent across the app and weren't part of
+       this ask. Lightened for dark mode below: the light-mode green reads
+       as near-black on the dark theme's near-black background otherwise. */
+    --brand-nutri: #1e5631;
+    --brand-tale: #b8962e;
 }
 
 :root[data-theme="dark"] {
@@ -61,6 +69,8 @@
     --landing-photo-ring: rgba(231, 237, 233, 0.2);
     --emphasis-bg: var(--green);
     --emphasis-fg: #08210f;
+    --brand-nutri: #5fbe84;
+    --brand-tale: #d4b34a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,6 +98,8 @@
         --landing-photo-ring: rgba(231, 237, 233, 0.2);
         --emphasis-bg: var(--green);
         --emphasis-fg: #08210f;
+        --brand-nutri: #5fbe84;
+        --brand-tale: #d4b34a;
     }
 }
 
@@ -308,6 +320,14 @@ a { color: inherit; text-decoration: none; }
     font-weight: 600;
     font-size: 19px;
 }
+/* The "NutriTale" wordmark's own treatment, distinct from ordinary
+   heading text - see brand_wordmark_html() in includes/icons.php for why
+   this is real HTML/CSS rather than baked into the logo image. Heavier
+   than the 600 weight headings use, so it reads as a brand mark rather
+   than a section title that happens to say "NutriTale". */
+.brand-wordmark { font-weight: 800; }
+.brand-nutri { color: var(--brand-nutri); }
+.brand-tale { color: var(--brand-tale); }
 .app-nav-links {
     display: flex;
     gap: 20px;

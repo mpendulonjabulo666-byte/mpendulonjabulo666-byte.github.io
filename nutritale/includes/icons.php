@@ -63,12 +63,27 @@ function render_theme_toggle(): string
 }
 
 // $size sets the rendered height; width follows the source image's own
-// aspect ratio (the isolated book mark isn't square, unlike the old
-// vector circle-leaf mark this replaced).
+// aspect ratio (the isolated book mark isn't square). 1024x525 is the new
+// (2026-09) illustration's real pixel size - update this ratio again if
+// the source image is ever replaced with a differently-proportioned one.
 function nutritale_logo_svg(int $size = 48): string
 {
     $height = $size;
-    $width = (int)round($size * 700 / 455);
+    $width = (int)round($size * 1024 / 525);
     return '<img src="assets/img/logo/book-mark.png" alt="' . h(APP_NAME) . '" width="' . $width . '" height="' . $height
         . '" style="display:inline-block;vertical-align:middle;">';
+}
+
+// The "NutriTale" wordmark styled to match the brand mark: "Nutri" in a
+// deep forest green, "Tale" in gold, both in a heavier weight of the
+// display serif than headings use elsewhere. Kept as real, selectable,
+// theme-aware HTML text rather than baking it into the logo image itself
+// - a raster wordmark in a fixed dark green would go illegible on the
+// dark theme's near-black background, and would need re-exporting for
+// every place it appears instead of just following the CSS variables
+// (see --brand-nutri / --brand-tale, which do get lighter in dark mode
+// for exactly that legibility reason).
+function brand_wordmark_html(): string
+{
+    return '<span class="brand-wordmark"><span class="brand-nutri">Nutri</span><span class="brand-tale">Tale</span></span>';
 }

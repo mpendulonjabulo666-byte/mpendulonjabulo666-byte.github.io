@@ -45,7 +45,7 @@ $topList = $topListStmt->fetchAll();
 </head>
 <body class="landing-body">
 <header class="app-nav landing-nav">
-    <a class="app-nav-brand" href="landing.php"><?= nutritale_logo_svg(28) ?> <span><?= APP_NAME ?></span></a>
+    <a class="app-nav-brand" href="landing.php"><?= nutritale_logo_svg(28) ?> <?= brand_wordmark_html() ?></a>
     <div class="app-nav-user">
         <?= render_theme_toggle() ?>
         <a href="login.php" class="btn btn-text btn-small">Log in</a>
@@ -143,7 +143,7 @@ $topList = $topListStmt->fetchAll();
         </div>
         <div class="book-mockup">
             <div class="book-mockup-inner">
-                <img src="assets/img/logo/book-mark.png" alt="The NutriTale starter recipe book" width="700" height="455">
+                <img src="assets/img/logo/book-mark.png" alt="The NutriTale starter recipe book" width="1024" height="525">
                 <span class="tag premium-tag book-badge">8 Free Recipes</span>
             </div>
         </div>

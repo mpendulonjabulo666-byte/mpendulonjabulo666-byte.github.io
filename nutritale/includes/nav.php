@@ -8,7 +8,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
 };
 ?>
 <header class="app-nav">
-    <a class="app-nav-brand" href="index.php"><?= nutritale_logo_svg(28) ?> <span><?= APP_NAME ?></span></a>
+    <a class="app-nav-brand" href="index.php"><?= nutritale_logo_svg(28) ?> <?= brand_wordmark_html() ?></a>
 
     <input type="checkbox" id="nav-toggle" class="app-nav-toggle-input">
     <label for="nav-toggle" class="app-nav-toggle" aria-label="Toggle menu"><?= icon('list', 20) ?></label>
