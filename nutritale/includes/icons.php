@@ -31,6 +31,27 @@ function icon(string $name, int $size = 20): string
         'sun' => '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>',
         'moon' => '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>',
         'share' => '<circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>',
+        // Added for the sidebar restyle (2026-09): a leaf-motif divider and
+        // a sparkle for the Premium CTA, matching the new brand mockup's
+        // icon language as closely as a simple stroke icon reasonably can
+        // - see CONTINUE.md-adjacent chat history for why the mockup's
+        // fully illustrated, multi-tone icons (chef hat, market stall,
+        // fork-and-leaf) aren't reproduced here: that's custom illustration
+        // work, not something a line-icon set can approximate honestly.
+        // A pointed lens (two arcs sharing the same two endpoints) plus a
+        // straight center vein. Three earlier attempts at this one small
+        // glyph were each wrong in a different way, caught only by
+        // rendering it standalone rather than by reading the path data:
+        // mismatched control points collapsed it into a plain circle; too
+        // small an arc radius made a rounded oval indistinguishable from a
+        // paperclip; and - the counterintuitive one - giving the two arcs
+        // *opposite* sweep flags (the seemingly obvious way to make them
+        // bulge opposite ways) instead made them overlap on the same side,
+        // because reversing which endpoint comes first already flips the
+        // effective geometry once. Matching sweep flags is what actually
+        // produces the two-sided lens here.
+        'leaf' => '<path d="M12 3A13 13 0 0 1 12 21A13 13 0 0 1 12 3Z"></path><path d="M12 6v12"></path>',
+        'sparkles' => '<path d="M12 3 13.5 9.5 20 11 13.5 12.5 12 19 10.5 12.5 4 11 10.5 9.5Z"></path>',
     ];
 
     $body = $paths[$name] ?? '<circle cx="12" cy="12" r="9"></circle>';
