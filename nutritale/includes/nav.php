@@ -32,11 +32,15 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
         </nav>
         <div class="app-nav-user">
             <?php if (empty($user['is_premium_member']) && empty($user['is_admin'])): ?>
-                <a href="premium.php" class="btn btn-text btn-small" style="color:var(--green-dark);font-weight:600;"><?= icon('wand', 14) ?> Go Premium</a>
+                <a href="premium.php" class="btn btn-emphasis btn-block"><?= icon('wand', 16) ?> Go Premium</a>
             <?php endif; ?>
-            <?= render_theme_toggle() ?>
-            <a href="profile.php" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>
-            <a href="logout.php" class="btn btn-text btn-small"><?= icon('logout', 16) ?> Log out</a>
+            <div class="app-nav-user-row">
+                <a href="profile.php" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>
+                <div class="app-nav-user-actions">
+                    <?= render_theme_toggle() ?>
+                    <a href="logout.php" class="btn btn-text btn-small" aria-label="Log out" title="Log out"><?= icon('logout', 16) ?></a>
+                </div>
+            </div>
         </div>
     </div>
 </header>

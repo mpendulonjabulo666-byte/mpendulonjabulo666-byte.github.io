@@ -30,8 +30,8 @@
     --landing-glass-border: rgba(255, 255, 255, 0.9);
     --landing-glass-shadow: 0 26px 50px -30px rgba(20, 50, 32, 0.45);
     --landing-photo-ring: rgba(255, 255, 255, 0.7);
-    --landing-emphasis-bg: #1c2521;
-    --landing-emphasis-fg: #ffffff;
+    --emphasis-bg: #1c2521;
+    --emphasis-fg: #ffffff;
 }
 
 :root[data-theme="dark"] {
@@ -59,8 +59,8 @@
     --landing-glass-border: rgba(231, 237, 233, 0.12);
     --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
     --landing-photo-ring: rgba(231, 237, 233, 0.2);
-    --landing-emphasis-bg: var(--green);
-    --landing-emphasis-fg: #08210f;
+    --emphasis-bg: var(--green);
+    --emphasis-fg: #08210f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,8 +86,8 @@
         --landing-glass-border: rgba(231, 237, 233, 0.12);
         --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
         --landing-photo-ring: rgba(231, 237, 233, 0.2);
-        --landing-emphasis-bg: var(--green);
-        --landing-emphasis-fg: #08210f;
+        --emphasis-bg: var(--green);
+        --emphasis-fg: #08210f;
     }
 }
 
@@ -269,6 +269,14 @@ a { color: inherit; text-decoration: none; }
     color: var(--white);
     box-shadow: 0 14px 26px -14px rgba(31, 125, 73, 0.7);
 }
+/* A second, deliberately different accent for the one or two calls to
+   action that should read as special rather than routine (Go Premium,
+   Try it with three ingredients) - everyday Save/Add buttons stay green,
+   this stands apart from them on purpose. Ink-dark pill in light mode
+   (matching Soft Kitchen Light), same green as everything else in dark
+   mode (Deep Herb never introduced a second accent) - see --emphasis-*. */
+.btn-emphasis { background: var(--emphasis-bg); color: var(--emphasis-fg); }
+.btn-emphasis:hover { transform: translateY(-2px); }
 .btn-primary:hover { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 18px 30px -14px rgba(31, 125, 73, 0.8); }
 .btn-text { background: none; color: var(--green-dark); padding: 12px 14px; }
 .btn-text:hover { text-decoration: underline; }
@@ -322,6 +330,12 @@ a { color: inherit; text-decoration: none; }
     gap: 14px;
     font-size: 14px;
 }
+/* Groups the profile link and the theme-toggle+logout pair into one row
+   inside .app-nav-user, so the sidebar can stack "Go Premium" above them
+   without the four items competing as equal flex siblings. Plain flex,
+   not media-gated, so it also holds together in the mobile drawer. */
+.app-nav-user-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.app-nav-user-actions { display: flex; align-items: center; gap: 10px; }
 
 .app-main {
     max-width: 1080px;
@@ -958,19 +972,25 @@ a { color: inherit; text-decoration: none; }
         gap: 24px;
         margin-top: 28px;
     }
-    .app-nav-links { flex-direction: column; gap: 2px; }
-    .app-nav-links a { padding: 10px 12px; border-radius: 8px; }
+    /* Pill nav items (999px), matching the sidebar mockup: a plain filled
+       pill for the active page instead of the old rectangle-plus-left-bar
+       accent - no inset box-shadow needed once the whole pill fills. */
+    .app-nav-links { flex-direction: column; gap: 4px; }
+    .app-nav-links a { padding: 11px 16px; border-radius: 999px; font-size: 14px; }
     .app-nav-links a:hover { background: var(--green-light); }
-    .app-nav-links a.is-active { background: var(--green-light); font-weight: 700; box-shadow: inset 3px 0 0 var(--green); }
-    .app-nav-divider { margin: 10px 12px; }
+    .app-nav-links a.is-active { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
+    .app-nav-divider { margin: 10px 16px; }
     .app-nav:not(.landing-nav) .app-nav-user {
         margin-top: auto;
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
-        padding-top: 16px;
+        gap: 12px;
+        padding-top: 18px;
         border-top: 1px solid var(--border);
     }
+    /* The one nav-adjacent link meant to stand out rather than blend in -
+       see .btn-emphasis above for why it isn't just another green button. */
+    .app-nav-user .btn-emphasis { justify-content: flex-start; padding: 12px 16px; }
     .app-main { margin: 0 0 0 240px; max-width: 1200px; padding: 32px 40px; }
 }
 
