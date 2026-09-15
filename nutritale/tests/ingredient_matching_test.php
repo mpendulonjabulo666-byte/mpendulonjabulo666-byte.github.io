@@ -139,5 +139,34 @@ check(
     canonical_ingredient_set('rice', []) === ['rice']
 );
 
+// --- split_pantry_entry() (CONTINUE.md §2.9 / Step 10): the pantry "Add"
+// field's own placeholder text ("e.g. chicken, spinach, rice...") implies
+// comma-separated multi-add - this makes that real, without exploding a
+// single ingredient's own words -------------------------------------------
+check(
+    'the exact phrase the field\'s placeholder suggests splits into three',
+    split_pantry_entry('chicken, spinach, rice') === ['chicken', 'spinach', 'rice']
+);
+check(
+    'the real "rice and chicken" row already in this app\'s data splits into two',
+    split_pantry_entry('rice and chicken') === ['rice', 'chicken']
+);
+check('"&" is also a separator', split_pantry_entry('chicken & rice') === ['chicken', 'rice']);
+check(
+    'a single multi-word ingredient is NOT split on its own whitespace',
+    split_pantry_entry('chicken breast') === ['chicken breast']
+);
+check(
+    '"and" only splits as a whole word, not inside one ("island" stays intact)',
+    split_pantry_entry('rice, island spice') === ['rice', 'island spice']
+);
+check(
+    'mixed separators and messy whitespace all resolve the same way',
+    split_pantry_entry('  chicken ,  rice   and   spinach ') === ['chicken', 'rice', 'spinach']
+);
+check('duplicate entries are not stored twice', split_pantry_entry('rice, rice, chicken') === ['rice', 'chicken']);
+check('a lone empty submission yields nothing', split_pantry_entry('  ,  , ') === []);
+check('a plain single ingredient still round-trips as one entry', split_pantry_entry('rice') === ['rice']);
+
 echo "\n$pass passed, $fail failed\n";
 exit($fail > 0 ? 1 : 0);

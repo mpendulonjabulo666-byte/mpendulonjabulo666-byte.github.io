@@ -309,34 +309,38 @@ it silently. Already noted in `DEPLOYMENT.md`; repeated here because review
 notifications quietly not arriving is the kind of thing nobody notices for
 weeks.
 
-### 2.9 — Pantry "Add" accepts more than one ingredient as one row
+### 2.9 — Pantry "Add" accepts more than one ingredient as one row ✅ DONE (Step 10)
 
-Found while doing Step 6, not fixed inline per §4's own rule. `pantry.php`'s
-add form has one text input and a placeholder reading "e.g. chicken,
-spinach, rice..." — which reads like comma-separated multi-add, but the
-handler (`pantry.php`, `action === 'add'`) inserts the *entire* typed string
-as a single `user_pantry_items` row, no splitting. This app's own live data
-has both shapes already: `"rice and chicken"` and `"meat mince"` are each one
-row that's arguably two or three real ingredients.
+Was: `pantry.php`'s add form has one text input and a placeholder reading
+"e.g. chicken, spinach, rice..." — which reads like comma-separated
+multi-add, but the handler (`action === 'add'`) inserted the *entire* typed
+string as a single `user_pantry_items` row, no splitting. This app's own
+live data had both shapes already: `"rice and chicken"` and `"meat mince"`
+are each one row that's arguably two or three real ingredients. Found while
+doing Step 6, not fixed inline per §4's own rule, since it's a data-entry
+fix rather than a matching-algorithm one.
 
-Step 6's matcher copes — `canonical_ingredient_set()` resolves a row to
-however many canonical ingredients its text contains, so matching isn't
-wrong — but the underlying data stays one denormalized row per Add click
-that happened to contain several ingredients, which:
+Now: `split_pantry_entry()` (`includes/ingredient_matching.php`) splits on a
+comma, `&`, a line break, or the standalone word "and" — never on
+whitespace within a phrase, so "chicken breast" still becomes one row, not
+two, and "and" only splits as a whole word ("island" doesn't get cut
+mid-word). `pantry.php`'s add handler now loops over the result instead of
+inserting the raw string once.
 
-- can't be removed individually (the "×" chip removes the whole row —
-  clearing "rice and chicken" loses both, there's no way to keep one)
-- gives `str_contains`-style substring bugs a new place to hide if any
-  *other* feature ever reads `user_pantry_items.ingredient_name` expecting
-  one ingredient per row (nothing does yet, but `shopping_list.php` /
-  `planner.php` are worth checking before this becomes load-bearing)
+Deliberately not backfilled: the two real rows already in this app's data
+(`"rice and chicken"`, `"meat mince"`) are left as they are — they still
+match correctly (Step 6 handles a multi-ingredient row fine), and rewriting
+someone's existing data as a side effect of a forward-looking fix is the
+same call already made for the Step 3 trial-counter bug ("users already
+burned by the old bug keep their inflated count").
 
-Fix is UI-side, not matching-side: split on `,`/`and`/`&`/newline at Add
-time and insert one row per resulting ingredient (each through the same
-`canonical_ingredient_set()` tokenizer already written, so "chicken, rice"
-becomes two rows instead of one), or move to a proper multi-chip input.
-Small, but it's a data-entry fix, not a matching-algorithm fix, so it's its
-own step rather than folded into Step 6.
+Tests: `tests/ingredient_matching_test.php` (9 more), pure function, no
+database — including the exact phrase this app's own placeholder text
+suggests and the real "rice and chicken" case. The insertion loop itself
+(unchanged SQL, just called per split entry) was verified against the live
+database with a synthetic account: three-item and two-item inputs create
+that many separate rows, a single multi-word ingredient still stores as
+one row, and re-adding a duplicate doesn't create a second row.
 
 ---
 
@@ -411,10 +415,11 @@ Each step is independently shippable. Don't batch them.
       cancellation ITN ends one today. Needs PayFast's subscription-cancel
       API, `profile.php` UI, and a decision on immediate vs.
       end-of-period revocation.
-- [ ] **Step 10 — Split multi-ingredient pantry rows** (§2.9)
-      Split on `,`/`and`/`&`/newline at Add time instead of storing one
-      free-text row per click. Small; found while doing Step 6, not the same
-      kind of fix so kept separate.
+- [x] **Step 10 — Split multi-ingredient pantry rows** (§2.9) — done
+      `split_pantry_entry()` (new, `includes/ingredient_matching.php`),
+      wired into `pantry.php`'s add handler. `tests/ingredient_matching_test.php`
+      (+9). Verified against the live database with a synthetic account.
+      Existing rows deliberately not backfilled — see §2.9.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

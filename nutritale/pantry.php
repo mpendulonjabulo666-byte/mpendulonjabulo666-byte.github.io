@@ -27,11 +27,15 @@ $userAllergens = user_allergens((int)$user['id']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
     if ($action === 'add') {
-        $name = trim($_POST['ingredient_name'] ?? '');
-        if ($name !== '' && !$isBlocked) {
+        $raw = trim($_POST['ingredient_name'] ?? '');
+        if ($raw !== '' && !$isBlocked) {
+            // "chicken, spinach, rice" (the field's own placeholder text)
+            // becomes three rows, not one - see split_pantry_entry().
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
             // Adding ingredients is free. Only an AI generation spends a trial use.
-            $stmt->execute([$user['id'], $name]);
+            foreach (split_pantry_entry($raw) as $name) {
+                $stmt->execute([$user['id'], $name]);
+            }
         }
     } elseif ($action === 'remove') {
         $name = $_POST['ingredient_name'] ?? '';

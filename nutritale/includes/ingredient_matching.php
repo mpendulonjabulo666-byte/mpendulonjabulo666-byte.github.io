@@ -170,3 +170,29 @@ function load_ingredient_alias_map(): array
     }
     return $map;
 }
+
+// A different granularity from everything above: splits one pantry "Add"
+// submission into the separate ingredient *entries* it names, for storing
+// as separate rows - never down to individual words the way
+// ingredient_tokens() does for matching. "Chicken breast" must stay one
+// entry, not become "chicken" + "breast".
+//
+// The "Add" field is a single text input, but its own placeholder text
+// ("e.g. chicken, spinach, rice...") reads like it accepts more than one
+// at a time, and this app's own live data shows people take it at its
+// word - a real pantry row is literally saved as "rice and chicken"
+// (CONTINUE.md §2.9). Splitting at Add time instead means that becomes two
+// rows, which can be removed individually and don't rely on the matcher's
+// tolerance for a multi-ingredient row to work correctly.
+//
+// Splits only on a conjunction - a comma, "and", "&", or a line break -
+// never on whitespace within a phrase. "and" is matched on word
+// boundaries so "island" or "brand" isn't split mid-word.
+function split_pantry_entry(string $raw): array
+{
+    $raw = str_replace(["\r\n", "\r"], "\n", $raw);
+    $raw = preg_replace('/\s*(?:,|\n|&|\band\b)\s*/iu', ',', $raw);
+    $entries = array_map('trim', explode(',', $raw));
+    $entries = array_filter($entries, fn($e) => $e !== '');
+    return array_values(array_unique($entries));
+}
