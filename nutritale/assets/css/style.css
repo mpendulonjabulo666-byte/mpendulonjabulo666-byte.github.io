@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
 
 :root {
     color-scheme: light;
     --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --green: #2fae66;
     --green-dark: #1f7d49;
     --green-light: #eafaf0;
@@ -15,7 +16,22 @@
     --error-bg: #fdeaea;
     --success: #1f7d49;
     --success-bg: #eafaf0;
-    --radius: 12px;
+    --radius: 16px;
+    --radius-lg: 24px;
+    /* "Soft Kitchen Light" — the landing page's decorative field. Kept as
+       tokens (not hardcoded in the landing rules below) so the dark-mode
+       blocks below can swap in "Deep Herb" instead, matching the app's
+       existing light/dark toggle rather than being a separate style. */
+    --landing-bg: #f4f8f5;
+    --landing-blob-1: rgba(47, 174, 102, 0.34);
+    --landing-blob-2: rgba(158, 214, 120, 0.32);
+    --landing-blob-3: rgba(31, 125, 73, 0.2);
+    --landing-glass-bg: rgba(255, 255, 255, 0.78);
+    --landing-glass-border: rgba(255, 255, 255, 0.9);
+    --landing-glass-shadow: 0 26px 50px -30px rgba(20, 50, 32, 0.45);
+    --landing-photo-ring: rgba(255, 255, 255, 0.7);
+    --landing-emphasis-bg: #1c2521;
+    --landing-emphasis-fg: #ffffff;
 }
 
 :root[data-theme="dark"] {
@@ -32,6 +48,19 @@
     --error-bg: rgba(239, 106, 106, 0.14);
     --success: #6ee7a5;
     --success-bg: rgba(110, 231, 165, 0.14);
+    /* "Deep Herb" — the landing page's dark counterpart to Soft Kitchen
+       Light above, not a separate style: same layout, this app's existing
+       dark-theme green as the glow instead of the light mist-green. */
+    --landing-bg: #0d1411;
+    --landing-blob-1: rgba(52, 197, 121, 0.34);
+    --landing-blob-2: rgba(28, 120, 92, 0.4);
+    --landing-blob-3: rgba(140, 200, 110, 0.18);
+    --landing-glass-bg: linear-gradient(180deg, rgba(231, 237, 233, 0.07), rgba(231, 237, 233, 0.02));
+    --landing-glass-border: rgba(231, 237, 233, 0.12);
+    --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
+    --landing-photo-ring: rgba(231, 237, 233, 0.2);
+    --landing-emphasis-bg: var(--green);
+    --landing-emphasis-fg: #08210f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +78,16 @@
         --error-bg: rgba(239, 106, 106, 0.14);
         --success: #6ee7a5;
         --success-bg: rgba(110, 231, 165, 0.14);
+        --landing-bg: #0d1411;
+        --landing-blob-1: rgba(52, 197, 121, 0.34);
+        --landing-blob-2: rgba(28, 120, 92, 0.4);
+        --landing-blob-3: rgba(140, 200, 110, 0.18);
+        --landing-glass-bg: linear-gradient(180deg, rgba(231, 237, 233, 0.07), rgba(231, 237, 233, 0.02));
+        --landing-glass-border: rgba(231, 237, 233, 0.12);
+        --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
+        --landing-photo-ring: rgba(231, 237, 233, 0.2);
+        --landing-emphasis-bg: var(--green);
+        --landing-emphasis-fg: #08210f;
     }
 }
 
@@ -62,7 +101,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-body);
     background: var(--bg);
     color: var(--ink);
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -217,19 +256,30 @@ a { color: inherit; text-decoration: none; }
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 10px 16px;
-    border-radius: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
     border: none;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
-.btn-primary { background: var(--green); color: var(--white); }
-.btn-primary:hover { background: var(--green-dark); }
-.btn-text { background: none; color: var(--green-dark); padding: 10px 8px; }
+.btn-primary {
+    background: var(--green);
+    color: var(--white);
+    box-shadow: 0 14px 26px -14px rgba(31, 125, 73, 0.7);
+}
+.btn-primary:hover { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 18px 30px -14px rgba(31, 125, 73, 0.8); }
+.btn-text { background: none; color: var(--green-dark); padding: 12px 14px; }
 .btn-text:hover { text-decoration: underline; }
 .btn-block { display: flex; width: 100%; margin-top: 6px; }
-.btn-small { padding: 6px 10px; font-size: 13px; }
+.btn-small { padding: 7px 14px; font-size: 13px; }
+/* The lift + glow reads as "prominent CTA" - right for a full-size
+   primary button, too heavy for the small ones dense in-app forms use
+   (Save, Add, Get AI ideas). Small primary buttons keep the pill shape
+   and color, lose the emphasis motion. */
+.btn-small.btn-primary { box-shadow: none; }
+.btn-small.btn-primary:hover { transform: none; box-shadow: none; }
 
 /* App nav */
 .app-nav {
@@ -924,19 +974,51 @@ a { color: inherit; text-decoration: none; }
     .app-main { margin: 0 0 0 240px; max-width: 1200px; padding: 32px 40px; }
 }
 
-/* Landing page */
+/* Landing page — "Soft Kitchen Light" in light mode, "Deep Herb" in dark
+   (see the --landing-* tokens near the top of this file): mist/glow
+   gradient field behind the hero and Top List, frosted "glass" cards,
+   circular photo crops, pill buttons with a lift-and-glow hover. Scoped to
+   .landing-body so none of it leaks into the logged-in app, which keeps
+   its existing flat, solid-card look until that gets its own pass. */
+.landing-body { background: var(--landing-bg); }
+
 .landing-main {
     max-width: 1080px;
     margin: 0 auto;
     padding: 0 28px;
 }
+
+/* Wraps the hero + Top List in a shared decorative field so the blobs
+   read as one continuous backdrop behind both sections, the way the
+   redesign shows it, rather than restarting per-section. */
+.landing-glow-field { position: relative; overflow: hidden; }
+.landing-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(28px);
+    pointer-events: none;
+    z-index: 0;
+}
+.landing-blob-1 { top: -160px; left: -140px; width: 560px; height: 480px; background: radial-gradient(circle at 45% 45%, var(--landing-blob-1), transparent 70%); }
+.landing-blob-2 { top: 420px; right: -180px; width: 600px; height: 560px; background: radial-gradient(circle at 50% 50%, var(--landing-blob-2), transparent 72%); }
+.landing-blob-3 { bottom: -200px; left: 30%; width: 640px; height: 500px; background: radial-gradient(circle at 50% 50%, var(--landing-blob-3), transparent 72%); }
+/* Targets only the real content (both are <section>s), never the blob
+   divs above - a "> *" here would tie for specificity with .landing-blob's
+   own position:absolute and, coming later in the file, win: the blobs
+   would fall back to position:relative and get laid out in normal flow as
+   three ~500px-tall boxes stacked above the hero. (Found by screenshotting
+   the actual rendered page - it left a very large, very literal empty
+   gap.) */
+.landing-glow-field > section { position: relative; z-index: 1; }
+
 .landing-hero {
     text-align: center;
     padding: 56px 12px 40px;
 }
 .landing-hero h1 {
     font-size: 40px;
-    line-height: 1.15;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     margin: 0 0 18px;
 }
 .landing-hero-sub {
@@ -948,45 +1030,120 @@ a { color: inherit; text-decoration: none; }
 .landing-cta {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 16px;
     flex-wrap: wrap;
 }
-.landing-hero-grid { display: flex; flex-direction: column; gap: 24px; }
-.landing-hero-photo {
+.landing-hero-grid { display: flex; flex-direction: column; gap: 32px; }
+
+/* The circular hero photo: a soft outer disc, the photo itself inset with
+   a translucent ring, floating badge chips breaking its edge. */
+.landing-hero-photo-wrap {
     order: -1;
+    position: relative;
     width: 100%;
-    max-width: 340px;
+    max-width: 320px;
+    aspect-ratio: 1;
     margin: 0 auto;
-    aspect-ratio: 4 / 3;
-    border-radius: 16px;
-    background-size: cover;
-    background-position: center;
-    box-shadow: 0 16px 40px rgba(20, 30, 24, 0.14);
 }
+.landing-hero-photo-disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--landing-photo-ring);
+    box-shadow: 0 40px 80px -40px rgba(20, 50, 32, 0.5);
+}
+.landing-hero-photo {
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-size: cover;
+    /* The source photo is a tall portrait crop with all the food along its
+       right edge and plain backdrop on the left - centering it in a
+       square circle mostly shows the empty backdrop. */
+    background-position: 85% center;
+    box-shadow: inset 0 0 0 8px var(--landing-photo-ring);
+}
+.landing-float-badge {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 16px 30px -16px rgba(20, 50, 32, 0.4);
+}
+.landing-float-badge svg { color: var(--green-dark); }
+.landing-float-badge-cal { left: -12px; bottom: 30px; }
+.landing-float-badge-match { right: -8px; top: 20px; }
+
 @media (min-width: 820px) {
-    .landing-hero { text-align: left; padding: 64px 12px; }
+    .landing-hero { text-align: left; padding: 68px 12px 84px; }
     .landing-hero-grid { flex-direction: row; align-items: center; gap: 48px; }
     .landing-hero-copy { flex: 1.1; }
-    .landing-hero-photo { order: 0; flex: 0.9; max-width: 420px; aspect-ratio: 3 / 4; margin: 0; }
+    .landing-hero-photo-wrap { order: 0; flex: 0 0 380px; max-width: 380px; }
     .landing-hero-sub { margin-left: 0; }
     .landing-cta { justify-content: flex-start; }
 }
-.landing-cta .btn-primary { padding: 12px 24px; font-size: 15px; }
-.landing-cta .btn-text { padding: 12px 16px; font-size: 15px; }
+
+/* Frosted "glass" surface used for Top List cards, the feature grid, and
+   the three promo bands — translucent so the glow field shows through it,
+   which only reads correctly over .landing-glow-field or .landing-body,
+   never over the plain app-shell background. */
+.landing-glass-card {
+    background: var(--landing-glass-bg);
+    border: 1px solid var(--landing-glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--landing-glass-shadow);
+}
+
+.top-list-heading { text-align: center; margin-bottom: 34px; }
+.top-list-heading h2 { font-size: 38px; margin: 0 0 6px; }
+.top-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 26px;
+}
+.top-list-card { padding: 26px 24px 24px; text-align: center; }
+.top-list-photo {
+    width: 170px;
+    height: 170px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 20px 34px -18px rgba(20, 50, 32, 0.55), inset 0 0 0 8px var(--landing-photo-ring);
+}
+.top-list-card .star-rating { justify-content: center; margin: 0 0 10px; }
+.top-list-card h3 { font-size: 19px; margin: 0 0 6px; }
+.top-list-card p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.5; color: var(--muted); text-align: left; }
+.top-list-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.top-list-meta > span:first-child { display: inline-flex; align-items: center; gap: 14px; }
+.top-list-meta > span:first-child span { display: inline-flex; align-items: center; gap: 5px; }
 
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
     padding: 20px 0 64px;
+    position: relative;
+    z-index: 1;
 }
-.feature-card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px 20px;
-}
+.feature-card { padding: 24px 20px; }
 .feature-card svg { color: var(--green); }
 .feature-card h3 { margin: 14px 0 8px; font-size: 16px; }
 .feature-card p { margin: 0; font-size: 13.5px; line-height: 1.55; }
@@ -996,8 +1153,6 @@ a { color: inherit; text-decoration: none; }
     grid-template-columns: 1.3fr 1fr;
     gap: 32px;
     align-items: center;
-    background: var(--green-light);
-    border-radius: 20px;
     padding: 40px;
     margin-bottom: 64px;
 }
@@ -1030,16 +1185,24 @@ a { color: inherit; text-decoration: none; }
 .landing-final-cta {
     text-align: center;
     padding: 40px 0 72px;
+    position: relative;
+    z-index: 1;
 }
 .landing-final-cta h2 { font-size: 26px; margin: 0 0 20px; text-wrap: balance; }
 
 .landing-footer {
     text-align: center;
     padding: 24px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--landing-glass-border);
     font-size: 13px;
+    position: relative;
+    z-index: 1;
 }
 .landing-footer a { color: var(--green-dark); font-weight: 600; }
+:root[data-theme="dark"] .landing-footer a { color: var(--green); }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .landing-footer a { color: var(--green); }
+}
 
 @media (max-width: 700px) {
     .landing-hero { padding: 48px 8px 40px; }

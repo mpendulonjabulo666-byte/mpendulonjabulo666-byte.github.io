@@ -9,6 +9,21 @@ if (current_user()) {
 
 $recipeCountStmt = db()->query('SELECT COUNT(*) FROM recipes');
 $recipeCount = (int)$recipeCountStmt->fetchColumn();
+
+// Top List: real recipes, real (honest) ratings - render_stars() already
+// shows "No reviews yet" rather than a fabricated-looking "0.0 (0)" for a
+// recipe nobody's rated yet, same as everywhere else in the app. Ordered
+// so a recipe that does have real reviews surfaces first, rather than
+// implying a popularity ranking this fresh a site doesn't have yet.
+$topListStmt = db()->query(
+    'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
+     COALESCE(AVG(rr.rating), 0) AS avg_rating, COUNT(rr.rating) AS rating_count
+     FROM recipes r LEFT JOIN recipe_ratings rr ON rr.recipe_id = r.id
+     GROUP BY r.id
+     ORDER BY rating_count DESC, avg_rating DESC, r.id ASC
+     LIMIT 3'
+);
+$topList = $topListStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,7 +43,7 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
 <link rel="stylesheet" href="assets/css/style.css?v=4">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
-<body>
+<body class="landing-body">
 <header class="app-nav landing-nav">
     <a class="app-nav-brand" href="landing.php"><?= nutritale_logo_svg(28) ?> <span><?= APP_NAME ?></span></a>
     <div class="app-nav-user">
@@ -39,53 +54,84 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
 </header>
 
 <main class="landing-main">
-    <section class="landing-hero">
-        <div class="landing-hero-grid">
-            <div class="landing-hero-copy">
-                <h1>Cook what you have.<br>Plan what you need.</h1>
-                <p class="muted landing-hero-sub">
-                    <?= APP_NAME ?> turns your pantry into recipe ideas, your week into a meal plan, and your plan into a
-                    shopping list — with nutrition goals and ratings built in.
-                </p>
-                <div class="landing-cta">
-                    <a href="register.php" class="btn btn-primary">Get started free</a>
-                    <a href="login.php" class="btn btn-text">I already have an account</a>
+    <div class="landing-glow-field">
+        <div class="landing-blob landing-blob-1"></div>
+        <div class="landing-blob landing-blob-2"></div>
+        <div class="landing-blob landing-blob-3"></div>
+
+        <section class="landing-hero">
+            <div class="landing-hero-grid">
+                <div class="landing-hero-copy">
+                    <h1>Cook What You<br>Already Have</h1>
+                    <p class="muted landing-hero-sub">
+                        <?= APP_NAME ?> turns your pantry into recipe ideas, your week into a meal plan, and your plan into a
+                        shopping list — with nutrition goals and ratings built in.
+                    </p>
+                    <div class="landing-cta">
+                        <a href="register.php" class="btn btn-primary">Get started free</a>
+                        <a href="login.php" class="btn btn-text">I already have an account</a>
+                    </div>
+                    <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
                 </div>
-                <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
+                <div class="landing-hero-photo-wrap">
+                    <div class="landing-hero-photo-disc"></div>
+                    <div class="landing-hero-photo" style="background-image:url('assets/img/banners/landing-hero-breakfast.jpg');"></div>
+                    <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> 340 cal <span class="muted" style="font-weight:400;">Overnight oats</span></span>
+                    <span class="landing-float-badge landing-float-badge-match"><?= icon('wand', 14) ?> Pantry-matched</span>
+                </div>
             </div>
-            <div class="landing-hero-photo" style="background-image:url('assets/img/banners/landing-hero-breakfast.jpg');"></div>
-        </div>
-    </section>
+        </section>
+
+        <?php if ($topList): ?>
+            <section class="top-list-heading">
+                <h2>Top List</h2>
+                <p class="muted">A few of our recipes to get you started</p>
+            </section>
+            <section class="top-list-grid mb-16" style="margin-bottom:76px;">
+                <?php foreach ($topList as $r): ?>
+                    <div class="top-list-card landing-glass-card">
+                        <div class="top-list-photo" style="background-image:url('<?= h($r['image_url']) ?>');"></div>
+                        <?= render_stars((float)$r['avg_rating'], (int)$r['rating_count'], 15) ?>
+                        <h3><?= h($r['title']) ?></h3>
+                        <p><?= h($r['description']) ?></p>
+                        <div class="top-list-meta">
+                            <span><span><?= icon('clock', 14) ?> <?= (int)$r['cook_time_minutes'] ?> min</span><span><?= icon('flame', 14) ?> <?= (int)$r['calories'] ?> cal</span></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
+    </div>
 
     <section class="feature-grid">
-        <div class="feature-card">
+        <div class="feature-card landing-glass-card">
             <?= icon('wand', 24) ?>
             <h3>What Can I Make?</h3>
             <p class="muted">Add the ingredients sitting in your kitchen and get ranked recipe matches — matched to your diet first, missing items called out. 3 free tries, then Premium.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card landing-glass-card">
             <?= icon('shopping-cart', 24) ?>
             <h3>Ingredient marketplace</h3>
             <p class="muted">Got surplus ingredients? List them for other members to buy, or pick up what you're missing from someone nearby.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card landing-glass-card">
             <?= icon('calendar', 24) ?>
             <h3>Meal planner</h3>
             <p class="muted">Drag recipes onto a weekly grid by meal, then export or print a shopping list built from what you planned.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card landing-glass-card">
             <?= icon('flame', 24) ?>
             <h3>Nutrition goals</h3>
             <p class="muted">Set daily calorie and macro targets and watch progress bars fill in as you plan your day.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card landing-glass-card">
             <?= icon('star', 24) ?>
             <h3>Ratings &amp; reviews</h3>
             <p class="muted">Every recipe carries real ratings from people who've cooked it — no guessing if it's any good.</p>
         </div>
     </section>
 
-    <section class="landing-vendor">
+    <section class="landing-vendor landing-glass-card">
         <div class="landing-vendor-text">
             <span class="tag mb-16"><?= icon('download', 12) ?> Free download</span>
             <h2>The starter recipe book</h2>
@@ -103,7 +149,7 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
         </div>
     </section>
 
-    <section class="landing-vendor">
+    <section class="landing-vendor landing-glass-card">
         <div class="landing-vendor-text">
             <span class="tag premium-tag mb-16"><?= icon('wand', 12) ?> Premium</span>
             <h2>Unlimited "What Can I Make?"</h2>
@@ -121,7 +167,7 @@ $recipeCount = (int)$recipeCountStmt->fetchColumn();
         </div>
     </section>
 
-    <section class="landing-vendor">
+    <section class="landing-vendor landing-glass-card">
         <div class="landing-vendor-text">
             <span class="tag premium-tag mb-16"><?= icon('wand', 12) ?> For creators</span>
             <h2>Sell your recipes</h2>
