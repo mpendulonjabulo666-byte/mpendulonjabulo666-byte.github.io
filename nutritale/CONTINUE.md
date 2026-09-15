@@ -259,14 +259,61 @@ step didn't have:
   whether the older pattern has this bug. Left the two once-off branches
   as they were rather than change based on an unconfirmed hypothesis;
   confirm against a real PayFast `FAILED` ITN payload before touching them.
-- **No self-serve subscription cancellation.** `premium_cancel.php` only
-  handles a `pending` row abandoned mid-checkout — there is no "cancel my
-  subscription" action anywhere in the app for an *active* one. The only
-  way one currently ends is PayFast's own cancellation ITN (from the user
-  managing it on PayFast's side) or letting it lapse. Not attempted here —
-  it needs PayFast's subscription-cancellation API, a UI in `profile.php`,
-  and a decision on immediate-vs-end-of-period revocation, which is a
-  small feature, not a hardening fix.
+- ~~No self-serve subscription cancellation~~ ✅ DONE (Step 12). Was:
+  `premium_cancel.php` only handled a `pending` row abandoned mid-checkout
+  — there was no "cancel my subscription" action anywhere in the app for
+  an *active* one; the only way one ever ended was PayFast's own
+  cancellation ITN or letting it lapse.
+
+  Now: a "Premium subscription" card on `profile.php` (shown only when an
+  active subscription row exists) shows the price and, if known,
+  `current_period_end`, with a "Cancel subscription" button (confirm
+  dialog, matching every other destructive action in this app —
+  `recipe_delete.php`, `admin_recipe_delete.php`, the marketplace listing
+  removal — none of which had a subscription equivalent before this).
+  Calls PayFast's *subscriptions API* (a different, newer API from the
+  checkout/ITN flow, with its own signature scheme) to actually stop
+  billing, rather than just flipping our own flag and hoping.
+
+  The signature algorithm (`payfast_api_signature()`,
+  `includes/payfast.php`) is copied from, and cross-checked line-by-line
+  against, PayFast's own official PHP SDK
+  (`github.com/PayFast/payfast-php-sdk`, `lib/Auth.php`'s
+  `generateApiSignature()` and `lib/Request.php`'s `sendApiRequest()`) —
+  not guessed, since a wrong signature either breaks every call outright
+  (401) or fails unpredictably. One specific, easy-to-get-backwards detail
+  confirmed straight from their `Request.php`: sandbox mode's
+  `testing=true` is sent on the actual request but deliberately *excluded*
+  from what gets signed — signing it would break sandbox specifically
+  while looking correct in code review.
+
+  **Decision made**: immediate revocation, not end-of-period. Matches the
+  behaviour a PayFast-initiated cancellation already had in
+  `payfast_notify.php` — deliberately not inventing a second, inconsistent
+  cancellation semantics depending on who initiated it. Also fails
+  **closed** on an API error: local state is only ever updated after
+  PayFast's own API confirms the cancellation, never speculatively, so a
+  failed call can't leave someone thinking they've cancelled while PayFast
+  keeps billing them.
+
+  Tests: `payfast_api_signature()` (`tests/payfast_test.php`, +5) against
+  a reference hash computed independently, not by calling the function
+  under test on itself. The local DB side effects (`profile.php`'s
+  handler) were verified against the live database with a synthetic
+  account and an injected API result, both success and failure —
+  confirming the failure path leaves the subscription row and
+  `is_premium_member` untouched. **Not verified**: an actual live call to
+  PayFast's sandbox API. Attempted one (a cancel against a fake token, so
+  nothing real to break) and hit `SSL certificate problem: unable to get
+  local issuer certificate` — this dev machine's XAMPP install ships a CA
+  bundle (`xampp/apache/bin/curl-ca-bundle.crt`) dated May 2022, which
+  would block *any* HTTPS call PHP makes here, including the pre-existing
+  `payfast_confirm_with_payfast()` ITN check — not something this step
+  introduced. A current bundle was fetched from curl.se and is staged in
+  the session's scratchpad, but replacing a file outside the project
+  needs the user's own approval, so it wasn't applied automatically. A
+  real sandbox subscription (and a working TLS setup here, or on a real
+  host) is the only way left to confirm the actual round-trip.
 
 ### 2.6 — Vendors can see earnings but cannot be paid
 
@@ -410,11 +457,18 @@ Each step is independently shippable. Don't batch them.
       Unverified hypothesis from Step 7 — confirm against a real PayFast
       `FAILED` ITN payload before touching `recipe_purchases` /
       `ingredient_orders`'s branches.
-- [ ] **Step 12 — Self-serve subscription cancellation** (§2.5)
-      No in-app way to cancel an active subscription; only PayFast's own
-      cancellation ITN ends one today. Needs PayFast's subscription-cancel
-      API, `profile.php` UI, and a decision on immediate vs.
-      end-of-period revocation.
+- [x] **Step 12 — Self-serve subscription cancellation** (§2.5) — done,
+      real sandbox round-trip unverified
+      `payfast_api_signature()` + `payfast_cancel_subscription()` (new,
+      `includes/payfast.php`, cross-checked against PayFast's own official
+      SDK source), "Premium subscription" card + handler in `profile.php`.
+      Decision made: immediate revocation, matching the existing
+      PayFast-initiated path; fails closed on an API error.
+      `tests/payfast_test.php` (+5, reference-hash check). DB side effects
+      verified live with a synthetic account and an injected result. The
+      actual network call couldn't be verified end-to-end — this machine's
+      XAMPP CA bundle is stale (from 2022), blocking any real HTTPS call;
+      see §2.5 for the fix staged and awaiting approval to apply.
 - [x] **Step 10 — Split multi-ingredient pantry rows** (§2.9) — done
       `split_pantry_entry()` (new, `includes/ingredient_matching.php`),
       wired into `pantry.php`'s add handler. `tests/ingredient_matching_test.php`

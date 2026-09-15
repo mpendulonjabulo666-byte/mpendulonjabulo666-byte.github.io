@@ -6,12 +6,17 @@
 //
 //   php tests/payfast_test.php
 //
+// Also tests payfast_api_signature() (added for Step 12's subscription
+// cancellation) against a value computed independently, not by calling
+// the function under test on itself.
+//
 // Deliberately not testing payfast_signature(), payfast_confirm_with_payfast(),
-// or payfast_notify.php itself here: the first two are unchanged by this
-// step, and the notify script is a sequence of DB writes driven by a real
-// PayFast POST, verified against the live database instead (see
-// CONTINUE.md's Step 7 note) the same way this project's other DB-facing
-// code has been throughout.
+// payfast_api_request(), payfast_cancel_subscription(), or
+// payfast_notify.php itself here: the first two are unchanged by this
+// step; the latter three make (or wrap something that makes) a real HTTP
+// call, so there's nothing a unit test can usefully fake without just
+// re-asserting the mock - see CONTINUE.md's Step 12 note for how the
+// cancel flow was actually checked instead.
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/payfast.php';
@@ -75,6 +80,36 @@ $partialResolver = stub_resolver([
 ]);
 check('a partial resolution still accepts an IP that did resolve', payfast_request_is_from_payfast('41.185.26.42', $partialResolver));
 check('a partial resolution still rejects an unrelated IP (not a full fail-open)', !payfast_request_is_from_payfast('10.0.0.1', $partialResolver));
+
+// --- payfast_api_signature() - the REST API's signature scheme, distinct
+// from payfast_signature()'s checkout-flow one, added for Step 12 --------
+$fixture = ['merchant-id' => '10000100', 'version' => 'v1', 'timestamp' => '2026-01-01T00:00:00+00:00'];
+
+// Computed independently (not by calling payfast_api_signature() itself)
+// by running the same algorithm PayFast's own SDK documents:
+//   ksort(['merchant-id'=>..., 'passphrase'=>..., 'timestamp'=>..., 'version'=>...])
+//   -> "merchant-id=10000100&passphrase=testpass&timestamp=2026-01-01T00%3A00%3A00%2B00%3A00&version=v1"
+//   -> md5(...)
+check(
+    'matches an independently-computed reference signature',
+    payfast_api_signature($fixture, 'testpass') === '2c2f31301266715b74ebe4f5987e92fa'
+);
+check(
+    'key order in the input does not change the result (it gets ksorted)',
+    payfast_api_signature(array_reverse($fixture, true), 'testpass') === payfast_api_signature($fixture, 'testpass')
+);
+check(
+    'a different passphrase changes the signature',
+    payfast_api_signature($fixture, 'a-different-passphrase') !== payfast_api_signature($fixture, 'testpass')
+);
+check(
+    'a different data value changes the signature',
+    payfast_api_signature(['merchant-id' => '99999999'] + $fixture, 'testpass') !== payfast_api_signature($fixture, 'testpass')
+);
+check(
+    'an existing "signature" key in the input is excluded, not signed over',
+    payfast_api_signature($fixture + ['signature' => 'whatever-was-here-before'], 'testpass') === payfast_api_signature($fixture, 'testpass')
+);
 
 echo "\n$pass passed, $fail failed\n";
 exit($fail > 0 ? 1 : 0);

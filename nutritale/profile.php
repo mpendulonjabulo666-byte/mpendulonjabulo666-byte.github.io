@@ -3,6 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
+require_once __DIR__ . '/includes/payfast.php';
 
 $user = require_login();
 
@@ -89,8 +90,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         db()->prepare('UPDATE users SET is_vendor = ? WHERE id = ?')->execute([$isVendor, $user['id']]);
         flash_set('success', $isVendor ? 'Selling is now on — mark a recipe as premium from My Recipes to list it.' : 'Selling turned off.');
         redirect('profile.php');
+    } elseif ($form === 'cancel_subscription') {
+        // CONTINUE.md §2.5 / Step 12 — previously the only ways a
+        // subscription ever ended were PayFast's own cancellation ITN or
+        // letting it lapse (see premium_enforce_expiry() in
+        // includes/functions.php). This calls PayFast's subscriptions API
+        // directly rather than just flipping our own flag, so a stopped
+        // subscription here means PayFast really will stop billing it.
+        $subStmt = db()->prepare("SELECT * FROM premium_subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1");
+        $subStmt->execute([$user['id']]);
+        $sub = $subStmt->fetch();
+
+        if (!$sub || !$sub['pf_token']) {
+            $errors[] = 'No active subscription was found to cancel.';
+        } else {
+            $result = payfast_cancel_subscription($sub['pf_token']);
+            if ($result['ok']) {
+                // Trust PayFast's own API response rather than waiting on
+                // a possible follow-up ITN, and revoke immediately - the
+                // same, already-existing behaviour a PayFast-initiated
+                // cancellation gets in payfast_notify.php. Deliberately
+                // not a different, end-of-period rule for this one path.
+                db()->prepare("UPDATE premium_subscriptions SET status = 'cancelled' WHERE id = ?")->execute([$sub['id']]);
+                db()->prepare('UPDATE users SET is_premium_member = 0 WHERE id = ?')->execute([$user['id']]);
+                flash_set('success', 'Your Premium subscription has been cancelled. No further payments will be taken.');
+                redirect('profile.php');
+            } else {
+                // Fails closed on purpose: if PayFast didn't confirm the
+                // cancel, our own records stay untouched rather than
+                // showing someone as cancelled while PayFast keeps billing.
+                $errors[] = 'Could not cancel your subscription right now (' . $result['error'] . '). Please try again, or contact support.';
+            }
+        }
     }
 }
+
+$subStmt = db()->prepare("SELECT * FROM premium_subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1");
+$subStmt->execute([$user['id']]);
+$activeSubscription = $subStmt->fetch() ?: null;
 
 $dietStmt = db()->prepare('SELECT diet_type FROM user_diet_preferences WHERE user_id = ?');
 $dietStmt->execute([$user['id']]);
@@ -154,6 +191,23 @@ $goals = $goalStmt->fetch() ?: [];
             <button type="submit" class="btn btn-primary">Save details</button>
         </form>
     </div>
+
+    <?php if ($activeSubscription): ?>
+        <div class="card mb-16">
+            <h2 style="font-size:16px;margin-top:0;">Premium subscription</h2>
+            <p class="muted" style="margin-top:0;font-size:13px;">
+                R<?= number_format((float)$activeSubscription['amount'], 2) ?>/month via PayFast.
+                <?php if ($activeSubscription['current_period_end']): ?>
+                    Renews <?= h(date('j F Y', strtotime($activeSubscription['current_period_end']))) ?>.
+                <?php endif; ?>
+            </p>
+            <form method="post" onsubmit="return confirm('Cancel your Premium subscription? You\'ll lose unlimited AI ingredient lookups immediately, and no further payments will be taken.');">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="form" value="cancel_subscription">
+                <button type="submit" class="btn btn-text btn-small" style="color:var(--error);">Cancel subscription</button>
+            </form>
+        </div>
+    <?php endif; ?>
 
     <div class="card mb-16">
         <h2 style="font-size:16px;margin-top:0;">Change password</h2>

@@ -107,3 +107,96 @@ function payfast_confirm_with_payfast(array $postData): bool
     curl_close($ch);
     return is_string($response) && trim($response) === 'VALID';
 }
+
+// --- PayFast's REST API (subscriptions: fetch/pause/cancel/update/adhoc) —
+// a different, newer API from the checkout/ITN flow above, with its own
+// signature scheme and its own single host for both live and sandbox
+// (sandbox is a `?testing=true` query param, not a separate subdomain).
+// CONTINUE.md §2.5's Step 12: lets a user cancel their own subscription
+// instead of the only options being PayFast's own ITN or letting it lapse.
+//
+// The algorithm below is copied from, and cross-checked line-by-line
+// against, PayFast's own official PHP SDK
+// (github.com/PayFast/payfast-php-sdk, lib/Auth.php's
+// generateApiSignature() and lib/Request.php's sendApiRequest()) rather
+// than guessed — a wrong signature either breaks every call outright
+// (401) or, worse, could look plausible and fail unpredictably. One
+// specific, easy-to-get-backwards detail confirmed straight from their
+// Request.php: the sandbox `testing=true` flag is sent on the actual
+// request but deliberately EXCLUDED from what gets signed.
+
+// Signs a call to the PayFast REST API. $data is every header value plus
+// any query/JSON body data for this specific call — never the `testing`
+// sandbox flag, which PayFast's own SDK deliberately excludes from the
+// signature too (see the file-level comment above).
+function payfast_api_signature(array $data, string $passphrase): string
+{
+    if ($passphrase !== '') {
+        $data['passphrase'] = $passphrase;
+    }
+    ksort($data);
+    $pairs = [];
+    foreach ($data as $key => $value) {
+        if ($key === 'signature') continue;
+        $pairs[] = $key . '=' . urlencode((string)$value);
+    }
+    return md5(implode('&', $pairs));
+}
+
+// One authenticated call to PayFast's subscriptions API. $path is appended
+// to https://api.payfast.co.za/ (e.g. "subscriptions/$token/cancel");
+// $body, if given, is sent as the JSON body and also folded into the
+// signature, matching the official SDK. Every call this app makes so far
+// needs no body.
+function payfast_api_request(string $method, string $path, array $body = []): array
+{
+    $headers = [
+        'merchant-id' => PAYFAST_MERCHANT_ID,
+        'version' => 'v1',
+        'timestamp' => date('Y-m-d\TH:i:sO'),
+    ];
+    $headers['signature'] = payfast_api_signature(array_merge($headers, $body), PAYFAST_PASSPHRASE);
+
+    $url = 'https://api.payfast.co.za/' . ltrim($path, '/');
+    if (PAYFAST_SANDBOX) {
+        $url .= '?testing=true'; // added to the request only, never to the signature — see above
+    }
+
+    $headerLines = ['Content-Type: application/json'];
+    foreach ($headers as $key => $value) {
+        $headerLines[] = "$key: $value";
+    }
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_HTTPHEADER => $headerLines,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    if ($body) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+    }
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false) {
+        return ['ok' => false, 'error' => 'Could not reach PayFast (' . $curlErr . ').'];
+    }
+    $data = json_decode($response, true);
+    if ($httpCode < 200 || $httpCode >= 300) {
+        return ['ok' => false, 'error' => $data['message'] ?? "PayFast returned HTTP $httpCode.", 'http_code' => $httpCode];
+    }
+    return ['ok' => true, 'data' => $data];
+}
+
+// Cancels a subscription. $token is the subscription's pf_token, captured
+// from the ITN history in premium_subscriptions — distinct from any one
+// payment's m_payment_id, and the identifier PayFast's recurring-billing
+// side uses for the ongoing subscription itself.
+function payfast_cancel_subscription(string $token): array
+{
+    return payfast_api_request('PUT', "subscriptions/$token/cancel");
+}
