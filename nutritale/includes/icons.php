@@ -52,6 +52,20 @@ function icon(string $name, int $size = 20): string
         // produces the two-sided lens here.
         'leaf' => '<path d="M12 3A13 13 0 0 1 12 21A13 13 0 0 1 12 3Z"></path><path d="M12 6v12"></path>',
         'sparkles' => '<path d="M12 3 13.5 9.5 20 11 13.5 12.5 12 19 10.5 12.5 4 11 10.5 9.5Z"></path>',
+        // Added for the login/register redesign. mail/lock/eye-off/arrow-
+        // right/target are copied verbatim from the mockup's own tested
+        // source rather than redrawn from memory, after the leaf icon
+        // above cost three attempts to get right by hand.
+        'mail' => '<rect x="2" y="4" width="20" height="16" rx="2"></rect><polyline points="3 6 12 13 21 6"></polyline>',
+        'lock' => '<rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path>',
+        // Not from the mockup (it only supplied the "hidden" state below).
+        // A hand-typed curved path here was *also* wrong on the first try
+        // (same lesson as 'leaf' above) - an ellipse is a shape a parser
+        // genuinely cannot get subtly wrong, so that's what this uses.
+        'eye' => '<ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle>',
+        'eye-off' => '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>',
+        'arrow-right' => '<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline>',
+        'target' => '<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3"></path>',
     ];
 
     $body = $paths[$name] ?? '<circle cx="12" cy="12" r="9"></circle>';
@@ -59,6 +73,30 @@ function icon(string $name, int $size = 20): string
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size
         . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
         . 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $body . '</svg>';
+}
+
+// Google's and Facebook's brand marks, for the "or continue with" social
+// buttons on login.php/register.php - real multi-colour fills, so these
+// don't go through icon() above (which forces a single-colour stroke
+// outline via fill="none" on every glyph, the right choice for the app's
+// own icon set but wrong for a third-party brand mark that has official
+// colours). Paths verified against the login mockup's own tested source
+// rather than redrawn from memory.
+function icon_google(int $size = 20): string
+{
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" aria-hidden="true">'
+        . '<path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.4a5.5 5.5 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.6-5.2 3.6-8.8Z"/>'
+        . '<path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3a7.2 7.2 0 0 1-10.7-3.8H1.3v3.1A12 12 0 0 0 12 24Z"/>'
+        . '<path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1Z"/>'
+        . '<path fill="#EA4335" d="M12 4.7c1.8 0 3.4.6 4.6 1.8l3.5-3.5A12 12 0 0 0 1.3 6.6l4 3.1A7.2 7.2 0 0 1 12 4.7Z"/>'
+        . '</svg>';
+}
+
+function icon_facebook(int $size = 20): string
+{
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" aria-hidden="true">'
+        . '<path fill="#1877F2" d="M13.5 21.9v-8h2.7l.4-3.2h-3.1V8.6c0-.9.3-1.5 1.6-1.5h1.6V4.2c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.5H7.6v3.2h2.3v8h3.6Z"/>'
+        . '</svg>';
 }
 
 function render_stars(float $average, ?int $count = null, int $size = 14): string

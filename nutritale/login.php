@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/oauth.php';
 
 if (current_user()) {
     redirect('index.php');
@@ -12,6 +13,12 @@ $email = '';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+// A simple, honest version of "remember me": extends this browser's own
+// session cookie lifetime rather than issuing a separate persistent
+// login token - real, not decorative (checking the box does keep you
+// signed in across a browser restart), just not the more elaborate
+// rotating-token scheme some sites use for it.
+const REMEMBER_ME_DAYS = 30;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
@@ -41,6 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Incorrect email or password.';
         } else {
             db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$user['id']]);
+            if (!empty($_POST['remember_me'])) {
+                session_set_cookie_params(REMEMBER_ME_DAYS * 86400);
+                // The session is already open (config.php starts it) -
+                // params only take effect for a *new* cookie, so re-send
+                // it under the new lifetime rather than the default one.
+                setcookie(session_name(), session_id(), time() + REMEMBER_ME_DAYS * 86400, '/');
+            }
             $_SESSION['user_id'] = (int)$user['id'];
             redirect($user['is_admin'] ? 'admin.php' : 'index.php');
         }
@@ -66,40 +80,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
-<div class="auth-shell">
-<?= render_theme_toggle() ?>
-    <div class="auth-card">
-        <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(56) ?></a>
-        <h1 class="center-text">Welcome back</h1>
-        <div class="card">
-            <?php foreach ($errors as $error): ?>
-                <div class="alert alert-error"><?= h($error) ?></div>
-            <?php endforeach; ?>
-            <form method="post" novalidate>
-                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                <label class="field">
-                    <span>Email</span>
-                    <input type="email" name="email" value="<?= h($email) ?>" required>
-                </label>
-                <label class="field">
-                    <span>Password</span>
-                    <div style="display:flex;gap:8px;">
-                        <input type="password" name="password" id="login-password" autocapitalize="off" autocorrect="off" spellcheck="false" required style="flex:1;">
-                        <button type="button" class="btn btn-text btn-small" id="toggle-password" style="white-space:nowrap;">Show</button>
+<div class="auth-split-shell">
+    <?= render_theme_toggle() ?>
+    <div class="auth-split">
+        <div class="auth-brand-panel">
+            <div class="auth-brand-photo">
+                <img src="assets/img/banners/recipe-book-spread.jpg" alt="A NutriTale recipe page">
+            </div>
+            <div>
+                <p class="auth-brand-quote">"Good food. Better choices. Your story."</p>
+                <div class="auth-brand-features">
+                    <div class="auth-brand-feature"><?= icon('leaf', 24) ?><span>Healthy<br>Recipes</span></div>
+                    <div class="auth-brand-feature"><?= icon('calendar', 24) ?><span>Meal<br>Planning</span></div>
+                    <div class="auth-brand-feature"><?= icon('shopping-cart', 24) ?><span>Shopping<br>Lists</span></div>
+                    <div class="auth-brand-feature"><?= icon('target', 24) ?><span>Nutrition<br>Goals</span></div>
+                </div>
+                <p class="auth-brand-signature mt-16">Real food. Real change.</p>
+            </div>
+        </div>
+
+        <div class="auth-form-panel">
+            <div class="auth-form-card">
+                <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(48) ?></a>
+                <h1>Welcome Back</h1>
+                <p class="auth-form-subtitle">Log in to continue your food journey</p>
+
+                <div class="auth-tabs">
+                    <span class="auth-tab is-active">Login</span>
+                    <a class="auth-tab" href="register.php" style="text-decoration:none;">Sign Up</a>
+                </div>
+
+                <?php foreach ($errors as $error): ?>
+                    <div class="alert alert-error"><?= h($error) ?></div>
+                <?php endforeach; ?>
+                <?php if ($error = flash_get('error')): ?>
+                    <div class="alert alert-error"><?= h($error) ?></div>
+                <?php endif; ?>
+
+                <form method="post" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                    <label class="auth-field-icon">
+                        <?= icon('mail', 18) ?>
+                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" required>
+                    </label>
+                    <label class="auth-field-icon">
+                        <?= icon('lock', 18) ?>
+                        <input type="password" name="password" id="login-password" placeholder="Enter your password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <button type="button" id="toggle-password" aria-label="Show password">
+                            <span id="toggle-password-icon"><?= icon('eye', 18) ?></span>
+                        </button>
+                    </label>
+                    <script>
+                    document.getElementById('toggle-password').addEventListener('click', function () {
+                        var field = document.getElementById('login-password');
+                        var showing = field.type === 'text';
+                        field.type = showing ? 'password' : 'text';
+                        this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+                    });
+                    </script>
+
+                    <div class="auth-row-between">
+                        <label class="auth-checkbox">
+                            <input type="checkbox" name="remember_me" value="1">
+                            Remember me
+                        </label>
+                        <a href="forgot_password.php" style="font-weight:700;color:var(--green-dark);">Forgot password?</a>
                     </div>
-                </label>
-                <script>
-                document.getElementById('toggle-password').addEventListener('click', function () {
-                    var field = document.getElementById('login-password');
-                    var showing = field.type === 'text';
-                    field.type = showing ? 'password' : 'text';
-                    this.textContent = showing ? 'Show' : 'Hide';
-                });
-                </script>
-                <button type="submit" class="btn btn-primary btn-block">Log in</button>
-            </form>
-            <a class="btn btn-text btn-block" href="forgot_password.php">Forgot password?</a>
-            <a class="btn btn-text btn-block" href="register.php">Create an account</a>
+
+                    <button type="submit" class="btn btn-emphasis btn-block" style="justify-content:center;gap:10px;">Log In <?= icon('arrow-right', 18) ?></button>
+                </form>
+
+                <div class="auth-divider">or continue with</div>
+                <div class="auth-social-grid">
+                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
+                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
+                </div>
+
+                <p class="auth-switch-link">Don't have an account? <a href="register.php">Sign Up →</a></p>
+            </div>
         </div>
     </div>
 </div>

@@ -44,6 +44,29 @@ define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 
+// Optional "Sign in with Google" / "Sign in with Facebook" on the login
+// and sign-up pages (includes/oauth.php + oauth_*.php). Same pattern as
+// GEMINI_API_KEY above: leave either pair blank to disable that one
+// button - it shows greyed out rather than erroring when clicked - so
+// there's nothing to configure to keep using plain email/password.
+//   Google:   console.cloud.google.com/apis/credentials -> Create
+//             credentials -> OAuth client ID -> Web application. Add
+//             {your domain}/oauth_google_callback.php as an authorized
+//             redirect URI.
+//   Facebook: developers.facebook.com/apps -> create an app -> add the
+//             "Facebook Login" product. Add
+//             {your domain}/oauth_facebook_callback.php as a valid OAuth
+//             redirect URI, and set the app to Live (not just Development
+//             mode) before real users can use it.
+// Signing in this way finds or creates an account by the email address
+// the provider hands back - only ever one it has itself confirmed, never
+// an unverified one (see the callbacks) - the same account a plain
+// email/password sign-up would use.
+define('GOOGLE_CLIENT_ID', '');
+define('GOOGLE_CLIENT_SECRET', '');
+define('FACEBOOK_APP_ID', '');
+define('FACEBOOK_APP_SECRET', '');
+
 // Free users are already bounded by PANTRY_FREE_USES above, but premium
 // and admin accounts skip that counter entirely (see pantry.php) and
 // were previously unmetered - see CONTINUE.md §2.4. These two bound them:

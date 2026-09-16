@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/oauth.php';
 
 if (current_user()) {
     redirect('index.php');
@@ -63,36 +64,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
-<div class="auth-shell">
-<?= render_theme_toggle() ?>
-    <div class="auth-card">
-        <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(56) ?></a>
-        <h1 class="center-text">Create your account</h1>
-        <div class="card">
-            <?php foreach ($errors as $error): ?>
-                <div class="alert alert-error"><?= h($error) ?></div>
-            <?php endforeach; ?>
-            <form method="post" novalidate>
-                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                <label class="field">
-                    <span>Name</span>
-                    <input type="text" name="name" value="<?= h($name) ?>" required>
-                </label>
-                <label class="field">
-                    <span>Email</span>
-                    <input type="email" name="email" value="<?= h($email) ?>" required>
-                </label>
-                <label class="field">
-                    <span>Password</span>
-                    <input type="password" name="password" required minlength="8">
-                </label>
-                <label class="field">
-                    <span>Confirm password</span>
-                    <input type="password" name="confirm_password" required minlength="8">
-                </label>
-                <button type="submit" class="btn btn-primary btn-block">Create account</button>
-            </form>
-            <a class="btn btn-text btn-block" href="login.php">I already have an account</a>
+<div class="auth-split-shell">
+    <?= render_theme_toggle() ?>
+    <div class="auth-split">
+        <div class="auth-brand-panel">
+            <div class="auth-brand-photo">
+                <img src="assets/img/banners/recipe-book-spread.jpg" alt="A NutriTale recipe page">
+            </div>
+            <div>
+                <p class="auth-brand-quote">"Good food. Better choices. Your story."</p>
+                <div class="auth-brand-features">
+                    <div class="auth-brand-feature"><?= icon('leaf', 24) ?><span>Healthy<br>Recipes</span></div>
+                    <div class="auth-brand-feature"><?= icon('calendar', 24) ?><span>Meal<br>Planning</span></div>
+                    <div class="auth-brand-feature"><?= icon('shopping-cart', 24) ?><span>Shopping<br>Lists</span></div>
+                    <div class="auth-brand-feature"><?= icon('target', 24) ?><span>Nutrition<br>Goals</span></div>
+                </div>
+                <p class="auth-brand-signature mt-16">Real food. Real change.</p>
+            </div>
+        </div>
+
+        <div class="auth-form-panel">
+            <div class="auth-form-card">
+                <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(48) ?></a>
+                <h1>Create Account</h1>
+                <p class="auth-form-subtitle">Start your food journey with NutriTale</p>
+
+                <div class="auth-tabs">
+                    <a class="auth-tab" href="login.php" style="text-decoration:none;">Login</a>
+                    <span class="auth-tab is-active">Sign Up</span>
+                </div>
+
+                <?php foreach ($errors as $error): ?>
+                    <div class="alert alert-error"><?= h($error) ?></div>
+                <?php endforeach; ?>
+
+                <form method="post" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                    <label class="auth-field-icon">
+                        <?= icon('user', 18) ?>
+                        <input type="text" name="name" value="<?= h($name) ?>" placeholder="Enter your name" required>
+                    </label>
+                    <label class="auth-field-icon">
+                        <?= icon('mail', 18) ?>
+                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" required>
+                    </label>
+                    <label class="auth-field-icon">
+                        <?= icon('lock', 18) ?>
+                        <input type="password" name="password" placeholder="Create a password" required minlength="8">
+                    </label>
+                    <!-- A confirm-password field, kept even though the
+                         mockup's card didn't have one: it catches a typo
+                         before it locks someone out of a brand-new
+                         account, and dropping an existing safeguard isn't
+                         part of "match the visual design". -->
+                    <label class="auth-field-icon">
+                        <?= icon('lock', 18) ?>
+                        <input type="password" name="confirm_password" placeholder="Confirm your password" required minlength="8">
+                    </label>
+
+                    <button type="submit" class="btn btn-emphasis btn-block mt-16" style="justify-content:center;gap:10px;">Sign Up <?= icon('arrow-right', 18) ?></button>
+                </form>
+
+                <div class="auth-divider">or continue with</div>
+                <div class="auth-social-grid">
+                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
+                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
+                </div>
+
+                <p class="auth-switch-link">Already have an account? <a href="login.php">Log In →</a></p>
+            </div>
         </div>
     </div>
 </div>

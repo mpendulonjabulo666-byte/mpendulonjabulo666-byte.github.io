@@ -140,10 +140,12 @@ h1, h2, h3 {
 .theme-icon-moon { display: none; }
 :root[data-theme="dark"] .theme-icon-sun { display: none; }
 :root[data-theme="dark"] .theme-icon-moon { display: inline-flex; }
-.auth-shell .theme-toggle-btn {
+.auth-shell .theme-toggle-btn,
+.auth-split-shell .theme-toggle-btn {
     position: fixed;
     top: 20px;
     right: 20px;
+    z-index: 5;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -1281,4 +1283,174 @@ a { color: inherit; text-decoration: none; }
     .landing-hero { padding: 48px 8px 40px; }
     .landing-hero h1 { font-size: 30px; }
     .landing-vendor { grid-template-columns: 1fr; padding: 28px; }
+}
+
+/* Split-panel login/register, from the login mockup - only these two
+   pages use it. forgot_password.php, reset_password.php and
+   onboarding.php keep the older centered .auth-card shell; the mockup
+   didn't cover them and there's no reason to touch a working page to
+   match a design that was never drawn for it. */
+.auth-split-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--landing-bg);
+}
+.auth-split {
+    width: 100%;
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 30px 60px -30px rgba(20, 40, 28, 0.35);
+}
+@media (min-width: 900px) {
+    .auth-split { grid-template-columns: 1fr 0.95fr; min-height: 700px; }
+}
+
+.auth-brand-panel {
+    display: none;
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 48px 40px;
+    background: linear-gradient(180deg, var(--landing-bg), var(--bg));
+    text-align: center;
+}
+@media (min-width: 900px) {
+    .auth-brand-panel { display: flex; }
+}
+.auth-brand-photo {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 30px 54px -28px rgba(20, 50, 32, 0.5);
+}
+.auth-brand-photo img { display: block; width: 100%; height: auto; }
+.auth-brand-quote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--green-dark);
+    max-width: 380px;
+    margin: 0;
+}
+.auth-brand-features { display: flex; align-items: stretch; }
+.auth-brand-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--green-dark);
+    text-align: center;
+    border-right: 1px solid var(--border);
+}
+.auth-brand-feature:last-child { border-right: none; }
+.auth-brand-feature svg { color: var(--green); }
+.auth-brand-signature {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--muted);
+    margin: 0;
+}
+
+.auth-form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+}
+.auth-form-card { width: 100%; max-width: 420px; }
+.auth-form-card h1 { font-size: 30px; margin: 0 0 6px; }
+.auth-form-subtitle { margin: 0 0 22px; color: var(--muted); font-size: 14.5px; }
+
+.auth-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 22px;
+}
+.auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 999px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--muted);
+}
+.auth-tab.is-active { background: var(--emphasis-bg); color: var(--emphasis-fg); }
+
+.auth-field-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    margin-bottom: 14px;
+}
+.auth-field-icon svg { color: var(--muted); flex: none; }
+.auth-field-icon input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    padding: 0;
+    font-size: 15px;
+    background: none;
+    color: var(--ink);
+}
+.auth-field-icon input:focus { outline: none; }
+.auth-field-icon:focus-within { border-color: var(--green); }
+.auth-field-icon button { border: none; background: none; color: var(--muted); cursor: pointer; display: flex; padding: 0; flex: none; }
+
+.auth-row-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; font-size: 13.5px; margin: 2px 0 18px; }
+.auth-checkbox { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.auth-checkbox input { accent-color: var(--green); width: 16px; height: 16px; }
+
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; font-size: 13px; color: var(--muted); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.auth-social-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.auth-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--ink);
+    font-size: 14.5px;
+    font-weight: 600;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.auth-social-btn:hover { border-color: var(--muted); transform: translateY(-1px); }
+/* A disabled button here means the provider has no credentials
+   configured (config.php) - shown greyed out with an explanatory title
+   attribute rather than left off entirely, so it's clear the option
+   exists but isn't set up, not that it was deliberately removed. */
+.auth-social-btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+.auth-switch-link { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.auth-switch-link a { font-weight: 700; color: var(--green-dark); }
+
+@media (max-width: 480px) {
+    .auth-brand-features { flex-wrap: wrap; justify-content: center; row-gap: 14px; }
+    .auth-brand-feature { border-right: none; }
 }
