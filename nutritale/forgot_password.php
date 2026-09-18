@@ -29,10 +29,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $resetLink = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST']
                     . dirname($_SERVER['PHP_SELF']) . '/reset_password.php?token=' . $token;
 
-                // No SMTP is configured for this app. In production, email $resetLink
-                // to the user instead of displaying it. Shown here so the flow is
-                // testable without mail setup.
-                @mail($email, 'Reset your ' . APP_NAME . ' password', "Reset your password: $resetLink");
+                send_notification_email($email, 'Reset your ' . APP_NAME . ' password', "Reset your password: $resetLink");
+
+                // Only shown on the page when no real email is configured
+                // (SMTP_HOST blank - see config.php) - otherwise this was a
+                // real account-takeover path: submitting *any* registered
+                // email here would hand the requester a live reset link for
+                // that account in their own browser response, whether or
+                // not they own it, regardless of whether the email itself
+                // actually got delivered.
+                if (SMTP_HOST !== '') {
+                    $resetLink = null;
+                }
             }
         }
     }

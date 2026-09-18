@@ -180,15 +180,15 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
     <form method="get" class="filter-bar">
         <div class="search-field">
             <?= icon('search', 16) ?>
-            <input type="text" name="q" value="<?= h($q) ?>" placeholder="Search by title or ingredient...">
+            <input type="text" name="q" value="<?= h($q) ?>" placeholder="Search by title or ingredient..." aria-label="Search recipes">
         </div>
-        <select name="meal_type" onchange="this.form.submit()">
+        <select name="meal_type" onchange="this.form.submit()" aria-label="Filter by meal type">
             <option value="">All meals</option>
             <?php foreach ($mealTypes as $mt): ?>
                 <option value="<?= h($mt) ?>" <?= $mealType === $mt ? 'selected' : '' ?>><?= ucfirst($mt) ?></option>
             <?php endforeach; ?>
         </select>
-        <select name="diet" onchange="this.form.submit()">
+        <select name="diet" onchange="this.form.submit()" aria-label="Filter by diet">
             <option value="">Any diet</option>
             <?php foreach ($dietOptions as $d): ?>
                 <option value="<?= h($d) ?>" <?= $diet === $d ? 'selected' : '' ?>><?= ucfirst($d) ?></option>
@@ -212,7 +212,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
         <?php if ($totalPages > 1): ?>
             <div class="pagination">
                 <?php if ($page > 1): ?>
-                    <a href="<?= h(paginate_url($page - 1, $q, $mealType, $diet)) ?>"><?= icon('chevron-left', 14) ?></a>
+                    <a href="<?= h(paginate_url($page - 1, $q, $mealType, $diet)) ?>" aria-label="Previous page"><?= icon('chevron-left', 14) ?></a>
                 <?php endif; ?>
                 <?php for ($p = 1; $p <= $totalPages; $p++): ?>
                     <?php if ($p === $page): ?>
@@ -222,7 +222,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
                     <?php endif; ?>
                 <?php endfor; ?>
                 <?php if ($page < $totalPages): ?>
-                    <a href="<?= h(paginate_url($page + 1, $q, $mealType, $diet)) ?>"><?= icon('chevron-right', 14) ?></a>
+                    <a href="<?= h(paginate_url($page + 1, $q, $mealType, $diet)) ?>" aria-label="Next page"><?= icon('chevron-right', 14) ?></a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>

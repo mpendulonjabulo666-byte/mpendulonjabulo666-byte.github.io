@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-form-panel">
             <div class="auth-form-card">
                 <a href="landing.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to home</a>
-                <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(48) ?></a>
+                <a href="landing.php" class="center-text mb-16" style="display:block;" aria-label="<?= h(APP_NAME) ?> home"><?= nutritale_logo_svg(48) ?></a>
                 <h1>Welcome Back</h1>
                 <p class="auth-form-subtitle">Log in to continue your food journey</p>
 
@@ -122,11 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                     <label class="auth-field-icon">
                         <?= icon('mail', 18) ?>
-                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" required>
+                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" aria-label="Email" required>
                     </label>
                     <label class="auth-field-icon">
                         <?= icon('lock', 18) ?>
-                        <input type="password" name="password" id="login-password" placeholder="Enter your password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <input type="password" name="password" id="login-password" placeholder="Enter your password" aria-label="Password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                         <button type="button" id="toggle-password" aria-label="Show password">
                             <span id="toggle-password-icon"><?= icon('eye', 18) ?></span>
                         </button>
@@ -153,8 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="auth-divider">or continue with</div>
                 <div class="auth-social-grid">
-                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
-                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
+                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
+                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
                 </div>
 
                 <p class="auth-switch-link">Don't have an account? <a href="register.php">Sign Up →</a></p>

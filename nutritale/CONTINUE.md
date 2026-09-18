@@ -596,6 +596,139 @@ unrelated to this app's own code. All five migrations are recorded in
 fresh install picks them up normally through `setup.php` on a machine
 without this local quirk.
 
+### 2.11 — Launch checklist (Step 9): SMTP, accessibility, and backups done; PayFast go-live blocked on a real account
+
+Worked through `DEPLOYMENT.md`'s existing checklist item by item, per its
+own text rather than inventing new requirements. Three of four named
+items are done and verified; the fourth (PayFast) has real client-only
+blockers, and is documented as such rather than faked.
+
+**Real SMTP** (was: `mail()`, silently dropped by many hosts) — PHPMailer
+v7.1.1 vendored unmodified in `includes/PHPMailer/` (no Composer anywhere
+else in this app; same reasoning as `includes/oauth.php`'s header
+comment). `config/config.php` gains `SMTP_HOST`/`PORT`/`USERNAME`/
+`PASSWORD`/`ENCRYPTION`/`FROM_EMAIL`/`FROM_NAME`, same "blank = safe
+default, feature just doesn't fully work yet" pattern as `GEMINI_API_KEY`
+— blank `SMTP_HOST` falls back to the old `mail()` behavior rather than
+refusing to send. `send_notification_email()` (`includes/functions.php`)
+rewritten to use it.
+
+Found and fixed a real bug while wiring this up, not part of the original
+ask but directly entangled with it: `forgot_password.php` had its own
+separate `@mail()` call and *always* displayed the reset link directly on
+the page, regardless of whether an email was actually configured or sent.
+Once real SMTP is live, that's a genuine account-takeover path — anyone
+submitting *any* registered email gets a working reset link back in their
+own browser response. Fixed: it now calls the shared
+`send_notification_email()`, and the on-page link only shows when
+`SMTP_HOST` is blank (the existing, deliberate "testable without mail
+setup" dev convenience — safe only because there's no real email being
+raced against in that case).
+
+Verified live: ran a local test SMTP server (a small Python script, no
+real credentials needed), pointed `config/config.php` at it temporarily,
+triggered a real password reset through the actual HTTP flow, and
+confirmed the exact SMTP conversation happened (EHLO → MAIL FROM → RCPT
+TO → DATA) and the received message had correct headers and the real
+reset link and token intact — then reverted `config/config.php` to its
+shipped blank defaults. **What's not verified**: delivery to a real
+internet inbox, which needs real provider credentials (a host's SMTP, a
+transactional-email API key, or a personal account's app password) that
+weren't available in this environment — the same category of blocker as
+PayFast's merchant account below, not a gap in the code.
+
+**Accessibility pass** (landing, login/register, browse, recipe detail,
+pantry, planner) — fixed what live testing showed as clearly broken,
+flagged what's genuinely borderline rather than guessing at full WCAG
+compliance:
+
+- Every field on `login.php`/`register.php` relied on placeholder text
+  alone (not a reliable accessible name) — added `aria-label` to all six.
+  Same gap on `pantry.php`'s ingredient input and each of `planner.php`'s
+  28 per-slot "add recipe" combobox inputs (given a specific label per
+  day/meal, e.g. "Add recipe for Mon breakfast", not one generic label
+  repeated 28 times).
+- `index.php`'s pagination prev/next arrows and search/filter controls
+  had no accessible name at all (icon-only, or unlabeled `<select>`s) —
+  added `aria-label` to all four.
+- The logo link on `login.php`/`register.php` wrapped only an icon with
+  no text — added `aria-label="NutriTale home"`.
+- `.search-field input:focus { outline: none; }` (used on `index.php`,
+  `favorites.php`, `my_recipes.php`) removed the browser's focus ring
+  with **no replacement** — a keyboard user tabbing into search got zero
+  visible indication. Added a `:focus-within` border-color change on the
+  wrapper, matching the pattern already used elsewhere (`.auth-field-icon`).
+- **Found via live keyboard testing, not code review**: Google/Facebook's
+  `aria-disabled="true"` buttons (shown greyed out when OAuth isn't
+  configured — see the login/register redesign) were still reachable by
+  Tab and activatable by Enter, since `pointer-events: none` only blocks
+  *mouse* interaction. Added `tabindex="-1"` alongside `aria-disabled` so
+  keyboard users skip them entirely, matching what mouse users already
+  experience.
+- **Real, significant color-contrast failure, found by computing actual
+  WCAG ratios, not eyeballing**: `.btn-primary` (light theme) is white
+  text on `--green` (`#2fae66`) — **2.85:1**, well under the 4.5:1 AA
+  minimum for text this size (14px bold doesn't qualify for the large-text
+  3:1 exception). This is the app's single most-used button style
+  (Save/Add/Sign Up/Log In/Get started, etc.) — not a corner case. Fixed
+  by using the existing `--green-dark` (`#1f7d49`) token instead, which
+  reaches 5.14:1 in light mode and is *higher* contrast than the current
+  passing case in dark mode too (7.36:1 → 10.66:1) — a strict improvement
+  in both themes, confirmed by computing both, not assumed. Hover changed
+  from a second background swap to `filter: brightness(0.9)`, which only
+  ever darkens further and so can never regress contrast in either theme.
+- Computed contrast for every other text/background pairing in both
+  themes (body text, muted text, nav links, brand wordmark colors, alert
+  banners including their dark-mode translucent overlays properly
+  alpha-blended before checking, the landing page's dark "Deep Herb" glass
+  cards specifically since that's the direction most likely to hide a
+  contrast bug) — all pass WCAG AA (≥4.5:1 for text) with one exception:
+  the dark-mode error alert on a card surface computes to **4.49:1**,
+  a hair under the threshold. Flagged, not touched — this is the
+  "borderline, don't guess" case explicitly, not a clear failure like the
+  button above.
+- Verified real keyboard tab order (not just static markup review) with a
+  small CDP-driven script: launched headless Chrome, dispatched real Tab
+  key events, and read `document.activeElement` at each step, on
+  `login.php`, `register.php`, `index.php`, `recipe.php`, `pantry.php`,
+  and `planner.php`. No `tabindex` overrides exist anywhere in this
+  codebase, so source order already matches visual order everywhere; this
+  is what actually caught the two disabled-OAuth-button and unlabeled-logo
+  bugs above; re-ran the trace after each fix to confirm it.
+- Checked every `<img>` and CSS `background-image` across the named pages:
+  all three real `<img>` tags already had meaningful `alt` text; every
+  photo shown via `background-image` (recipe cards, hero banners) sits
+  next to real text (title, description) that carries the same
+  information, so the decorative-image treatment is correct as-is, not a
+  gap.
+
+**Daily backups** — `scripts/backup_db.sh` (new): reads DB credentials
+from `config/config.php` itself (via `php -r`, one source of truth, not
+duplicated), runs `mysqldump --single-transaction --quick --routines`,
+gzips the result, and deletes anything older than 14 days that it created.
+Verified against this app's own dev database: produced a valid gzip dump,
+then restored it into a fresh scratch database and confirmed the same
+table count (29) and row counts (recipes, users) as the source — a real
+round-trip, not just "the command exited 0." `DEPLOYMENT.md` gets a new
+"Backups" section with the exact crontab line, the restore command, and
+the cPanel equivalent for shared hosting.
+
+**PayFast go-live** — followed `DEPLOYMENT.md`'s existing checklist
+exactly, verifying rather than assuming its claim that the signature and
+IP-allowlist code needs zero changes for production: traced every
+consumer (`payfast_signature()`/`payfast_api_signature()` are pure
+functions that never read `PAYFAST_SANDBOX`; the IP-allowlist's hostname
+list already includes the live hostname unconditionally, not gated behind
+the sandbox flag; every checkout file reads merchant credentials from
+config, never hardcoded; `app_base_url()` already derives from the real
+request, not a hardcoded domain) — confirmed true, documented in
+`DEPLOYMENT.md` with the specific reasoning, not just asserted.
+**Blocked on the client's own PayFast merchant account and a real
+deployed HTTPS domain** — neither exists yet. `config/config.php` still
+ships the sandbox defaults with a comment pointing at exactly what to
+replace and where the full checklist lives; nothing was guessed or faked
+here.
+
 ---
 
 ## 3. The order to do it in
@@ -673,9 +806,17 @@ Each step is independently shippable. Don't batch them.
       real sale/payout rows, cleaned up after — see §2.6 for the full
       verification trail, including a real layout bug the screenshot caught
       and fixed.
-- [ ] **Step 9 — Launch checklist**
-      `DEPLOYMENT.md` § "Going live with PayFast", real credentials, SMTP,
-      accessibility pass, `mysqldump` cron.
+- [ ] **Step 9 — Launch checklist** (§2.11) — 3 of 4 done, 1 blocked
+      SMTP (real PHPMailer integration, config wired, a real security bug
+      in `forgot_password.php` found and fixed along the way), an
+      accessibility pass (several real, live-verified fixes plus one
+      significant color-contrast bug in the app's main button style), and
+      a `mysqldump` backup script with rotation are done and verified live.
+      PayFast go-live is not — it needs the client's own real merchant
+      account and deployed domain, neither of which exist yet; the
+      claim that the existing signature/IP-allowlist code needs no
+      changes for production was verified by tracing every caller, not
+      assumed. See §2.11 for the full detail on all four.
 - [ ] **Step 11 — Once-off ITN amount check may block failed/cancelled
       status updates** (§2.5)
       Unverified hypothesis from Step 7 — confirm against a real PayFast

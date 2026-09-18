@@ -182,10 +182,51 @@ function disclaimer(string $kind): string
     return '<p class="disclaimer" role="note">' . h(DISCLAIMERS[$kind]) . '</p>';
 }
 
+// CONTINUE.md §2.8 / Step 9: PHP's mail() (the old body of this function)
+// is silently dropped by many hosts with no error to catch - real SMTP via
+// PHPMailer, configured with real credentials (config.php's SMTP_*
+// constants), actually gets a delivery attempt and a real error if one
+// fails. SMTP_HOST left blank (the shipped default) falls back to mail()
+// rather than refusing to send at all - the same "safe empty default,
+// feature just doesn't fully work until configured" pattern as
+// GEMINI_API_KEY and the OAuth credentials elsewhere in config.php, not a
+// dead end that needs a code change to recover from.
 function send_notification_email(string $to, string $subject, string $body): void
 {
-    // No SMTP is configured for this app by default. This is a best-effort
-    // send via PHP's mail() function; wire a real mail service (or SMTP in
-    // php.ini) in production for this to actually deliver.
-    @mail($to, $subject, $body, 'From: ' . APP_NAME . ' <no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>');
+    if (SMTP_HOST === '') {
+        @mail($to, $subject, $body, 'From: ' . APP_NAME . ' <no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>');
+        return;
+    }
+
+    require_once __DIR__ . '/PHPMailer/Exception.php';
+    require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+    require_once __DIR__ . '/PHPMailer/SMTP.php';
+
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = SMTP_HOST;
+        $mail->Port = SMTP_PORT;
+        $mail->SMTPAutoTLS = false; // explicit SMTP_ENCRYPTION below decides this, not a guess based on the port
+        if (SMTP_USERNAME !== '') {
+            $mail->SMTPAuth = true;
+            $mail->Username = SMTP_USERNAME;
+            $mail->Password = SMTP_PASSWORD;
+        }
+        if (SMTP_ENCRYPTION !== '') {
+            $mail->SMTPSecure = SMTP_ENCRYPTION;
+        }
+        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        $mail->addAddress($to);
+        $mail->Subject = $subject;
+        $mail->Body = $body;
+        $mail->send();
+    } catch (\PHPMailer\PHPMailer\Exception $e) {
+        // Logged, not thrown further - a notification email failing to
+        // send (e.g. a rating notice) should never break the page action
+        // that triggered it. error_log() is always on regardless of
+        // APP_DEBUG (config.php), so this is still visible to whoever's
+        // checking the server's error log.
+        error_log('send_notification_email: SMTP send to ' . $to . ' failed: ' . $mail->ErrorInfo);
+    }
 }

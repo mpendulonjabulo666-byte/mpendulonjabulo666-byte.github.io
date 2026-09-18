@@ -143,7 +143,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
                             <input type="hidden" name="week_anchor" value="<?= h($monday->format('Y-m-d')) ?>">
                             <input type="hidden" name="recipe_id" class="combobox-value">
                             <div class="combobox">
-                                <input type="text" class="combobox-input" placeholder="+ Add recipe" autocomplete="off">
+                                <input type="text" class="combobox-input" placeholder="+ Add recipe" aria-label="Add recipe for <?= DAY_NAMES[$d] ?> <?= h($mealType) ?>" autocomplete="off">
                                 <div class="combobox-list" hidden></div>
                             </div>
                         </form>

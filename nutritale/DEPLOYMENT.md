@@ -138,6 +138,42 @@ default, no real money can move. Before accepting real payments:
    `payfast_request_is_from_payfast()` in `includes/payfast.php` if you're
    deploying behind one anyway.
 
+**None of the signature-check, IP-allowlist, or subscription-API code
+needs any change to work in production** — confirmed by tracing every
+caller, not assumed:
+
+- `payfast_signature()` (checkout forms) and `payfast_api_signature()`
+  (subscription cancellation) are pure functions of the data passed in —
+  neither reads `PAYFAST_SANDBOX` at all, so the algorithm is identical in
+  both environments; only the request `process`/`validate` URLs
+  (`payfast_process_url()`, `payfast_validate_url()`) branch on it, and
+  both already do.
+- `payfast_request_is_from_payfast()`'s hostname list
+  (`www.payfast.co.za`, `sandbox.payfast.co.za`, `w1w.payfast.co.za`,
+  `w2w.payfast.co.za`) already includes the live hostname unconditionally
+  — it isn't gated behind `PAYFAST_SANDBOX` today, so switching that flag
+  changes nothing about which source IPs are accepted.
+- Every checkout/subscription file (`checkout.php`, `premium_checkout.php`,
+  `ingredient_checkout.php`, `payfast_notify.php`) reads
+  `PAYFAST_MERCHANT_ID`/`_KEY`/`_PASSPHRASE` from `config/config.php`
+  directly — no file has a hardcoded sandbox credential anywhere. The
+  small "Sandbox mode — no real money moves" notices on those pages are
+  gated on `PAYFAST_SANDBOX` too, so they correctly disappear once you
+  flip it to `false`.
+- `app_base_url()` builds its result from the actual incoming request's
+  `HTTP_HOST` and scheme, never a hardcoded domain — it already produces
+  the right URL on whatever domain the app is actually reached on, with
+  no edit needed once step 4 above is true.
+
+**Blocked on your own PayFast account**: steps 1, 2, 4, and 5 above need a
+real, live merchant account and a real deployed HTTPS domain — neither
+exists yet, so `config/config.php` still ships the sandbox defaults with
+the comment above `PAYFAST_MERCHANT_ID` explaining exactly what to
+replace and how. Fill in your real Merchant ID, Merchant Key, and
+passphrase from your PayFast dashboard once the account exists, flip
+`PAYFAST_SANDBOX` to `false`, and step 5's live test purchase is the last
+thing to do before real payments go live.
+
 ## Environment-specific values to double check
 
 - `config/config.php`: `DB_*`, `PAYFAST_*`, `PLATFORM_COMMISSION_PCT`,
@@ -153,17 +189,61 @@ default, no real money can move. Before accepting real payments:
   dependency on this and always works. Get a free key at
   [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 - Email sending: `send_notification_email()` in `includes/functions.php`
-  currently uses PHP's `mail()`, which many hosts either block or
-  silently drop — if recipe-review notification emails aren't
-  arriving, that function is the first place to check (most hosts do
-  better with SMTP via a real mail provider instead of `mail()`).
+  sends via real SMTP (PHPMailer, vendored in `includes/PHPMailer/` — see
+  its `README.md`) once `config/config.php`'s `SMTP_HOST` is set; left
+  blank, it falls back to PHP's `mail()`, which many hosts block or
+  silently drop. Set `SMTP_HOST`/`SMTP_PORT`/`SMTP_USERNAME`/
+  `SMTP_PASSWORD`/`SMTP_ENCRYPTION`/`SMTP_FROM_EMAIL`/`SMTP_FROM_NAME` to
+  your host's mail server, a transactional email provider (SendGrid,
+  Mailgun, Postmark, Brevo), or a personal account's SMTP with an app
+  password. Verified end-to-end against a local test SMTP server during
+  development (a real password-reset email was composed, sent over a
+  real SMTP conversation, and arrived with the correct headers and reset
+  link intact) — actual delivery to a real inbox still needs your own
+  real provider credentials, which weren't available in that
+  environment.
+
+## Backups
+
+`scripts/backup_db.sh` runs `mysqldump` against the credentials already in
+`config/config.php` (reads them via `php -r`, so nothing is duplicated or
+needs separate configuration), gzips the result, and deletes anything
+older than 14 days it created. Verified directly against this app's own
+dev database: produces a valid, gzip-compressed dump (confirmed with
+`gunzip | mysql` restoring cleanly into a scratch database — same table
+count and row counts as the source) in well under a second at NutriTale's
+current data size.
+
+1. **Pick a directory outside the web root** — e.g. if the app is at
+   `/var/www/nutritale`, use `/var/www/nutritale-backups`, a sibling
+   directory, never anything under `nutritale/` itself. A backup inside
+   the web root is downloadable by anyone who guesses or finds its URL;
+   `.htaccess` has no rule for a directory you create yourself.
+2. **Make the script executable** (once): `chmod +x scripts/backup_db.sh`
+3. **Add the cron job** (`crontab -e`), daily at 3am server time:
+   ```
+   0 3 * * * /var/www/nutritale/scripts/backup_db.sh /var/www/nutritale-backups >> /var/www/nutritale-backups/backup.log 2>&1
+   ```
+   (adjust both paths to wherever you actually deployed the app and want
+   backups kept)
+4. **To restore** a specific backup:
+   ```
+   gunzip -c /var/www/nutritale-backups/nutritale_2026-09-18_030000.sql.gz | mysql -h DB_HOST -u DB_USER -p DB_NAME
+   ```
+   (uses the same `DB_HOST`/`DB_USER`/`DB_NAME` from `config/config.php`;
+   it'll prompt for `DB_PASS`) — this **overwrites** the target database's
+   current contents with the backup's, so double-check you're restoring
+   into the database you mean to.
+
+Shared hosting (Path A): cPanel's Cron Jobs page runs the same command —
+paste the crontab line above (everything after the schedule) into its
+command field, since cPanel already provides the schedule as separate
+minute/hour/day fields.
 
 ## After deploying
 
 - Set `DB_PASS` back to a real secret (never commit real credentials —
   `config/config.php` is meant to be edited on the server, not in git)
-- Consider a daily `mysqldump` cron job — there's no backup automation
-  built in
 - If any images under `assets/` come back 403 after upload, your SFTP/FTP
   client likely set restrictive permissions — run `find assets -type f
   -exec chmod 644 {} \;` and `find assets -type d -exec chmod 755 {} \;`

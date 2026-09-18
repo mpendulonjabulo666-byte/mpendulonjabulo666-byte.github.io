@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="auth-form-panel">
             <div class="auth-form-card">
-                <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(48) ?></a>
+                <a href="landing.php" class="center-text mb-16" style="display:block;" aria-label="<?= h(APP_NAME) ?> home"><?= nutritale_logo_svg(48) ?></a>
                 <h1>Create Account</h1>
                 <p class="auth-form-subtitle">Start your food journey with NutriTale</p>
 
@@ -104,15 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                     <label class="auth-field-icon">
                         <?= icon('user', 18) ?>
-                        <input type="text" name="name" value="<?= h($name) ?>" placeholder="Enter your name" required>
+                        <input type="text" name="name" value="<?= h($name) ?>" placeholder="Enter your name" aria-label="Name" required>
                     </label>
                     <label class="auth-field-icon">
                         <?= icon('mail', 18) ?>
-                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" required>
+                        <input type="email" name="email" value="<?= h($email) ?>" placeholder="Enter your email" aria-label="Email" required>
                     </label>
                     <label class="auth-field-icon">
                         <?= icon('lock', 18) ?>
-                        <input type="password" name="password" placeholder="Create a password" required minlength="8">
+                        <input type="password" name="password" placeholder="Create a password" aria-label="Password" required minlength="8">
                     </label>
                     <!-- A confirm-password field, kept even though the
                          mockup's card didn't have one: it catches a typo
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          part of "match the visual design". -->
                     <label class="auth-field-icon">
                         <?= icon('lock', 18) ?>
-                        <input type="password" name="confirm_password" placeholder="Confirm your password" required minlength="8">
+                        <input type="password" name="confirm_password" placeholder="Confirm your password" aria-label="Confirm password" required minlength="8">
                     </label>
 
                     <button type="submit" class="btn btn-emphasis btn-block mt-16" style="justify-content:center;gap:10px;">Sign Up <?= icon('arrow-right', 18) ?></button>
@@ -129,8 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="auth-divider">or continue with</div>
                 <div class="auth-social-grid">
-                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
-                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
+                    <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
+                    <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
                 </div>
 
                 <p class="auth-switch-link">Already have an account? <a href="login.php">Log In →</a></p>

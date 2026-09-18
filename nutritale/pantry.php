@@ -187,7 +187,7 @@ if ($pantry) {
             <form method="post" style="display:flex;gap:8px;">
                 <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                 <input type="hidden" name="action" value="add">
-                <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+                <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
                 <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
             </form>
         <?php endif; ?>

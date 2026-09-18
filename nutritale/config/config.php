@@ -19,7 +19,9 @@ define('APP_NAME', 'NutriTale');
 // move real money. Before going live: create a real PayFast merchant
 // account, replace PAYFAST_MERCHANT_ID/KEY with your own, set a
 // passphrase to match what you configure in your PayFast account
-// settings, and set PAYFAST_SANDBOX to false.
+// settings, and set PAYFAST_SANDBOX to false. See DEPLOYMENT.md's "Going
+// live with PayFast" section for the full checklist - no other code
+// change is needed, only these values.
 define('PAYFAST_SANDBOX', true);
 define('PAYFAST_MERCHANT_ID', '10000100');
 define('PAYFAST_MERCHANT_KEY', '46f0cd694581a');
@@ -84,6 +86,25 @@ define('FACEBOOK_APP_SECRET', '');
 //   because of an allergen violation still costs one. See includes/ai_cache.php.
 define('AI_PANTRY_CACHE_DAYS', 3);
 define('AI_PANTRY_DAILY_CAP', 30);
+
+// Outgoing email (password resets, "someone rated your recipe" notices).
+// Leave SMTP_HOST blank to fall back to PHP's mail(), which many hosts
+// block or silently drop (see DEPLOYMENT.md) - fine for local development,
+// not reliable for anything a real user needs to actually receive. Any
+// real SMTP provider works here: your host's own mail server (check its
+// control panel for the hostname/port), a transactional email service
+// (SendGrid, Mailgun, Postmark, Brevo - most have a free tier), or a
+// personal account's SMTP with an app password (e.g. Gmail:
+// smtp.gmail.com, port 587, an "app password" - not your normal login
+// password - from your Google account's security settings). Never commit
+// real values here.
+define('SMTP_HOST', '');
+define('SMTP_PORT', 587);
+define('SMTP_USERNAME', '');
+define('SMTP_PASSWORD', '');
+define('SMTP_ENCRYPTION', 'tls'); // 'tls', 'ssl', or '' for an unencrypted connection
+define('SMTP_FROM_EMAIL', 'no-reply@example.com');
+define('SMTP_FROM_NAME', APP_NAME);
 
 // Set to true only while actively debugging locally — it prints full PHP
 // errors (file paths, stack traces, sometimes query fragments) straight
