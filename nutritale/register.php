@@ -4,6 +4,8 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/oauth.php';
 
+enforce_maintenance_mode();
+
 if (current_user()) {
     redirect('index.php');
 }

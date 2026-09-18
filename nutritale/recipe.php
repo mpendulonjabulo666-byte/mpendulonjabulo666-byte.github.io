@@ -35,6 +35,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rate'
     redirect('recipe.php?id=' . urlencode($recipeId));
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'report' && csrf_check()) {
+    $recipeId = $_POST['recipe_id'] ?? '';
+    $reportReasons = ['incorrect_info', 'inappropriate', 'duplicate', 'other'];
+    $reason = in_array($_POST['reason'] ?? '', $reportReasons, true) ? $_POST['reason'] : 'other';
+    $details = trim($_POST['details'] ?? '');
+
+    $dupe = db()->prepare('SELECT 1 FROM recipe_reports WHERE recipe_id = ? AND reporter_user_id = ?');
+    $dupe->execute([$recipeId, $user['id']]);
+    if ($dupe->fetch()) {
+        flash_set('error', "You've already reported this recipe — our team will review it.");
+    } else {
+        db()->prepare('INSERT INTO recipe_reports (recipe_id, reporter_user_id, reason, details) VALUES (?, ?, ?, ?)')
+            ->execute([$recipeId, $user['id'], $reason, $details !== '' ? $details : null]);
+        flash_set('success', 'Thanks — this recipe has been reported for review.');
+    }
+    redirect('recipe.php?id=' . urlencode($recipeId));
+}
+
 $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ?');
 $stmt->execute([$id]);
 $recipe = $stmt->fetch();
@@ -156,6 +174,9 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
             <?php if ($success = flash_get('success')): ?>
                 <div class="alert alert-success"><?= h($success) ?></div>
             <?php endif; ?>
+            <?php if ($reportError = flash_get('error')): ?>
+                <div class="alert alert-error"><?= h($reportError) ?></div>
+            <?php endif; ?>
 
             <?php if ($allergenConflicts): ?>
                 <div class="alert alert-error">This recipe contains <?= h(implode(', ', $allergenConflicts)) ?>, which you've marked as an allergen to avoid.</div>
@@ -203,6 +224,29 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
                         <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Delete</button>
                     </form>
                 </div>
+            <?php else: ?>
+                <details class="recipe-owner-actions mb-16">
+                    <summary class="btn btn-text btn-small" style="display:inline-flex;cursor:pointer;"><?= icon('alert-triangle', 14) ?> Report this recipe</summary>
+                    <form method="post" class="mt-16" style="max-width:360px;">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="report">
+                        <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                        <label class="field">
+                            <span>Reason</span>
+                            <select name="reason">
+                                <option value="incorrect_info">Incorrect information</option>
+                                <option value="inappropriate">Inappropriate content</option>
+                                <option value="duplicate">Duplicate of another recipe</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Details (optional)</span>
+                            <textarea name="details" rows="2" maxlength="255"></textarea>
+                        </label>
+                        <button type="submit" class="btn btn-text btn-small" style="color:var(--error);">Submit report</button>
+                    </form>
+                </details>
             <?php endif; ?>
 
             <?php if ($isLocked): ?>

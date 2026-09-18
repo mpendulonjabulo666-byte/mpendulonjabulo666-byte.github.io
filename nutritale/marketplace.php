@@ -5,6 +5,11 @@ require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
 
+if (empty($user['is_admin']) && !platform_setting('show_marketplace')) {
+    flash_set('error', 'The marketplace is temporarily unavailable.');
+    redirect('index.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
     if ($action === 'create_listing') {

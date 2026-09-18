@@ -4,6 +4,8 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/recipe_card.php';
 
+enforce_maintenance_mode();
+
 $user = current_user();
 if (!$user) {
     redirect('landing.php');
@@ -139,6 +141,9 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <main class="app-main">
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
+    <?php endif; ?>
+    <?php if ($error = flash_get('error')): ?>
+        <div class="alert alert-error"><?= h($error) ?></div>
     <?php endif; ?>
 
     <?php if ($todayMeals): ?>

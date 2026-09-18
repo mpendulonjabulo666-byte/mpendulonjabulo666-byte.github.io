@@ -11,4 +11,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     flash_set('success', 'Recipe removed.');
 }
 
-redirect('admin.php');
+redirect('admin_recipes.php');

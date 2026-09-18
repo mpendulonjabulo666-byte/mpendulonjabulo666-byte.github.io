@@ -42,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $name]);
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
+    } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry && empty($user['is_admin']) && !platform_setting('enable_ai_matching')) {
+        $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => 'AI recipe matching is temporarily turned off by the site admin.'];
     } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
         $pantryHash = ai_pantry_hash($pantry, $dietPrefs, $userAllergens);
         $cached = ai_cache_lookup((int)$user['id'], $pantryHash, AI_PANTRY_CACHE_DAYS);

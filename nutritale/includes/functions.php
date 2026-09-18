@@ -67,6 +67,12 @@ function require_login(): array
         header('Location: login.php');
         exit;
     }
+    // A single choke point for every protected page in the app (recipes,
+    // pantry, planner, marketplace, profile, admin's own require_admin()
+    // included) rather than a call sprinkled into each one individually -
+    // login.php/register.php aren't behind require_login(), so an admin
+    // can always still sign in to turn maintenance mode back off.
+    enforce_maintenance_mode();
     return $user;
 }
 
@@ -78,6 +84,36 @@ function require_admin(): array
         die('Admins only.');
     }
     return $user;
+}
+
+// Backs admin_settings.php's four platform toggles. Cached per-request in
+// a static array since several pages (nav.php included) check one of
+// these on every load - one row fetched once, not once per check.
+function platform_setting(string $key): bool
+{
+    static $settings = null;
+    if ($settings === null) {
+        $settings = db()->query('SELECT * FROM platform_settings WHERE id = 1')->fetch() ?: [];
+    }
+    return !empty($settings[$key]);
+}
+
+// Called from the top of any page that should be closed to non-admins
+// while maintenance_mode is on. Deliberately not enforced globally from
+// config.php: login.php/logout.php must keep working so an admin can
+// still sign in to turn it back off.
+function enforce_maintenance_mode(): void
+{
+    if (!platform_setting('maintenance_mode')) {
+        return;
+    }
+    $user = current_user();
+    if ($user && !empty($user['is_admin'])) {
+        return;
+    }
+    http_response_code(503);
+    require __DIR__ . '/../maintenance.php';
+    exit;
 }
 
 function flash_set(string $key, string $message): void

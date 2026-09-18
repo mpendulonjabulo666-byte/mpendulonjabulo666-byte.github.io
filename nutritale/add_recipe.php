@@ -6,6 +6,14 @@ require_once __DIR__ . '/includes/allergens.php';
 
 $user = require_login();
 
+// Only gates *new* submissions - someone editing a recipe they already
+// own shouldn't get locked out of fixing it just because admin has
+// paused new ones.
+if (!isset($_GET['id']) && empty($user['is_admin']) && !platform_setting('allow_recipe_submissions')) {
+    flash_set('error', 'New recipe submissions are temporarily paused. Please check back later.');
+    redirect('my_recipes.php');
+}
+
 $dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
 // Single source of truth - includes/allergens.php also maps each of
 // these to the keywords that detect it in AI-written text.

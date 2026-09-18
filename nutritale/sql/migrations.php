@@ -103,4 +103,43 @@ return [
     // premium_enforce_expiry() in includes/functions.php, which treats
     // NULL as "not tracked yet, don't touch" rather than "expired."
     '2026_09_15_premium_period_end' => 'ALTER TABLE premium_subscriptions ADD COLUMN current_period_end DATETIME NULL AFTER status',
+
+    // Admin suite build: backs the new "Report this recipe" link on
+    // recipe.php and admin_reports.php's review queue. UNIQUE on
+    // (recipe_id, reporter_user_id) so re-submitting the same report just
+    // tells the reporter they've already flagged it, rather than piling
+    // up duplicates an admin has to skip past one by one.
+    '2026_09_18_recipe_reports' => "
+        CREATE TABLE recipe_reports (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            recipe_id VARCHAR(40) NOT NULL,
+            reporter_user_id INT UNSIGNED NOT NULL,
+            reason VARCHAR(30) NOT NULL,
+            details VARCHAR(255) NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'open',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TIMESTAMP NULL,
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+            FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE KEY uniq_recipe_reporter (recipe_id, reporter_user_id),
+            INDEX idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
+
+    // Admin suite build: backs admin_settings.php's real, enforced platform
+    // toggles (see enforce_maintenance_mode() and platform_setting() in
+    // includes/functions.php). Single fixed row (id=1) rather than a
+    // key/value table - there are exactly four named switches, not an
+    // open-ended list, so named columns are simpler to read and to guard
+    // with a CHECK on id than a generic settings store would be.
+    '2026_09_18_platform_settings' => "
+        CREATE TABLE platform_settings (
+            id TINYINT UNSIGNED PRIMARY KEY,
+            allow_recipe_submissions TINYINT(1) NOT NULL DEFAULT 1,
+            enable_ai_matching TINYINT(1) NOT NULL DEFAULT 1,
+            show_marketplace TINYINT(1) NOT NULL DEFAULT 1,
+            maintenance_mode TINYINT(1) NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        INSERT INTO platform_settings (id) VALUES (1)
+    ",
 ];

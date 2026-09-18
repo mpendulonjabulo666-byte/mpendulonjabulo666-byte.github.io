@@ -37,7 +37,9 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
             $navLink('favorites.php', 'heart', 'Favorites');
             $navLink('planner.php', 'calendar', 'Planner');
             $navLink('my_recipes.php', 'plus', 'My Recipes');
-            $navLink('marketplace.php', 'shopping-cart', 'Marketplace');
+            if (!empty($user['is_admin']) || platform_setting('show_marketplace')) {
+                $navLink('marketplace.php', 'shopping-cart', 'Marketplace');
+            }
             ?>
             <?php if (!empty($user['is_admin'])): ?>
                 <div class="app-nav-divider"><?= icon('leaf', 12) ?></div>

@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
+$canSubmit = !empty($user['is_admin']) || platform_setting('allow_recipe_submissions');
 
 $stmt = db()->prepare('SELECT * FROM recipes WHERE created_by = ? ORDER BY created_at DESC');
 $stmt->execute([$user['id']]);
@@ -33,10 +34,17 @@ $recipes = $stmt->fetchAll();
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
     <?php endif; ?>
+    <?php if ($error = flash_get('error')): ?>
+        <div class="alert alert-error"><?= h($error) ?></div>
+    <?php endif; ?>
 
     <div class="planner-header">
         <h1>My recipes</h1>
-        <a class="btn btn-primary" href="add_recipe.php"><?= icon('plus', 16) ?> Add a recipe</a>
+        <?php if ($canSubmit): ?>
+            <a class="btn btn-primary" href="add_recipe.php"><?= icon('plus', 16) ?> Add a recipe</a>
+        <?php else: ?>
+            <span class="tag"><?= icon('alert-triangle', 14) ?> New submissions paused</span>
+        <?php endif; ?>
     </div>
 
     <?php if (!$recipes): ?>
