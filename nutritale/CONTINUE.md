@@ -37,7 +37,7 @@ So: use those docs for **what still needs to exist and why** (especially
 | Vendor recipes | `add_recipe.php` `my_recipes.php` `vendor.php` `checkout*.php` | Done, with commission split and net-earnings display |
 | Marketplace | `marketplace.php` `ingredient_checkout*.php` | Done |
 | Payments | `includes/payfast.php` `payfast_notify.php` | Signature check + server-side `VALID` confirmation + amount verification on once-off sales. See §2.5 |
-| Admin | `admin.php` `admin_recipe_delete.php` | Done. Admins bypass premium gates |
+| Admin | `admin.php` `admin_recipes.php` `admin_categories.php` `admin_users.php` `admin_reports.php` `admin_meal_plans.php` `admin_analytics.php` `admin_settings.php` `admin_profile.php` | Done — real dashboard stats, recipe reports/moderation, user role management, admin-curated meal plan templates, real analytics (signups/views/AI usage), four enforced platform toggles including maintenance mode. Admins bypass premium gates |
 | PWA | `manifest.json` `sw.js` `assets/js/theme-*.js` | Done, install prompt included |
 | Security baseline | `includes/functions.php` `.htaccess` | CSRF token on **every** browser POST handler (verified file by file); PDO prepared statements throughout; `APP_DEBUG` false by default; `h()` escaping |
 
@@ -389,6 +389,81 @@ database with a synthetic account: three-item and two-item inputs create
 that many separate rows, a single multi-word ingredient still stores as
 one row, and re-adding a duplicate doesn't create a second row.
 
+### 2.10 — Admin suite: real data instead of a mockup's placeholders ✅ DONE (Step 13)
+
+A UI mockup (outside this file's original scope — a design reference, not
+part of the spec) sketched a full admin dashboard: Dashboard, Recipes,
+Categories, Users, Reports, Meal Plans, Analytics, Settings, all populated
+with invented numbers. Built the real version of all eight, backed by
+actual queries against this app's own tables rather than sample data:
+
+- `admin.php` — real dashboard stats (users, recipes, premium members,
+  open reports, active-this-week, favorites/ratings/AI-usage totals).
+- `admin_recipes.php` — the pre-existing quick-add/table, with search/filter.
+- `admin_categories.php` — real counts by `meal_type` (links to `index.php`'s
+  existing filter) and `cuisine` (read-only — no page filters by cuisine).
+- `admin_users.php` — admin/premium/vendor toggles, with a guard so an
+  admin can never strip their own admin access.
+- `admin_reports.php` + a "Report this recipe" link on `recipe.php` — new
+  `recipe_reports` table, one report per user per recipe, open/resolved/
+  dismissed queue.
+- `admin_meal_plans.php` + `meal_plan_templates.php` — new
+  `meal_plan_templates`/`meal_plan_template_items` tables. Admins compose a
+  day-relative 7×4 template; members browse and adopt one onto any start
+  date from Planner, cloning it into their own `meal_plan_items`.
+- `admin_analytics.php` — new `users.last_login_at` column and
+  `recipe_views` table back real "active users" and "most viewed recipes";
+  14-day bar charts for views/signups/recipes-added/AI-generations; real
+  marketplace totals. Session-length/time-on-site is explicitly NOT here —
+  no client-side instrumentation exists to measure it honestly.
+- `admin_settings.php` — four **enforced** toggles via a new
+  `platform_settings` table: recipe submissions (`add_recipe.php`), AI
+  matching (`pantry.php`), marketplace visibility (`marketplace.php` + its
+  nav link), and maintenance mode (a single choke point added to
+  `require_login()`, plus `index.php`/`landing.php`/`register.php`
+  directly, since they check `current_user()` instead of going through
+  `require_login()`).
+- `admin_profile.php` — was accidentally stripped down to just account
+  details + password when split off from `profile.php`; restored to full
+  parity (diet/allergen preferences, nutrition goals, vendor toggle,
+  premium subscription card) since none of that is member-only.
+
+All of it verified live with throwaway admin/member accounts (created and
+deleted via direct SQL, never left behind): full report lifecycle, the
+self-demotion guard, a template created and adopted with the correct
+dates landing in the member's planner, real view/signup counts appearing
+correctly in the charts, and every settings toggle flipped off and
+confirmed to actually block a member account before being restored to
+its default.
+
+**What's still genuinely missing here** (real feature gaps, not
+restyling — worth its own decision before building):
+
+- Session-length/time-on-site analytics — needs client-side heartbeat
+  tracking that doesn't exist anywhere in the app.
+- Editing an existing admin-added recipe or an existing meal plan
+  template — both currently support create + delete only.
+- An admin action audit log — nothing records who toggled a setting,
+  deleted a recipe/user, or resolved a report.
+- Pagination on `admin_users.php` — capped at 200 rows, no pager.
+- Report email notifications — new reports don't alert admins, unlike
+  the existing pattern for recipe ratings (`send_notification_email`).
+- Bulk actions anywhere in the admin suite (one row at a time only).
+- A real cuisine filter on `index.php` (Categories' cuisine counts are
+  read-only without it) and a true editable category taxonomy, rather
+  than a view over the existing `meal_type`/`cuisine` columns.
+
+The new tables (`recipe_reports`, `platform_settings`,
+`meal_plan_templates`, `meal_plan_template_items`, `recipe_views`) and
+the `last_login_at` column were applied directly via `mysql.exe` rather
+than through `setup.php`, because this dev machine's antivirus has been
+intermittently deleting `setup.php` (and, at points, blocking its
+recreation outright) whenever it runs and does dynamic schema DDL —
+unrelated to this app's own code. All five migrations are recorded in
+`sql/migrations.php` and marked applied in `schema_migrations`, so a
+fresh install picks them up normally through `setup.php` on a machine
+without this local quirk.
+
 ---
 
 ## 3. The order to do it in
@@ -400,18 +475,24 @@ Each step is independently shippable. Don't batch them.
       plus `tests/allergen_test.php` and `tests/ai_pantry_test.php`.
       Verified against the live database: the sesame-tagged recipe is excluded
       for an account flagged sesame + shellfish, and the page reports it.
-- [ ] **Step 2 — Disclaimers** (§2.3) — in code, awaiting browser check
+- [x] **Step 2 — Disclaimers** (§2.3) — done
       `disclaimer()` + `DISCLAIMERS` in `includes/functions.php`, `.disclaimer`
       style (stylesheet bumped to `v=4`). Nutrition under the macros in
       `recipe.php`; allergens under the "Contains" line in `recipe.php`, both
       allergen pickers (`onboarding.php`, `profile.php`) and the two pantry
       allergen notes; medical under diet prefs in `onboarding.php` and the
       daily goals card in `profile.php` (there is no health-goal step in
-      onboarding — goals live in the profile).
-- [ ] **Step 3 — Fix the trial counter** (§2.4, second half) — in code, awaiting browser check
+      onboarding — goals live in the profile). Verified in a browser with a
+      throwaway account (created and deleted via direct SQL): both
+      onboarding disclaimers and both recipe.php disclaimers render exactly
+      where described.
+- [x] **Step 3 — Fix the trial counter** (§2.4, second half) — done
       `pantry.php` add-ingredient no longer increments
       `pantry_free_uses_used`; only `ai_suggest` does. Users already burned by
-      the old bug keep their inflated count — no data fix applied.
+      the old bug keep their inflated count — no data fix applied. Verified
+      live: added three ingredients on a fresh trial account, confirmed
+      `pantry_free_uses_used` stayed at 0 and the page still read "3 free
+      ingredients left."
 - [x] **Step 4 — Migration runner** (§2.7) — done
       `sql/migrations.php` (new), `schema_migrations` table in `schema.sql`,
       runner in `setup.php`. Verified against the live dev database
@@ -474,6 +555,17 @@ Each step is independently shippable. Don't batch them.
       wired into `pantry.php`'s add handler. `tests/ingredient_matching_test.php`
       (+9). Verified against the live database with a synthetic account.
       Existing rows deliberately not backfilled — see §2.9.
+
+- [x] **Step 13 — Admin suite: real dashboard, reports, meal plan
+      templates, analytics, enforced settings** (§2.10) — done
+      Eight admin pages (`admin.php`, `admin_recipes.php`,
+      `admin_categories.php`, `admin_users.php`, `admin_reports.php`,
+      `admin_meal_plans.php`, `admin_analytics.php`, `admin_settings.php`)
+      plus `admin_profile.php` restored to full member parity, five new
+      tables/columns, all verified live with throwaway accounts. See §2.10
+      for the punch-list of what's still genuinely missing (audit log,
+      recipe/template editing, pagination, report emails, bulk actions,
+      cuisine filtering, session-length analytics).
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 
