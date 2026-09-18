@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/vendor_payouts.php';
 
 $user = require_login();
 
@@ -45,6 +46,14 @@ $ingredientTotalsStmt = db()->prepare(
 );
 $ingredientTotalsStmt->execute([$user['id']]);
 $ingredientTotals = $ingredientTotalsStmt->fetch();
+
+$owed = calculate_vendor_owed(db(), (int)$user['id']);
+
+$payoutHistoryStmt = db()->prepare(
+    'SELECT * FROM vendor_payouts WHERE vendor_id = ? ORDER BY created_at DESC LIMIT 20'
+);
+$payoutHistoryStmt->execute([$user['id']]);
+$payoutHistory = $payoutHistoryStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -140,7 +149,42 @@ $ingredientTotals = $ingredientTotalsStmt->fetch();
                 </tbody>
             </table>
         </div>
-        <p class="muted mt-16" style="font-size:12px;">Payouts to your bank account aren't automated yet — for now this is a running ledger of what's owed to you.</p>
+    <?php endif; ?>
+
+    <h2 class="mb-16">Payouts</h2>
+    <div class="card mb-16" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+            <h3 style="margin:0 0 4px;font-size:15px;">Currently owed to you</h3>
+            <p class="muted" style="margin:0;font-size:13px;">
+                R<?= number_format($owed['amount'], 2) ?>
+                <?php if ($owed['amount'] > 0 && $owed['period_start']): ?>
+                    from sales since <?= h((new DateTime($owed['period_start']))->format('j F Y')) ?>
+                <?php endif; ?>
+                — paid out by EFT, not automatically through NutriTale yet.
+            </p>
+        </div>
+    </div>
+    <?php if (!$payoutHistory): ?>
+        <p class="muted">No payouts recorded yet.</p>
+    <?php else: ?>
+        <div class="card" style="overflow-x:auto;">
+            <table class="admin-table">
+                <thead><tr><th>Period</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody>
+                    <?php foreach ($payoutHistory as $p): ?>
+                        <tr>
+                            <td>
+                                <?= $p['period_start'] ? h((new DateTime($p['period_start']))->format('M j')) : '—' ?>
+                                – <?= h((new DateTime($p['period_end']))->format('M j, Y')) ?>
+                            </td>
+                            <td>R<?= number_format((float)$p['amount'], 2) ?></td>
+                            <td><span class="pill pill-<?= $p['status'] === 'paid' ? 'resolved' : 'open' ?>"><?= h(ucfirst($p['status'])) ?></span></td>
+                            <td><?= $p['paid_at'] ? h((new DateTime($p['paid_at']))->format('M j, Y')) : '—' ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </main>
 </body>

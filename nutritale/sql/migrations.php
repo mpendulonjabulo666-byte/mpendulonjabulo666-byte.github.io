@@ -197,4 +197,33 @@ return [
             INDEX idx_template (template_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // CONTINUE.md §2.6 / Step 8: vendors could see net earnings (vendor.php)
+    // but nothing tracked whether they'd actually been paid - all money sat
+    // in the platform's PayFast account with no payout record at all. One
+    // row per payout run, covering everything earned in (period_start,
+    // period_end] - see calculate_vendor_owed() in
+    // includes/vendor_payouts.php for why a contiguous period range, not a
+    // per-sale join table, is enough to never double-count a sale across
+    // payout runs. status stays pending/paid (not just a boolean) so a
+    // future "record a scheduled payout, confirm later" flow has somewhere
+    // to live, even though admin_payouts.php's one action today creates a
+    // row already marked paid.
+    '2026_09_18_vendor_payouts' => "
+        CREATE TABLE vendor_payouts (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            vendor_id INT UNSIGNED NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            period_start DATETIME NULL,
+            period_end DATETIME NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            paid_at DATETIME NULL,
+            paid_by_admin_id INT UNSIGNED NULL,
+            notes TEXT NULL,
+            FOREIGN KEY (vendor_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (paid_by_admin_id) REFERENCES users(id) ON DELETE SET NULL,
+            INDEX idx_vendor_period (vendor_id, period_end)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
 ];

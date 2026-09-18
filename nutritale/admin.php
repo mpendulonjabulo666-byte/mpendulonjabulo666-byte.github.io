@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/vendor_payouts.php';
 
 $user = require_admin();
 
@@ -17,6 +18,7 @@ $vendors = (int)db()->query('SELECT COUNT(*) FROM users WHERE is_vendor = 1')->f
 $totalFavorites = (int)db()->query('SELECT COUNT(*) FROM favorites')->fetchColumn();
 $totalRatings = (int)db()->query('SELECT COUNT(*) FROM recipe_ratings')->fetchColumn();
 $aiGenerationsToday = (int)db()->query('SELECT COUNT(*) FROM ai_generations WHERE created_at >= CURDATE()')->fetchColumn();
+$totalOwedToVendors = array_sum(array_column(vendors_with_owed_balance(db()), 'amount'));
 
 $openReports = 0;
 try {
@@ -84,6 +86,7 @@ try {
             <div><strong style="font-size:20px;"><?= number_format($totalFavorites) ?></strong><div class="muted" style="font-size:12px;">Recipes saved to favorites</div></div>
             <div><strong style="font-size:20px;"><?= number_format($totalRatings) ?></strong><div class="muted" style="font-size:12px;">Ratings &amp; reviews left</div></div>
             <div><strong style="font-size:20px;"><?= number_format($aiGenerationsToday) ?></strong><div class="muted" style="font-size:12px;">AI pantry lookups today</div></div>
+            <div><strong style="font-size:20px;">R<?= number_format($totalOwedToVendors, 2) ?></strong><div class="muted" style="font-size:12px;">Currently owed to vendors</div></div>
         </div>
     </div>
 
@@ -93,6 +96,7 @@ try {
             <a href="admin_recipes.php" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add a recipe</a>
             <a href="admin_users.php" class="btn btn-text btn-small"><?= icon('users', 14) ?> Manage users</a>
             <a href="admin_reports.php" class="btn btn-text btn-small"><?= icon('alert-triangle', 14) ?> Review reports</a>
+            <a href="admin_payouts.php" class="btn btn-text btn-small"><?= icon('download', 14) ?> Vendor payouts</a>
             <a href="admin_meal_plans.php" class="btn btn-text btn-small"><?= icon('calendar', 14) ?> Meal plans</a>
             <a href="admin_analytics.php" class="btn btn-text btn-small"><?= icon('bar-chart', 14) ?> Analytics</a>
         </div>

@@ -37,7 +37,7 @@ So: use those docs for **what still needs to exist and why** (especially
 | Vendor recipes | `add_recipe.php` `my_recipes.php` `vendor.php` `checkout*.php` | Done, with commission split and net-earnings display |
 | Marketplace | `marketplace.php` `ingredient_checkout*.php` | Done |
 | Payments | `includes/payfast.php` `payfast_notify.php` | Signature check + server-side `VALID` confirmation + amount verification on once-off sales. See §2.5 |
-| Admin | `admin.php` `admin_recipes.php` `admin_categories.php` `admin_users.php` `admin_reports.php` `admin_meal_plans.php` `admin_analytics.php` `admin_settings.php` `admin_profile.php` | Done — real dashboard stats, recipe reports/moderation, user role management, admin-curated meal plan templates, real analytics (signups/views/AI usage), four enforced platform toggles including maintenance mode. Admins bypass premium gates |
+| Admin | `admin.php` `admin_recipes.php` `admin_categories.php` `admin_users.php` `admin_reports.php` `admin_payouts.php` `admin_meal_plans.php` `admin_analytics.php` `admin_settings.php` `admin_profile.php` | Done — real dashboard stats, recipe reports/moderation, user role management, a manual-EFT vendor payout ledger, admin-curated meal plan templates, real analytics (signups/views/AI usage), four enforced platform toggles including maintenance mode. Admins bypass premium gates |
 | PWA | `manifest.json` `sw.js` `assets/js/theme-*.js` | Done, install prompt included |
 | Security baseline | `includes/functions.php` `.htaccess` | CSRF token on **every** browser POST handler (verified file by file); PDO prepared statements throughout; `APP_DEBUG` false by default; `h()` escaping |
 
@@ -315,12 +315,85 @@ step didn't have:
   real sandbox subscription (and a working TLS setup here, or on a real
   host) is the only way left to confirm the actual round-trip.
 
-### 2.6 — Vendors can see earnings but cannot be paid
+### 2.6 — Vendors can see earnings but cannot be paid ✅ DONE (Step 8)
 
-`vendor.php` shows net revenue after `PLATFORM_COMMISSION_PCT`. All money lands
-in the platform's PayFast account and there is no payout record, no payout
-status, no mechanism. Sell one recipe for real and you owe a vendor money with
-nothing tracking it. Decide the model before real payments go live.
+Was: `vendor.php` showed net revenue after `PLATFORM_COMMISSION_PCT`. All money
+landed in the platform's PayFast account and there was no payout record, no
+payout status, no mechanism. Sell one recipe for real and you owed a vendor
+money with nothing tracking it.
+
+**Decision made**: manual EFT with a tracked ledger, decoupled from *how* the
+money eventually moves. PayFast Split Payments (its Aggregation/marketplace
+merchant model) could replace the settlement mechanism later, but what's owed
+to each vendor needs tracking regardless of how it gets paid out, so the
+ledger doesn't assume or depend on that decision.
+
+Now, `includes/vendor_payouts.php`:
+
+- **`vendor_owed_amount()`** — the core rule, kept as a pure function (no DB):
+  a payout covers everything earned strictly after the latest existing
+  `vendor_payouts` row's `period_end` (pending or paid both "spend" that
+  range) up to now. That's enough to never double-count a sale across payout
+  runs without a per-sale join table, as long as every new payout starts
+  exactly where the last one's `period_end` left off — which
+  `calculate_vendor_owed()` always does by using the max `period_end` across
+  every existing row for that vendor as the cutoff.
+- **`calculate_vendor_owed()`** — fetches a vendor's real sale rows from both
+  `recipe_purchases` (`vendor_id`/`vendor_amount`) and `ingredient_orders`
+  (`seller_id`/`seller_amount`) — same `status = 'paid'` logic vendor.php's
+  own queries already used, reused rather than recomputed — plus their
+  payout history, and calls the pure function above.
+- **`vendors_with_owed_balance()`** — every vendor with something currently
+  owed, for `admin_payouts.php`'s list. Deliberately not filtered to
+  `is_vendor = 1`: someone could earn a sale, then turn selling off, and
+  still be owed the money from before.
+
+New `vendor_payouts` table (migration): one row per payout run — vendor,
+amount, status (`pending`/`paid` — only `paid` is ever written by
+`admin_payouts.php` today, but the column exists for a future "record a
+scheduled payout, confirm later" flow), `period_start`/`period_end`,
+`paid_at`, `paid_by_admin_id`, and an optional notes field for a bank
+reference.
+
+`admin_payouts.php` (new, same layout/nav as the rest of the Step 13 admin
+suite): lists every vendor with a positive balance and a "Mark as paid"
+button (confirm dialog, matching every other destructive/financial action in
+this app) that **recomputes the owed amount fresh at submission time** rather
+than trusting whatever the page showed when it loaded — closes the gap where
+a new sale lands in between page-load and click. A payout history table
+underneath shows every past run across all vendors. No money actually moves
+through the app at this stage — this only records that the admin paid the
+vendor manually via EFT outside the system, stated plainly on the page itself
+and in the flash message after marking one paid.
+
+`vendor.php` now shows the vendor their own current balance and full payout
+history, not just a running "your earnings" number with no record behind it.
+
+Tests: `tests/vendor_payouts_test.php` (16) exercises `vendor_owed_amount()`
+against fixture arrays — zero sales, no prior payout, a sale already covered
+by a prior payout excluded, only sales strictly after the cutoff counted,
+three sequential payout runs never double-counting across the whole history,
+and the latest of several out-of-order existing payouts being the one that
+matters. `calculate_vendor_owed()`/`vendors_with_owed_balance()` aren't
+unit-tested — thin DB-fetching wrappers with no logic of their own — verified
+against the live database instead: a synthetic vendor account with three fake
+paid sales (two `recipe_purchases`, one `ingredient_orders`, created and
+deleted via direct SQL) correctly summed to the right total in
+`calculate_vendor_owed()` and in `admin_payouts.php`'s own list; marking it
+paid through the real HTTP POST handler created the `vendor_payouts` row with
+the correct amount, `period_start`, `paid_by_admin_id`, and notes; recomputing
+afterward showed exactly R0 owed (not the same sales counted twice) and the
+vendor no longer appeared on `admin_payouts.php`'s list; a fourth sale added
+after that payout correctly showed as the only thing owed, with
+`period_start` picking up exactly at the prior payout's `period_end`.
+`vendor.php` was screenshotted showing the same numbers from the vendor's own
+side, including the payout history entry.
+
+Known limits, deliberately accepted: no partial payouts (a payout run always
+covers everything owed since the last one, not a chosen subset); no way yet
+to reverse or edit a payout row if an admin makes one by mistake — see §2.10's
+punch-list, "an admin action audit log" is the related, still-missing piece
+that would make correcting a mistake here traceable too.
 
 ### 2.7 — `setup.php` can create but never upgrade ✅ DONE (Step 4)
 
@@ -527,9 +600,13 @@ Each step is independently shippable. Don't batch them.
       migration. `tests/payfast_test.php` (8, stubbed DNS). Verified
       against the live database with a synthetic subscription, cleaned up
       after. Found two more gaps, filed rather than fixed — see §2.5.
-- [ ] **Step 8 — Vendor payouts** (§2.6)
-      Decide the model first (manual EFT with a tracked ledger is a legitimate
-      v1). Then build to that decision.
+- [x] **Step 8 — Vendor payouts** (§2.6) — done
+      Manual EFT with a tracked ledger. `includes/vendor_payouts.php` (new,
+      pure "what's owed" function + DB wrappers), `vendor_payouts` table
+      (migration), `admin_payouts.php` (new), `vendor.php` updated with a
+      payout-history section. `tests/vendor_payouts_test.php` (16). Verified
+      against the live database with a synthetic vendor and real sale rows,
+      cleaned up after — see §2.6 for the full verification trail.
 - [ ] **Step 9 — Launch checklist**
       `DEPLOYMENT.md` § "Going live with PayFast", real credentials, SMTP,
       accessibility pass, `mysqldump` cron.
