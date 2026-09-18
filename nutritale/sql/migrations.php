@@ -226,4 +226,21 @@ return [
             INDEX idx_vendor_period (vendor_id, period_end)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // A "mark as paid" was permanent with no way to undo a mistake and no
+    // record of why - a real risk once this handles actual vendor money.
+    // status gains a third value, 'reversed' (still just a string, not an
+    // ENUM - consistent with every other status column in this schema, and
+    // avoids an ALTER ... MODIFY on a live table just to add one value).
+    // reversal_reason is intentionally never nullable-in-practice - enforced
+    // in code (admin_payouts.php's handler), not by a CHECK constraint,
+    // since this DB's MySQL version predates reliable CHECK enforcement and
+    // the app is the only writer of this table anyway.
+    '2026_09_18_vendor_payout_reversal' => "
+        ALTER TABLE vendor_payouts
+            ADD COLUMN reversed_at DATETIME NULL AFTER paid_by_admin_id,
+            ADD COLUMN reversed_by_admin_id INT UNSIGNED NULL AFTER reversed_at,
+            ADD COLUMN reversal_reason TEXT NULL AFTER reversed_by_admin_id,
+            ADD CONSTRAINT fk_vendor_payouts_reversed_by FOREIGN KEY (reversed_by_admin_id) REFERENCES users(id) ON DELETE SET NULL
+    ",
 ];

@@ -171,20 +171,28 @@ $payoutHistory = $payoutHistoryStmt->fetchAll();
             <table class="admin-table">
                 <thead><tr><th>Period</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
                 <tbody>
-                    <?php foreach ($payoutHistory as $p): ?>
+                    <?php foreach ($payoutHistory as $p):
+                        $statusPill = ['paid' => 'resolved', 'pending' => 'open', 'reversed' => 'dismissed'][$p['status']] ?? 'open';
+                    ?>
                         <tr>
                             <td>
                                 <?= $p['period_start'] ? h((new DateTime($p['period_start']))->format('M j')) : '—' ?>
                                 – <?= h((new DateTime($p['period_end']))->format('M j, Y')) ?>
                             </td>
                             <td>R<?= number_format((float)$p['amount'], 2) ?></td>
-                            <td><span class="pill pill-<?= $p['status'] === 'paid' ? 'resolved' : 'open' ?>"><?= h(ucfirst($p['status'])) ?></span></td>
+                            <td style="white-space:normal;max-width:260px;">
+                                <span class="pill pill-<?= $statusPill ?>"><?= h(ucfirst($p['status'])) ?></span>
+                                <?php if ($p['status'] === 'reversed'): ?>
+                                    <div class="muted" style="font-size:12px;margin-top:4px;">Reason: <?= h($p['reversal_reason']) ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td><?= $p['paid_at'] ? h((new DateTime($p['paid_at']))->format('M j, Y')) : '—' ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+        <p class="muted mt-16" style="font-size:12px;">A reversed payout means that amount is owed to you again — it'll show under "Currently owed to you" above.</p>
     <?php endif; ?>
 </main>
 </body>

@@ -6,20 +6,25 @@ require_once __DIR__ . '/functions.php';
 // as ai_pantry_hash()/gemini_pantry_ideas()'s injectable-data pattern
 // elsewhere in this app.
 //
-// A payout covers everything earned strictly after the latest existing
-// payout's period_end (any status - pending or paid both "spend" that
-// range) up to now. That's enough to never double-count a sale across
-// runs without a per-sale join table: periods are always contiguous and
-// non-overlapping as long as every new payout starts exactly where the
-// last one's period_end left off, which is what calculate_vendor_owed()
-// below always does.
+// A payout covers everything earned strictly after the latest *non-reversed*
+// existing payout's period_end (pending or paid both still "spend" that
+// range - only 'reversed' gives it back) up to now. That's enough to never
+// double-count a sale across runs without a per-sale join table: periods
+// are contiguous and non-overlapping as long as every new payout starts
+// exactly where the last active one's period_end left off, which is what
+// calculate_vendor_owed() below always does. A reversed payout is skipped
+// entirely when finding that cutoff - exactly as if it had never been
+// created - so the money it covered becomes owed again on the next run.
 //
 // $paidSales: list of ['amount' => float, 'created_at' => 'Y-m-d H:i:s']
-// $existingPayouts: list of ['period_end' => 'Y-m-d H:i:s'], any status
+// $existingPayouts: list of ['period_end' => 'Y-m-d H:i:s', 'status' => string]
 function vendor_owed_amount(array $paidSales, array $existingPayouts): array
 {
     $cutoff = null;
     foreach ($existingPayouts as $payout) {
+        if ($payout['status'] === 'reversed') {
+            continue;
+        }
         if ($cutoff === null || $payout['period_end'] > $cutoff) {
             $cutoff = $payout['period_end'];
         }
@@ -72,11 +77,73 @@ function calculate_vendor_owed(PDO $pdo, int $vendorId): array
         array_merge($recipeSales->fetchAll(), $ingredientSales->fetchAll())
     );
 
-    $payoutStmt = $pdo->prepare('SELECT period_end FROM vendor_payouts WHERE vendor_id = ?');
+    $payoutStmt = $pdo->prepare('SELECT period_end, status FROM vendor_payouts WHERE vendor_id = ?');
     $payoutStmt->execute([$vendorId]);
     $existingPayouts = $payoutStmt->fetchAll();
 
     return vendor_owed_amount($paidSales, $existingPayouts);
+}
+
+// The one payout per vendor that's currently eligible for reversal - the
+// most recently created row that isn't already reversed. Deliberately by
+// id, not period_end: id is the unambiguous creation order regardless of
+// any period_end edge case, and payouts are always created moving forward
+// in time anyway. Reversing this one is always safe for the contiguous-
+// period invariant; reversing anything further back would leave a gap
+// (§2.6's punch-list already flags "no way to reverse a non-latest payout"
+// as a deliberate v1 limit, not an oversight).
+function latest_reversible_payout(PDO $pdo, int $vendorId): ?array
+{
+    $stmt = $pdo->prepare(
+        "SELECT * FROM vendor_payouts WHERE vendor_id = ? AND status IN ('pending', 'paid') ORDER BY id DESC LIMIT 1"
+    );
+    $stmt->execute([$vendorId]);
+    return $stmt->fetch() ?: null;
+}
+
+// vendor_id => id of that vendor's one reversible payout, for every vendor
+// that has one - lets admin_payouts.php's combined, all-vendors history
+// table decide per-row whether to show the Reverse action without an N+1
+// query per row.
+function latest_reversible_payout_ids(PDO $pdo): array
+{
+    return $pdo->query(
+        "SELECT vendor_id, MAX(id) AS id FROM vendor_payouts WHERE status IN ('pending', 'paid') GROUP BY vendor_id"
+    )->fetchAll(PDO::FETCH_KEY_PAIR);
+}
+
+// Reverses a payout, re-validating the same "latest and not already
+// reversed" rule server-side rather than trusting that admin_payouts.php
+// only ever rendered the button where it should have - a button being
+// hidden in one browser tab doesn't stop a POST crafted (or replayed from
+// an already-stale page) in another.
+function reverse_vendor_payout(PDO $pdo, int $payoutId, int $adminId, string $reason): array
+{
+    if (trim($reason) === '') {
+        return ['ok' => false, 'error' => 'A reason is required to reverse a payout.'];
+    }
+
+    $stmt = $pdo->prepare('SELECT * FROM vendor_payouts WHERE id = ?');
+    $stmt->execute([$payoutId]);
+    $payout = $stmt->fetch();
+
+    if (!$payout) {
+        return ['ok' => false, 'error' => 'Payout not found.'];
+    }
+    if ($payout['status'] === 'reversed') {
+        return ['ok' => false, 'error' => 'That payout has already been reversed.'];
+    }
+
+    $latest = latest_reversible_payout($pdo, (int)$payout['vendor_id']);
+    if (!$latest || (int)$latest['id'] !== $payoutId) {
+        return ['ok' => false, 'error' => 'Only the most recent payout for a vendor can be reversed - a newer one exists.'];
+    }
+
+    $pdo->prepare(
+        "UPDATE vendor_payouts SET status = 'reversed', reversed_at = NOW(), reversed_by_admin_id = ?, reversal_reason = ? WHERE id = ?"
+    )->execute([$adminId, trim($reason), $payoutId]);
+
+    return ['ok' => true, 'error' => null];
 }
 
 // Every vendor with something currently owed - backs admin_payouts.php's

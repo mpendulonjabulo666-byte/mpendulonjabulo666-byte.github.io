@@ -390,10 +390,67 @@ after that payout correctly showed as the only thing owed, with
 side, including the payout history entry.
 
 Known limits, deliberately accepted: no partial payouts (a payout run always
-covers everything owed since the last one, not a chosen subset); no way yet
-to reverse or edit a payout row if an admin makes one by mistake — see §2.10's
-punch-list, "an admin action audit log" is the related, still-missing piece
-that would make correcting a mistake here traceable too.
+covers everything owed since the last one, not a chosen subset).
+
+**Reversal** (added after the initial build, same step): a "mark as paid"
+was permanent with no way to undo a mistake and no record of why — a real
+risk once this handles actual vendor money.
+
+- `status` gains a third value, `reversed` (a string, not an ENUM — same
+  convention as every other status column in this schema), plus
+  `reversed_at`/`reversed_by_admin_id`/`reversal_reason` (migration
+  `2026_09_18_vendor_payout_reversal`).
+- **Scoped deliberately narrow**: only the single most recent payout for a
+  vendor — pending or paid — can be reversed, whether that's the very
+  latest row or, after reversing it, the one before it. Anything further
+  back is blocked, because periods are contiguous by construction (each
+  payout starts exactly where the last active one ended); reversing a
+  non-latest row would leave a gap or overlap in what's been paid for. This
+  is enforced **server-side** in `reverse_vendor_payout()` — not just by
+  hiding the button in `admin_payouts.php` — since a hidden button in one
+  tab doesn't stop a POST from an already-stale page in another.
+- `vendor_owed_amount()` (the pure function) now skips any `reversed` row
+  entirely when finding the cutoff period_end, exactly as if it had never
+  existed — so the money it covered becomes owed again on the very next
+  calculation, with no separate "undo" bookkeeping needed anywhere else.
+- `admin_payouts.php`'s payout history shows a "Reverse" action only on the
+  one eligible row per vendor (a plain "Not reversible" label with a tooltip
+  explains why on the others), requires typing a reason in a real textarea
+  (not just a confirm dialog — this is the only record of why), and shows
+  every reversed row with its reason and who reversed it, in red, right in
+  the history — not hidden or filtered out.
+- `vendor.php` shows the same reversed status and reason on the vendor's own
+  side, plus a note that a reversed amount becomes owed again.
+
+Tests: `tests/vendor_payouts_test.php` grew from 16 to 22 — three new pure-
+function cases for `vendor_owed_amount()` (a reversed-only history owes
+everything again; a reversed row sandwiched between two real ones is
+skipped even though it's chronologically more recent than the active one
+before it; a sale already covered by a *later* real payout doesn't
+resurface just because an *earlier* payout covering it was reversed) — plus
+every existing fixture updated to the new `['period_end' => ..., 'status'
+=> ...]` shape. `reverse_vendor_payout()`'s own logic (the "already
+reversed" and "not the latest" rejections, and the empty-reason rejection)
+is a thin DB-touching wrapper, verified live instead, same rule as
+`calculate_vendor_owed()`.
+
+Verified against the live database with a synthetic vendor: paid out a real
+sale, confirmed an empty-reason reversal attempt is rejected and leaves the
+row untouched, reversed it with a real reason through the actual HTTP POST
+handler and confirmed the row (`status`, `reversed_at`,
+`reversed_by_admin_id`, `reversal_reason`) and the recalculated balance
+(exactly the reversed amount, owed again) were both correct. Paid the
+vendor out again for a fresh sale, then added a *third* real payout, then
+confirmed attempting to reverse the now-non-latest second payout is
+blocked with the correct message and the row is untouched — distinct from
+the "already reversed" rejection tested earlier. Screenshotted
+`admin_payouts.php`'s mixed paid/reversed/not-reversible history and found
+a real layout bug from it: the Notes/reversal-reason column (unbounded
+width, `nowrap` by default) pushed the Reverse action far off-screen past
+the table's own horizontal scroll. Fixed by moving the action column
+earlier (right after Status) and constraining the Notes column to wrap
+within a fixed max-width, applied to both `admin_payouts.php` and
+`vendor.php`.
 
 ### 2.7 — `setup.php` can create but never upgrade ✅ DONE (Step 4)
 
@@ -516,8 +573,10 @@ restyling — worth its own decision before building):
   tracking that doesn't exist anywhere in the app.
 - Editing an existing admin-added recipe or an existing meal plan
   template — both currently support create + delete only.
-- An admin action audit log — nothing records who toggled a setting,
-  deleted a recipe/user, or resolved a report.
+- An admin action audit log for everything *except* payouts — vendor
+  payouts now have one (who paid/reversed, when, and why — see §2.6), but
+  nothing records who toggled a setting, deleted a recipe/user, or
+  resolved a report.
 - Pagination on `admin_users.php` — capped at 200 rows, no pager.
 - Report email notifications — new reports don't alert admins, unlike
   the existing pattern for recipe ratings (`send_notification_email`).
@@ -600,13 +659,20 @@ Each step is independently shippable. Don't batch them.
       migration. `tests/payfast_test.php` (8, stubbed DNS). Verified
       against the live database with a synthetic subscription, cleaned up
       after. Found two more gaps, filed rather than fixed — see §2.5.
-- [x] **Step 8 — Vendor payouts** (§2.6) — done
+- [x] **Step 8 — Vendor payouts, with reversal** (§2.6) — done
       Manual EFT with a tracked ledger. `includes/vendor_payouts.php` (new,
       pure "what's owed" function + DB wrappers), `vendor_payouts` table
       (migration), `admin_payouts.php` (new), `vendor.php` updated with a
-      payout-history section. `tests/vendor_payouts_test.php` (16). Verified
-      against the live database with a synthetic vendor and real sale rows,
-      cleaned up after — see §2.6 for the full verification trail.
+      payout-history section. A "mark as paid" can be reversed (only the
+      vendor's single most recent payout, enforced server-side, requires a
+      typed reason, second migration
+      `2026_09_18_vendor_payout_reversal`) — the reversed money becomes
+      owed again automatically since `vendor_owed_amount()` skips reversed
+      rows entirely when finding the payout cutoff. `tests/vendor_payouts_test.php`
+      (22). Verified against the live database with a synthetic vendor and
+      real sale/payout rows, cleaned up after — see §2.6 for the full
+      verification trail, including a real layout bug the screenshot caught
+      and fixed.
 - [ ] **Step 9 — Launch checklist**
       `DEPLOYMENT.md` § "Going live with PayFast", real credentials, SMTP,
       accessibility pass, `mysqldump` cron.

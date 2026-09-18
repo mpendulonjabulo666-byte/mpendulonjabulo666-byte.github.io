@@ -31,6 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
         flash_set('success', 'Payout recorded — remember this only logs that you paid the vendor by EFT; no money moves through NutriTale itself.');
         redirect('admin_payouts.php');
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reverse' && csrf_check()) {
+    $payoutId = (int)($_POST['payout_id'] ?? 0);
+    $reason = trim($_POST['reversal_reason'] ?? '');
+
+    $result = reverse_vendor_payout(db(), $payoutId, (int)$user['id'], $reason);
+    if ($result['ok']) {
+        flash_set('success', 'Payout reversed. That amount is owed to the vendor again.');
+        redirect('admin_payouts.php');
+    } else {
+        $errors[] = $result['error'];
+    }
 }
 
 $owedByVendor = vendors_with_owed_balance(db());
@@ -43,13 +54,17 @@ if ($owedByVendor) {
 }
 
 $history = db()->query(
-    'SELECT vp.*, u.name AS vendor_name, u.email AS vendor_email, a.name AS admin_name
+    'SELECT vp.*, u.name AS vendor_name, u.email AS vendor_email,
+     a.name AS admin_name, r.name AS reversed_by_name
      FROM vendor_payouts vp
      JOIN users u ON u.id = vp.vendor_id
      LEFT JOIN users a ON a.id = vp.paid_by_admin_id
+     LEFT JOIN users r ON r.id = vp.reversed_by_admin_id
      ORDER BY vp.created_at DESC
      LIMIT 50'
 )->fetchAll();
+
+$reversibleIds = latest_reversible_payout_ids(db());
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,9 +143,13 @@ $history = db()->query(
         <?php else: ?>
             <div style="overflow-x:auto;">
             <table class="admin-table">
-                <thead><tr><th>Vendor</th><th>Period</th><th>Amount</th><th>Status</th><th>Paid by</th><th>Notes</th></tr></thead>
+                <thead><tr><th>Vendor</th><th>Period</th><th>Amount</th><th>Status</th><th></th><th>Paid by</th><th>Notes</th></tr></thead>
                 <tbody>
-                    <?php foreach ($history as $p): ?>
+                    <?php foreach ($history as $p):
+                        $isReversible = ($reversibleIds[$p['vendor_id']] ?? null) !== null
+                            && (int)$reversibleIds[$p['vendor_id']] === (int)$p['id'];
+                        $statusPill = ['paid' => 'resolved', 'pending' => 'open', 'reversed' => 'dismissed'][$p['status']] ?? 'open';
+                    ?>
                         <tr>
                             <td><?= h($p['vendor_name']) ?></td>
                             <td>
@@ -138,9 +157,36 @@ $history = db()->query(
                                 – <?= h((new DateTime($p['period_end']))->format('M j, Y')) ?>
                             </td>
                             <td>R<?= number_format((float)$p['amount'], 2) ?></td>
-                            <td><span class="pill pill-<?= $p['status'] === 'paid' ? 'resolved' : 'open' ?>"><?= h(ucfirst($p['status'])) ?></span></td>
-                            <td><?= h($p['admin_name'] ?? '—') ?></td>
-                            <td class="muted"><?= h($p['notes'] ?? '') ?></td>
+                            <td><span class="pill pill-<?= $statusPill ?>"><?= h(ucfirst($p['status'])) ?></span></td>
+                            <td>
+                                <?php if ($isReversible): ?>
+                                    <details>
+                                        <summary class="btn btn-text btn-small" style="display:inline-flex;cursor:pointer;color:var(--error);white-space:nowrap;"><?= icon('x', 14) ?> Reverse</summary>
+                                        <form method="post" class="mt-16" style="min-width:220px;white-space:normal;" onsubmit="return confirm('Reverse this R<?= number_format((float)$p['amount'], 2) ?> payout to <?= h(addslashes($p['vendor_name'])) ?>? The amount becomes owed again.');">
+                                            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                            <input type="hidden" name="action" value="reverse">
+                                            <input type="hidden" name="payout_id" value="<?= (int)$p['id'] ?>">
+                                            <label class="field">
+                                                <span>Reason (required)</span>
+                                                <textarea name="reversal_reason" rows="2" required></textarea>
+                                            </label>
+                                            <button type="submit" class="btn btn-text btn-small" style="color:var(--error);">Confirm reversal</button>
+                                        </form>
+                                    </details>
+                                <?php elseif ($p['status'] !== 'reversed'): ?>
+                                    <span class="muted" style="font-size:12px;white-space:normal;display:block;max-width:110px;" title="A newer payout exists for this vendor — only the most recent one can be reversed.">Not reversible</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="white-space:nowrap;"><?= h($p['admin_name'] ?? '—') ?></td>
+                            <td class="muted" style="white-space:normal;max-width:260px;">
+                                <?= h($p['notes'] ?? '') ?>
+                                <?php if ($p['status'] === 'reversed'): ?>
+                                    <div style="color:var(--error);font-weight:600;margin-top:4px;">
+                                        Reversed <?= $p['reversed_at'] ? h((new DateTime($p['reversed_at']))->format('M j, Y')) : '' ?>
+                                        by <?= h($p['reversed_by_name'] ?? 'an admin') ?>: <?= h($p['reversal_reason']) ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
