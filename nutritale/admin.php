@@ -9,6 +9,7 @@ $user = require_admin();
 // same tables the rest of the app reads and writes, never a placeholder.
 $totalUsers = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
 $newUsersWeek = (int)db()->query('SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
+$activeWeek = (int)db()->query('SELECT COUNT(*) FROM users WHERE last_login_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
 $totalRecipes = (int)db()->query('SELECT COUNT(*) FROM recipes')->fetchColumn();
 $newRecipesWeek = (int)db()->query('SELECT COUNT(*) FROM recipes WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
 $premiumMembers = (int)db()->query('SELECT COUNT(*) FROM users WHERE is_premium_member = 1')->fetchColumn();
@@ -57,7 +58,7 @@ try {
         <div class="card admin-stat-card">
             <div class="admin-stat-label">Total users</div>
             <div class="admin-stat-value"><?= number_format($totalUsers) ?></div>
-            <div class="admin-stat-sub"><?= $newUsersWeek ?> new this week</div>
+            <div class="admin-stat-sub"><?= $newUsersWeek ?> new · <?= $activeWeek ?> active this week</div>
         </div>
         <div class="card admin-stat-card">
             <div class="admin-stat-label">Recipes</div>
@@ -92,6 +93,8 @@ try {
             <a href="admin_recipes.php" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add a recipe</a>
             <a href="admin_users.php" class="btn btn-text btn-small"><?= icon('users', 14) ?> Manage users</a>
             <a href="admin_reports.php" class="btn btn-text btn-small"><?= icon('alert-triangle', 14) ?> Review reports</a>
+            <a href="admin_meal_plans.php" class="btn btn-text btn-small"><?= icon('calendar', 14) ?> Meal plans</a>
+            <a href="admin_analytics.php" class="btn btn-text btn-small"><?= icon('bar-chart', 14) ?> Analytics</a>
         </div>
     </div>
 </main>

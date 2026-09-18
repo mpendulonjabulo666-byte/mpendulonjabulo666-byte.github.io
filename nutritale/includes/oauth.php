@@ -100,6 +100,6 @@ function oauth_find_or_create_user(string $email, string $name): array
 // check succeeds - same session key, same failed-attempt reset.
 function oauth_login_user(array $user): void
 {
-    db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$user['id']]);
+    db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
     $_SESSION['user_id'] = (int)$user['id'];
 }

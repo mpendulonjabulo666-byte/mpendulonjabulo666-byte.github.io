@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $errors[] = 'Incorrect email or password.';
         } else {
-            db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$user['id']]);
+            db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
             if (!empty($_POST['remember_me'])) {
                 session_set_cookie_params(REMEMBER_ME_DAYS * 86400);
                 // The session is already open (config.php starts it) -

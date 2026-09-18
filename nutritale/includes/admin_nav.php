@@ -6,6 +6,8 @@ $adminTabs = [
     'admin_categories.php' => ['grid', 'Categories'],
     'admin_users.php' => ['users', 'Users'],
     'admin_reports.php' => ['alert-triangle', 'Reports'],
+    'admin_meal_plans.php' => ['calendar', 'Meal Plans'],
+    'admin_analytics.php' => ['bar-chart', 'Analytics'],
     'admin_settings.php' => ['settings', 'Settings'],
 ];
 ?>

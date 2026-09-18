@@ -142,4 +142,59 @@ return [
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         INSERT INTO platform_settings (id) VALUES (1)
     ",
+
+    // Admin suite, part 2: real "active users" needs *some* signal of
+    // recent activity, and nothing in the schema tracked one before this -
+    // set from login.php and oauth_login_user() on every successful sign
+    // in. NULL for an account that has never logged in since this shipped
+    // (including every pre-existing account) rather than backfilled to
+    // created_at, which would fabricate an activity signal that never
+    // happened.
+    '2026_09_18_last_login' => 'ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER created_at',
+
+    // Backs admin_analytics.php's real "recipe views" numbers - one row
+    // per successful recipe.php page load (not rating/report POSTs). No
+    // dedup by user/day: a page-load counter is what "views" conventionally
+    // means in this kind of dashboard, and de-duplicating would need a
+    // policy decision (per session? per day? per user ever?) that isn't
+    // needed just to show honest totals and a top-viewed list.
+    '2026_09_18_recipe_views' => "
+        CREATE TABLE recipe_views (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            recipe_id VARCHAR(40) NOT NULL,
+            user_id INT UNSIGNED NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_recipe (recipe_id),
+            INDEX idx_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
+
+    // Admin-curated, publishable meal plan templates - distinct from each
+    // member's own meal_plan_items (planner.php). day_offset is 0-6
+    // relative to whatever start date a member later adopts it on
+    // (meal_plan_templates.php), not a fixed calendar date, so one
+    // template is reusable indefinitely rather than tied to the week it
+    // was authored in.
+    '2026_09_18_meal_plan_templates' => "
+        CREATE TABLE meal_plan_templates (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(150) NOT NULL,
+            description TEXT NULL,
+            created_by INT UNSIGNED NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE meal_plan_template_items (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            template_id INT UNSIGNED NOT NULL,
+            day_offset TINYINT UNSIGNED NOT NULL,
+            meal_type VARCHAR(30) NOT NULL,
+            recipe_id VARCHAR(40) NOT NULL,
+            FOREIGN KEY (template_id) REFERENCES meal_plan_templates(id) ON DELETE CASCADE,
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+            INDEX idx_template (template_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
 ];

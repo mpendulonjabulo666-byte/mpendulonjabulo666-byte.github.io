@@ -62,6 +62,10 @@ if (!$recipe) {
     die('Recipe not found.');
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    db()->prepare('INSERT INTO recipe_views (recipe_id, user_id) VALUES (?, ?)')->execute([$id, $user['id']]);
+}
+
 $dietStmt = db()->prepare('SELECT diet_type FROM recipe_diet_tags WHERE recipe_id = ?');
 $dietStmt->execute([$id]);
 $dietTags = $dietStmt->fetchAll(PDO::FETCH_COLUMN);
