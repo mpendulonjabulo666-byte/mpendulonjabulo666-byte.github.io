@@ -79,7 +79,10 @@ $recipes = $stmt->fetchAll();
         <div class="alert alert-success"><?= h($success) ?></div>
     <?php endif; ?>
 
-    <h1 class="mb-16"><?= icon('shield', 20) ?> Admin portal</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;" class="mb-16">
+        <h1 style="margin:0;"><?= icon('shield', 20) ?> Admin portal</h1>
+        <a href="admin_profile.php" class="btn btn-text btn-small"><?= icon('user', 16) ?> My profile</a>
+    </div>
 
     <div class="card mb-16">
         <h2 style="margin-top:0;font-size:17px;"><?= icon('plus', 18) ?> Quick add recipe</h2>

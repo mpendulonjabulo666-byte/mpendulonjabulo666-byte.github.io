@@ -23,7 +23,7 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
             <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
             <div class="recipe-card-meta">
                 <span><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</span>
-                <span><?= icon('flame', 14) ?> <?= (int)$recipe['calories'] ?> cal</span>
+                <span><?= icon('flame', 14) ?> <?= $recipe['calories'] !== null ? (int)$recipe['calories'] . ' cal' : '— cal' ?></span>
             </div>
             <?php if ($dietTags): ?>
                 <div class="tag-row">

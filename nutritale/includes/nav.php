@@ -52,7 +52,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
                 </a>
             <?php endif; ?>
             <div class="app-nav-user-row">
-                <a href="profile.php" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>
+                <a href="<?= !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php' ?>" class="muted"><?= icon('settings', 16) ?> <?= h($user['name']) ?></a>
             </div>
             <div class="app-nav-user-row">
                 <a href="logout.php" class="btn btn-text btn-small"><?= icon('logout', 16) ?> Logout</a>

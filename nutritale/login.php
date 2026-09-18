@@ -101,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="auth-form-panel">
             <div class="auth-form-card">
+                <a href="landing.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to home</a>
                 <a href="landing.php" class="center-text mb-16" style="display:block;"><?= nutritale_logo_svg(48) ?></a>
                 <h1>Welcome Back</h1>
                 <p class="auth-form-subtitle">Log in to continue your food journey</p>

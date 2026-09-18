@@ -169,15 +169,15 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
                     <span id="servings-value"><?= (int)$recipe['servings'] ?></span>
                     <button type="button" id="servings-plus" aria-label="More servings"><?= icon('plus', 12) ?></button>
                 </div>
-                <div><?= icon('flame', 16) ?> <?= (int)$recipe['calories'] ?> cal</div>
+                <div><?= icon('flame', 16) ?> <?= $recipe['calories'] !== null ? (int)$recipe['calories'] . ' cal' : 'Calories unknown' ?></div>
                 <div>Difficulty: <?= h(ucfirst($recipe['difficulty'])) ?></div>
             </div>
 
             <div class="macro-row">
-                <div class="macro-pill"><strong><?= (int)$recipe['protein_g'] ?>g</strong><span>Protein</span></div>
-                <div class="macro-pill"><strong><?= (int)$recipe['carbs_g'] ?>g</strong><span>Carbs</span></div>
-                <div class="macro-pill"><strong><?= (int)$recipe['fat_g'] ?>g</strong><span>Fat</span></div>
-                <div class="macro-pill"><strong><?= (int)$recipe['fiber_g'] ?>g</strong><span>Fiber</span></div>
+                <div class="macro-pill"><strong><?= $recipe['protein_g'] !== null ? (int)$recipe['protein_g'] . 'g' : '—' ?></strong><span>Protein</span></div>
+                <div class="macro-pill"><strong><?= $recipe['carbs_g'] !== null ? (int)$recipe['carbs_g'] . 'g' : '—' ?></strong><span>Carbs</span></div>
+                <div class="macro-pill"><strong><?= $recipe['fat_g'] !== null ? (int)$recipe['fat_g'] . 'g' : '—' ?></strong><span>Fat</span></div>
+                <div class="macro-pill"><strong><?= $recipe['fiber_g'] !== null ? (int)$recipe['fiber_g'] . 'g' : '—' ?></strong><span>Fiber</span></div>
             </div>
             <?= disclaimer('nutrition') ?>
 
