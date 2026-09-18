@@ -682,11 +682,30 @@ compliance:
   banners including their dark-mode translucent overlays properly
   alpha-blended before checking, the landing page's dark "Deep Herb" glass
   cards specifically since that's the direction most likely to hide a
-  contrast bug) — all pass WCAG AA (≥4.5:1 for text) with one exception:
-  the dark-mode error alert on a card surface computes to **4.49:1**,
-  a hair under the threshold. Flagged, not touched — this is the
-  "borderline, don't guess" case explicitly, not a clear failure like the
-  button above.
+  contrast bug) — all pass WCAG AA (≥4.5:1 for text) with one flagged
+  exception, since closed: ✅ **the dark-mode error alert (4.49:1 → 4.90:1,
+  fixed)**. `--error-bg`'s alpha (only ever used by `.alert-error`) dropped
+  from 0.14 to 0.08 — counterintuitively a *lower* alpha raises contrast
+  here, since the red tint is itself lighter than the dark card surface it
+  sits on, so more of it pulls the blend toward the light `--error` text's
+  own luminance rather than away from it. Now 4.90:1 on a card, 5.50:1 on
+  the plain page background — comfortable margin above threshold in both,
+  not a second borderline value.
+
+  Re-checking that pairing turned up a second, worse instance the original
+  pass never actually computed: **light mode's own alert-error was failing
+  at 3.78:1** (the original pass had verified `--error` against the plain
+  page background — 6.05:1, fine — but never against `--error-bg`
+  specifically, so this slipped through). Lightening the background alone
+  couldn't fix it — even pure white only reaches 4.38:1 against that
+  text color — so `--error` itself darkened from `#d64545` to `#b93333`,
+  reaching 5.06:1. Only ever improves the handful of other places
+  `--error` is used as a plain foreground color (`.pantry-chip:hover`,
+  `.allergen-warning`, planner/recipe "remove" button hovers), since none
+  of those sit on a surface darker than this app's own light theme.
+  Verified live in both themes with a real triggered login error (an
+  actual failed-login `.alert-error`, not a mockup) — screenshotted, both
+  read clearly and neither clashes with surrounding colors.
 - Verified real keyboard tab order (not just static markup review) with a
   small CDP-driven script: launched headless Chrome, dispatched real Tab
   key events, and read `document.activeElement` at each step, on

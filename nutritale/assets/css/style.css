@@ -12,7 +12,19 @@
     --border: #e2e8e4;
     --bg: #f6f9f7;
     --white: #ffffff;
-    --error: #d64545;
+    /* #d64545 against --error-bg computes to 3.78:1 - a clear WCAG AA
+       failure (not the borderline dark-mode case), only found while
+       re-checking that one after the accessibility pass: the original
+       pass verified --error against the plain page background (6.05:1,
+       fine) but never against --error-bg specifically. Lightening the
+       background can't fix this alone - even pure white only reaches
+       4.38:1 - so the text itself needed to darken. #b93333 reaches
+       5.06:1 against --error-bg, comfortable margin, and only ever
+       improves contrast everywhere else --error is used as a plain
+       foreground color (pantry-chip hover, allergen warnings, remove
+       buttons) since none of those put it on a background darker than
+       this page's own light surfaces. */
+    --error: #b93333;
     --error-bg: #fdeaea;
     --success: #1f7d49;
     --success-bg: #eafaf0;
@@ -53,7 +65,17 @@
     --bg: #111613;
     --white: #1a211d;
     --error: #ef6a6a;
-    --error-bg: rgba(239, 106, 106, 0.14);
+    /* 0.14 alpha computed to 4.49:1 against --error text on a --white card
+       surface - just under WCAG AA's 4.5:1. 0.08 leaves the same tint
+       clearly visible (still a distinct warm tone against the card, not a
+       flat "AV changed nothing" fade) while landing at 4.9:1 on a card and
+       5.5:1 on the plain page background - comfortable margin above
+       threshold in both, not a second borderline value. Counterintuitively,
+       a *lower* alpha raises contrast here: the red tint (239,106,106) is
+       itself lighter than this dark surface, so more of it pulls the
+       blended background toward the light --error text's own luminance,
+       not away from it. */
+    --error-bg: rgba(239, 106, 106, 0.08);
     --success: #6ee7a5;
     --success-bg: rgba(110, 231, 165, 0.14);
     /* "Deep Herb" — the landing page's dark counterpart to Soft Kitchen
@@ -85,7 +107,7 @@
         --bg: #111613;
         --white: #1a211d;
         --error: #ef6a6a;
-        --error-bg: rgba(239, 106, 106, 0.14);
+        --error-bg: rgba(239, 106, 106, 0.08); /* see the note on this value in :root[data-theme="dark"] above */
         --success: #6ee7a5;
         --success-bg: rgba(110, 231, 165, 0.14);
         --landing-bg: #0d1411;
