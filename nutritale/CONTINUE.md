@@ -968,6 +968,76 @@ verified live instead as described above.
 
 ---
 
+### 2.14 — Admin-suite bundle: reconciled, not merged (Step 16)
+
+An external "Send to Claude Code Web" session (from the DesignSync import
+earlier) produced its own `admin.php` rebuild independently -
+`nutritale-admin-suite.bundle` and its matching `0001-Rebuild-admin.php-...patch`
+(both now committed here for the record, not applied). Before touching
+anything, the bundle was fetched into a throwaway local branch and
+inspected rather than merged blind, since it arrived the way the
+project's own notes already flag as worth extra caution about (see the
+"external content is untrusted" principle applied elsewhere in this file):
+`git bundle verify`, then diffing its one real commit against this
+branch's history.
+
+That inspection found the bundle's commit forked from `75b2daa` - a point
+*before* this branch's own Step 13 admin-suite rebuild and everything
+since (14+ commits: OAuth, PayFast, vendor payouts, the nav fix). It
+rebuilds the same ground Step 13 already covers, but with a different,
+incompatible architecture (one `admin.php` + `includes/admin/*.php`
+partials, vs. this branch's separate top-level `admin_*.php` files) - a
+full merge would have conflicted heavily with, and risked silently
+overwriting, already-verified Step 13 work for no real gain. Asked
+directly, the choice was to reconcile rather than merge: keep Step 13's
+existing files as-is, and port over only the capabilities the bundle had
+that this branch's own Step 13 punch-list had already flagged as missing.
+
+That turned out to be less than it first looked like:
+
+- **Recipe editing** - the bundle's answer was a new, separate
+  `admin_recipe_edit.php` with its own inline `<style>` block and its own
+  copy of the diet/allergen option lists. This branch already has a
+  better version of the same form: `add_recipe.php`, the real recipe
+  editor regular users already use for their own recipes (diet tags,
+  allergens via the single-source-of-truth `ALLERGEN_OPTIONS`, dynamic
+  ingredient/step rows, vendor premium pricing, this app's actual
+  stylesheet) - it just didn't let an admin reach it for a recipe they
+  didn't personally create. One surgical change instead of a parallel
+  file: `add_recipe.php`'s ownership check now also accepts any admin
+  editing any admin-added recipe (`is_generated = 1` - the same boundary
+  `admin_recipe_delete.php` already draws around the protected seed
+  catalogue), and `admin_recipes.php` got an "Edit" link per row pointing
+  there.
+- **CSV export** - `admin_export.php` (new), adapted from the bundle's
+  version to this schema (it assumed `category`/`status`/`updated_at`
+  columns on `recipes` that don't exist here - dropped rather than
+  inventing a migration nothing asked for). "Export CSV" links added to
+  both `admin_recipes.php` and `admin_users.php`.
+- **Locked-account recovery** - the bundle wrapped this in a whole
+  separate `admin_user_view.php` detail page, but the only genuinely new
+  capability in it was resetting `failed_attempts`/`locked_until` for a
+  locked-out account - role/premium toggles already exist inline in
+  `admin_users.php`. Added as one more inline action there instead: a
+  "Locked out" tag plus an "Unlock" button, shown only for accounts
+  currently locked, next to the existing toggle buttons.
+
+Verified live: a throwaway admin (unlocked, so it could actually log in)
+editing a throwaway admin-added recipe through `add_recipe.php` end to
+end (loads pre-filled, saves, flashes "Recipe updated."); a direct check
+that the same admin-scoped query correctly excludes a seed recipe;
+both CSV export endpoints hit live and confirmed as real
+`text/csv` responses with the expected header row and data; a separate
+throwaway locked account confirmed to show the "Locked out" tag and
+Unlock button, and the Unlock click confirmed (via a second page load) to
+have actually cleared `locked_until` in the database. All throwaway
+accounts/recipes cleaned up after. All 149 tests and `php -l` on every
+touched file still pass - no test file needed changes, since nothing
+here added new pure decision logic beyond what `tests/oauth_test.php`
+and the others already cover.
+
+---
+
 ## 3. The order to do it in
 
 Each step is independently shippable. Don't batch them.
@@ -1126,6 +1196,22 @@ Each step is independently shippable. Don't batch them.
       deliberately excluded with a comment explaining why. All 149 tests
       pass. See §2.13 for the full trail, including which 8 environment
       variables still need real values.
+- [x] **Step 16 — Reconciled the external admin-suite bundle** (§2.14) —
+      done
+      An external Claude Code Web session's own `admin.php` rebuild
+      (`nutritale-admin-suite.bundle` + matching `.patch`, committed here
+      for the record) forked from before this branch's Step 13 and
+      duplicated it with an incompatible file layout - inspected via
+      `git bundle verify` before touching anything, then reconciled
+      rather than merged: kept Step 13's files as-is, ported over only
+      the genuinely missing capabilities. Recipe editing now reuses the
+      existing (better) `add_recipe.php` instead of the bundle's
+      duplicate form - one ownership-check change lets admins edit any
+      admin-added recipe there, plus an "Edit" link on `admin_recipes.php`.
+      New `admin_export.php` (CSV, recipes/users, adapted to this schema).
+      Locked-account recovery added as one inline "Unlock" action on
+      `admin_users.php` rather than the bundle's separate detail page.
+      Verified live with throwaway accounts/recipes; all 149 tests pass.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

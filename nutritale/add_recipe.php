@@ -36,8 +36,18 @@ $steps = [''];
 $errors = [];
 
 if ($editId) {
-    $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND created_by = ?');
-    $stmt->execute([$editId, $user['id']]);
+    // Admins can edit any admin-added recipe here too (from the "Edit"
+    // link on admin_recipes.php), not just their own - same is_generated
+    // boundary admin_recipe_delete.php already draws, so the seed
+    // catalogue stays off-limits to editing here just like it is to
+    // deleting.
+    if (!empty($user['is_admin'])) {
+        $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND is_generated = 1');
+        $stmt->execute([$editId]);
+    } else {
+        $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND created_by = ?');
+        $stmt->execute([$editId, $user['id']]);
+    }
     $existing = $stmt->fetch();
     if (!$existing) {
         http_response_code(404);

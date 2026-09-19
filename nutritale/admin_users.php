@@ -9,6 +9,13 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $targetId = (int)($_POST['user_id'] ?? 0);
+
+    if (($_POST['action'] ?? '') === 'unlock') {
+        db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$targetId]);
+        flash_set('success', 'Account unlocked.');
+        redirect('admin_users.php' . (($_GET['q'] ?? '') !== '' ? '?q=' . urlencode($_GET['q']) : ''));
+    }
+
     $field = $_POST['toggle'] ?? '';
     $allowedFields = ['is_admin', 'is_premium_member', 'is_vendor'];
 
@@ -43,7 +50,7 @@ if ($search !== '') {
     $params = ['%' . $search . '%', '%' . $search . '%'];
 }
 $stmt = db()->prepare(
-    "SELECT id, name, email, is_admin, is_premium_member, is_vendor, created_at FROM users $where ORDER BY created_at DESC LIMIT 200"
+    "SELECT id, name, email, is_admin, is_premium_member, is_vendor, failed_attempts, locked_until, created_at FROM users $where ORDER BY created_at DESC LIMIT 200"
 );
 $stmt->execute($params);
 $users = $stmt->fetchAll();
@@ -83,9 +90,10 @@ $users = $stmt->fetchAll();
         <div class="alert alert-error"><?= h($error) ?></div>
     <?php endforeach; ?>
 
-    <form method="get" class="mb-16">
-        <input type="text" name="q" value="<?= h($search) ?>" placeholder="Search by name or email..." class="field" style="max-width:300px;display:inline-block;">
+    <form method="get" class="mb-16" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <input type="text" name="q" value="<?= h($search) ?>" placeholder="Search by name or email..." class="field" style="max-width:300px;">
         <button type="submit" class="btn btn-text btn-small"><?= icon('search', 14) ?> Search</button>
+        <a href="admin_export.php?type=users" class="btn btn-text btn-small" style="margin-left:auto;"><?= icon('download', 14) ?> Export CSV</a>
     </form>
 
     <div class="card" style="overflow-x:auto;">
@@ -97,12 +105,17 @@ $users = $stmt->fetchAll();
                     <th>Admin</th>
                     <th>Premium</th>
                     <th>Vendor</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($users as $u): ?>
+                    <?php $isLocked = $u['locked_until'] && new DateTime($u['locked_until']) > new DateTime(); ?>
                     <tr>
-                        <td><strong><?= h($u['name']) ?></strong> <span class="muted"><?= h($u['email']) ?></span></td>
+                        <td>
+                            <strong><?= h($u['name']) ?></strong> <span class="muted"><?= h($u['email']) ?></span>
+                            <?php if ($isLocked): ?><span class="tag" style="color:var(--error);border-color:var(--error);"><?= icon('lock', 12) ?> Locked out</span><?php endif; ?>
+                        </td>
                         <td><?= h((new DateTime($u['created_at']))->format('M j, Y')) ?></td>
                         <?php foreach (['is_admin', 'is_premium_member', 'is_vendor'] as $field): ?>
                             <td>
@@ -116,6 +129,16 @@ $users = $stmt->fetchAll();
                                 </form>
                             </td>
                         <?php endforeach; ?>
+                        <td>
+                            <?php if ($isLocked): ?>
+                                <form method="post">
+                                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                    <input type="hidden" name="action" value="unlock">
+                                    <button type="submit" class="btn btn-text btn-small"><?= icon('lock', 14) ?> Unlock</button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

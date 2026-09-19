@@ -153,7 +153,7 @@ $recipes = $stmt->fetchAll();
 
     <h1 class="mb-16" style="font-size:20px;"><?= icon('list', 20) ?> User-submitted recipes</h1>
 
-    <form method="get" class="toolbar mb-16" style="display:flex;gap:10px;flex-wrap:wrap;">
+    <form method="get" class="toolbar mb-16" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <input type="text" name="q" value="<?= h($search) ?>" placeholder="Search by title..." class="field" style="max-width:260px;">
         <select name="meal_type" class="field" style="max-width:180px;">
             <option value="">All meal types</option>
@@ -162,6 +162,7 @@ $recipes = $stmt->fetchAll();
             <?php endforeach; ?>
         </select>
         <button type="submit" class="btn btn-text btn-small"><?= icon('search', 14) ?> Filter</button>
+        <a href="admin_export.php?type=recipes" class="btn btn-text btn-small" style="margin-left:auto;"><?= icon('download', 14) ?> Export CSV</a>
     </form>
 
     <?php if (!$recipes): ?>
@@ -185,7 +186,8 @@ $recipes = $stmt->fetchAll();
                             <td><?= h($recipe['author_name']) ?> <span class="muted">(<?= h($recipe['author_email']) ?>)</span></td>
                             <td><?= h(ucfirst($recipe['meal_type'])) ?></td>
                             <td><?= h((new DateTime($recipe['created_at']))->format('M j, Y')) ?></td>
-                            <td>
+                            <td style="display:flex;gap:6px;">
+                                <a href="add_recipe.php?id=<?= urlencode($recipe['id']) ?>" class="btn btn-text btn-small">Edit</a>
                                 <form method="post" action="admin_recipe_delete.php" onsubmit="return confirm('Remove this recipe?');">
                                     <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                                     <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
