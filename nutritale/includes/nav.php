@@ -25,7 +25,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
     </a>
 
     <input type="checkbox" id="nav-toggle" class="app-nav-toggle-input">
-    <label for="nav-toggle" class="app-nav-toggle" aria-label="Toggle menu"><?= icon('list', 20) ?></label>
+    <label for="nav-toggle" class="app-nav-toggle" aria-label="Toggle menu" aria-expanded="false"><?= icon('list', 20) ?></label>
     <label for="nav-toggle" class="app-nav-backdrop" aria-hidden="true"></label>
 
     <div class="app-nav-collapsible">
@@ -66,3 +66,4 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
         </div>
     </div>
 </header>
+<script src="assets/js/nav-drawer-keyboard.js" defer></script>

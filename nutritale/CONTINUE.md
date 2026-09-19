@@ -748,6 +748,92 @@ ships the sandbox defaults with a comment pointing at exactly what to
 replace and where the full checklist lives; nothing was guessed or faked
 here.
 
+### 2.12 — Responsive header/nav: a real gap between the mobile drawer and the desktop sidebar (Step 14)
+
+Reported as "the public landing page is cramped on phone widths, unlike
+the logged-in app's sidebar drawer, which already handles mobile
+correctly." Audited both at 375px, 768px, and desktop before changing
+anything, per the request — the actual finding was the reverse of what
+was reported, found only because of that audit discipline rather than
+trusting the premise:
+
+- **`landing.php`'s header was never broken.** Tested 320-1024px in
+  14 real emulated-viewport steps (not just the three named widths) with
+  `document.body.scrollWidth` checked against `window.innerWidth` at
+  each one - zero overflow anywhere. A first pass using headless Chrome's
+  one-shot `--screenshot` CLI flag *appeared* to show it cut off at
+  375px, but that was the tool, not the app: a CDP session that waits for
+  an actual render pass before capturing (the same lesson already
+  learned twice before in this file - the hero photo's animation, and
+  Step 13's mysqldump verification - unreliable single-shot capture
+  timing keeps being the specific failure mode worth remembering) showed
+  a clean, correctly-wrapping header at the same width.
+- **The logged-in app's own nav - the thing offered as the reference for
+  "done right" - was the one actually broken**, on every single
+  authenticated page (`index.php`, `admin.php`, everything using
+  `includes/nav.php`, since it's one shared component) at exactly
+  701-900px, which includes the 768px iPad Mini width named in the
+  request. The mobile drawer (`@media max-width:700px`) and the desktop
+  sidebar (`@media min-width:901px`) were each correct on their own, but
+  the two breakpoints didn't meet - 701-900px got neither treatment, just
+  `.app-nav`'s bare flex row, and a nav carrying six-plus links plus
+  admin/premium/user/logout extras doesn't fit in that row. Confirmed
+  live: `scrollWidth` of 1202px inside a 768px viewport, both on
+  `index.php` and on `admin.php` (same shared `.app-nav`, same bug,
+  checked rather than assumed identical). `admin_nav.php`'s own separate
+  tab bar was not at fault - checked in isolation and already wraps
+  correctly on its own at every width.
+- **Fix**: widened the mobile-drawer media query from `max-width:700px`
+  to `max-width:900px`, landing exactly on the sidebar's existing
+  `min-width:901px` - no gap left at any width. Split `.recipe-columns`'s
+  and `.app-main`'s unrelated padding/column rules, which happened to
+  share that same query, back out into their own `max-width:700px` block
+  so widening the nav's breakpoint doesn't also change those two
+  components' behaviour at 701-900px - that was never asked for and
+  wasn't checked for regressions.
+- **Found two more real bugs directly in the drawer this fix now exposes
+  to a much wider range of real screens, checked per the request's own
+  item 5 rather than assumed fine because the mechanism predates this
+  work**: the hamburger toggle and close button are bare `<label>`
+  elements with no `tabindex` - never reachable by keyboard at all, on
+  any width, before this - and the drawer's links stayed in the page's
+  tab order via `transform: translateX(-100%)` alone even while closed
+  and fully off-screen, since a transform never removes an element from
+  keyboard navigation the way `visibility` does. Both fixed: new
+  `assets/js/nav-drawer-keyboard.js` (added once, to `includes/nav.php`
+  itself, so every page that includes it gets the fix automatically)
+  gives the toggle/close labels `tabindex="0"` + `role="button"` +
+  Enter/Space activation, keeps `aria-expanded` in sync, and closes the
+  drawer on Escape; `.app-nav-collapsible` now transitions `visibility`
+  alongside `transform`, so its contents are only genuinely tabbable
+  while the panel is actually open or opening, not while sitting
+  translated off-screen. `prefers-reduced-motion` disables both
+  transitions outright (`transition: none`), same treatment as the
+  landing hero photo's animation in §2.11.
+
+Verified live end to end, not by reasoning about the CSS alone: direct
+`.focus()` calls (more authoritative than simulating a Tab keypress via
+CDP, which turned out not to reliably replicate real browsers'
+visibility-based focus exclusion - confirmed by cross-checking both
+methods against each other rather than trusting either alone) proved the
+toggle is focusable while the drawer's own links are not, while closed;
+proved the reverse - link and close-button now genuinely focusable -
+once a real Enter keypress on the toggle opens it; proved Escape closes
+it again; proved `aria-expanded` flips to `"true"`/`"false"` correctly
+in step; proved both transitions report `0s` duration under a real
+`--force-prefers-reduced-motion` launch. Screenshotted `index.php` and
+`admin.php` at 375px/768px/1440px before and after (768px `index.php`
+before: nav links running off the right edge, no toggle button visible
+at all; after: a clean hamburger icon, zero overflow at any tested
+width from 320 to 1024px), plus the drawer's actual open state at 768px
+triggered by nothing but a dispatched keyboard Enter event - a real
+slide-in panel with backdrop, close button, and every link, exactly the
+same drawer the 700px-and-below case already had, just now also
+reachable in the width range that used to have nothing.
+
+All 136 tests and `php -l`/`node --check` on every touched file pass
+(CSS/JS/one shared include only - no other PHP logic touched).
+
 ---
 
 ## 3. The order to do it in
@@ -869,6 +955,25 @@ Each step is independently shippable. Don't batch them.
       for the punch-list of what's still genuinely missing (audit log,
       recipe/template editing, pagination, report emails, bulk actions,
       cuisine filtering, session-length analytics).
+- [x] **Step 14 — Responsive header/nav audit and fix** (§2.12) — done
+      Reported as landing.php being cramped on mobile; the actual bug was
+      the opposite - the logged-in app's own nav (`includes/nav.php`,
+      shared by every authenticated page including admin) had a real
+      701-900px gap between its mobile-drawer and desktop-sidebar
+      breakpoints, confirmed live with a 1202px-wide nav inside a 768px
+      viewport on both `index.php` and `admin.php`. Fixed by widening the
+      drawer's breakpoint to 900px, meeting the sidebar's 901px exactly.
+      Also found and fixed two real keyboard-accessibility bugs in the
+      drawer itself while verifying it per the request's own item 5: the
+      toggle/close buttons were never keyboard-reachable at all (bare
+      `<label>`s, no tabindex), and the drawer's links stayed tabbable
+      while closed and off-screen. New `assets/js/nav-drawer-keyboard.js`
+      fixes both plus Escape-to-close and `aria-expanded` syncing;
+      `prefers-reduced-motion` disables the drawer's transitions
+      outright. Verified live at 375/768/1440px before and after on both
+      pages, plus direct `.focus()` calls and a real dispatched Enter
+      keypress proving the whole open/close/focus cycle actually works,
+      plus a forced-reduced-motion check. See §2.12 for the full trail.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

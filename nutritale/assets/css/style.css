@@ -1079,8 +1079,22 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 700px) {
     .recipe-columns { grid-template-columns: 1fr; }
-    .app-nav { padding: 12px 16px; flex-wrap: wrap; }
     .app-main { padding: 18px; }
+}
+
+/* The mobile drawer below and the persistent sidebar further down
+   (@media min-width:901px) must together cover every width with no gap
+   between them - they didn't: this used to cut off at 700px, leaving
+   701-900px (iPad Mini included) with neither the drawer nor the sidebar,
+   just .app-nav's plain unwrapped flex row. With every logged-in page's
+   nav carrying six-plus links, admin's extra entry, "Go Premium," and the
+   user/logout row, that plain row is far too wide for 701-900px and
+   overflowed the whole page horizontally - confirmed live at 768px
+   (scrollWidth 1202 in a 768px viewport) on both index.php and admin.php
+   before this fix. 900px/901px is now a clean split, matching the
+   sidebar's own threshold exactly, so there's no width left unhandled. */
+@media (max-width: 900px) {
+    .app-nav { padding: 12px 16px; flex-wrap: wrap; }
 
     .app-nav-toggle { display: flex; }
     .app-nav-close { display: flex; align-self: flex-end; cursor: pointer; padding: 6px; color: var(--muted); }
@@ -1111,16 +1125,32 @@ a { color: inherit; text-decoration: none; }
         padding: 20px;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
         transform: translateX(-100%);
-        transition: transform 0.25s ease;
+        /* visibility in the same transition list, not a separate rule:
+           closing keeps the panel (and its links) genuinely tabbable
+           until the slide-out finishes, then removes it from the tab
+           order; opening removes hidden immediately so it's tabbable as
+           soon as it starts sliding in. Without this, the drawer's own
+           links stayed in the page's tab order even while sitting fully
+           off-screen behind transform alone - confirmed live: Tab moved
+           straight from the toggle button into invisible drawer links. */
+        transition: transform 0.25s ease, visibility 0.25s ease;
+        visibility: hidden;
         z-index: 50;
         overflow-y: auto;
     }
-    .app-nav-toggle-input:checked ~ .app-nav-collapsible { transform: translateX(0); }
+    .app-nav-toggle-input:checked ~ .app-nav-collapsible { transform: translateX(0); visibility: visible; }
     .app-nav-links { flex-direction: column; gap: 4px; }
     .app-nav-links a { padding: 10px 12px; border-radius: 8px; }
     .app-nav-links a:hover, .app-nav-links a.is-active { background: var(--green-light); }
     .app-nav-links a.is-active { font-weight: 700; }
     .app-nav-user { flex-direction: column; align-items: stretch; gap: 12px; }
+}
+/* The drawer's open/close slide is a real CSS transition, not decorative -
+   same treatment as the landing hero photo's animation above: honoured
+   unconditionally, not just "a bit less" of it. */
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+    .app-nav-collapsible { transition: none; }
+    .app-nav-backdrop { transition: none; }
 }
 
 /* Persistent left sidebar on wide screens — the mobile drawer above
