@@ -243,4 +243,23 @@ return [
             ADD COLUMN reversal_reason TEXT NULL AFTER reversed_by_admin_id,
             ADD CONSTRAINT fk_vendor_payouts_reversed_by FOREIGN KEY (reversed_by_admin_id) REFERENCES users(id) ON DELETE SET NULL
     ",
+
+    // Adds Apple Sign In alongside the existing Google/Facebook OAuth, and
+    // gives all three a real account-linking key instead of matching by
+    // email alone. oauth_provider is a plain string (not an ENUM - same
+    // convention as every other status-like column in this schema) rather
+    // than the ENUM the original ask specified, so a fourth provider later
+    // never needs an ALTER ... MODIFY on a live column. Both columns stay
+    // nullable - the overwhelming majority of accounts are plain
+    // email/password and have neither. A UNIQUE index on the pair is safe
+    // with MySQL's NULL semantics: NULL is never equal to NULL, so any
+    // number of non-OAuth accounts (NULL, NULL) coexist fine - the index
+    // only ever rejects a genuine duplicate (same provider, same real
+    // provider-issued id).
+    '2026_09_19_oauth_provider_id' => "
+        ALTER TABLE users
+            ADD COLUMN oauth_provider VARCHAR(20) NULL AFTER last_login_at,
+            ADD COLUMN oauth_id VARCHAR(255) NULL AFTER oauth_provider,
+            ADD UNIQUE INDEX uniq_oauth_provider_id (oauth_provider, oauth_id)
+    ",
 ];

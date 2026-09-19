@@ -37,11 +37,11 @@ $profile = oauth_http_json('GET', 'https://openidconnect.googleapis.com/v1/useri
 // Google explicitly signals whether it has confirmed this address belongs
 // to the person signing in - never create or log into an account on the
 // strength of one it hasn't.
-if (!$profile || empty($profile['email']) || empty($profile['email_verified'])) {
+if (!$profile || empty($profile['email']) || empty($profile['email_verified']) || empty($profile['sub'])) {
     flash_set('error', "Google didn't confirm a verified email address, so we couldn't sign you in.");
     redirect('login.php');
 }
 
-$user = oauth_find_or_create_user($profile['email'], $profile['name'] ?? '');
+$user = oauth_find_or_create_user('google', $profile['sub'], $profile['email'], $profile['name'] ?? '');
 oauth_login_user($user);
 redirect($user['is_admin'] ? 'admin.php' : 'index.php');

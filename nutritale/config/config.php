@@ -63,11 +63,43 @@ define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 // Signing in this way finds or creates an account by the email address
 // the provider hands back - only ever one it has itself confirmed, never
 // an unverified one (see the callbacks) - the same account a plain
-// email/password sign-up would use.
-define('GOOGLE_CLIENT_ID', '');
-define('GOOGLE_CLIENT_SECRET', '');
-define('FACEBOOK_APP_ID', '');
-define('FACEBOOK_APP_SECRET', '');
+// email/password sign-up would use, matched first by (oauth_provider,
+// oauth_id) and falling back to email so a second provider can link onto
+// an account the first already created.
+//
+// Every value below can come from a real environment variable instead of
+// being edited into this file - same getenv()-first pattern DB_HOST etc.
+// already use up top, useful for a host (like Railway) that injects
+// secrets as env vars rather than letting you edit files directly. Left
+// blank (the default either way), the matching sign-in button just shows
+// disabled - never an error.
+define('GOOGLE_CLIENT_ID', getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '');
+define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_OAUTH_CLIENT_SECRET') ?: '');
+define('FACEBOOK_APP_ID', getenv('FACEBOOK_OAUTH_CLIENT_ID') ?: '');
+define('FACEBOOK_APP_SECRET', getenv('FACEBOOK_OAUTH_CLIENT_SECRET') ?: '');
+
+// Apple "Sign in with Apple" - developer.apple.com/sign-in-with-apple.
+// Unlike Google/Facebook, Apple has no static client secret: APPLE_OAUTH_*
+// below are used to *generate* one (a short-lived signed JWT) on every
+// request - see apple_oauth_client_secret() in includes/oauth.php.
+//   APPLE_OAUTH_CLIENT_ID   - the Services ID you create for this website
+//                             (e.g. "com.nutritale.web"), NOT your app's
+//                             bundle ID.
+//   APPLE_OAUTH_TEAM_ID     - your 10-character Apple Developer Team ID.
+//   APPLE_OAUTH_KEY_ID      - the 10-character ID of the Sign in with
+//                             Apple *key* you create under Certificates,
+//                             Identifiers & Profiles -> Keys.
+//   APPLE_OAUTH_PRIVATE_KEY - the full contents of the .p8 file Apple
+//                             gives you when you create that key
+//                             (downloadable exactly once) - the
+//                             "-----BEGIN PRIVATE KEY-----" PEM block,
+//                             newlines intact. Almost always set via an
+//                             environment variable rather than pasted
+//                             here, since it's a multi-line secret.
+define('APPLE_OAUTH_CLIENT_ID', getenv('APPLE_OAUTH_CLIENT_ID') ?: '');
+define('APPLE_OAUTH_TEAM_ID', getenv('APPLE_OAUTH_TEAM_ID') ?: '');
+define('APPLE_OAUTH_KEY_ID', getenv('APPLE_OAUTH_KEY_ID') ?: '');
+define('APPLE_OAUTH_PRIVATE_KEY', getenv('APPLE_OAUTH_PRIVATE_KEY') ?: '');
 
 // Free users are already bounded by PANTRY_FREE_USES above, but premium
 // and admin accounts skip that counter entirely (see pantry.php) and

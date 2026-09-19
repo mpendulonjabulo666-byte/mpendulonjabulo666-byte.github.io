@@ -836,6 +836,138 @@ All 136 tests and `php -l`/`node --check` on every touched file pass
 
 ---
 
+### 2.13 — Apple Sign In, account linking, and a real "Share this recipe" button (Step 15)
+
+Two independent asks handled together: finish the OAuth row on login/register
+(Google and Facebook were already live; Apple was the missing third), and
+turn the existing print-only share icon on `recipe.php` into a working
+share feature.
+
+**Social login.** The request's own spec called for `league/oauth2-client` -
+asked about directly (Composer vs. extending the hand-rolled pattern
+Google/Facebook already used), the answer was to extend the hand-rolled
+flow, since this app has zero Composer dependencies anywhere by deliberate,
+repeated choice (see §0 / the PHPMailer vendoring decision). So Apple is
+hand-rolled the same way, checked against Apple's own current docs rather
+than guessed - the two real differences from Google/Facebook's flow:
+
+- Apple has no static client secret. `apple_oauth_client_secret()`
+  (`includes/oauth.php`) generates a short-lived ES256 JWT from
+  `APPLE_OAUTH_TEAM_ID`/`APPLE_OAUTH_KEY_ID`/`APPLE_OAUTH_PRIVATE_KEY` on
+  every token request. The one real hand-rolling trap here: `openssl_sign()`
+  on an EC key returns a DER-encoded ASN.1 signature, but JWT's ES256 wants
+  raw `r||s` concatenation - `der_to_raw_ecdsa()` does that conversion.
+  Verified against a throwaway generated EC key (not a real Apple key,
+  since setting one up needs a paid developer account): built the JWT,
+  round-tripped the raw signature back to DER, and confirmed
+  `openssl_verify()` accepts it - a correctness check the unit tests can't
+  do alone, since PHP can't fake a real elliptic-curve signature.
+- Apple requires `response_mode=form_post` (a POST callback, not GET) once
+  the `name email` scope is requested, and only ever sends the person's name
+  once, as a separate JSON blob in that POST body, never again on later
+  sign-ins. `oauth_apple.php` / `oauth_apple_callback.php` handle both;
+  `apple_decode_id_token()` decodes (deliberately does not fully
+  signature-verify) the id_token, on the same reasoning already applied to
+  Google/Facebook's server-to-server responses in `oauth_http_json()` -
+  it arrives straight over TLS from Apple's own token endpoint, not through
+  any party positioned to forge it in transit.
+
+Account linking was reworked for all three providers, not just added for
+Apple: `oauth_find_or_create_user()` now takes `(provider, providerId,
+email, name)` and resolves through a new pure decision function,
+`oauth_resolve_account()` (unit-tested in isolation, `tests/oauth_test.php`) -
+match by `(oauth_provider, oauth_id)` first, fall back to email (linking a
+second provider onto an existing account instead of creating a duplicate),
+else create new. The `users` table gained `oauth_provider`/`oauth_id`
+columns plus a unique index on the pair
+(`2026_09_19_oauth_provider_id` in `sql/migrations.php`) - a plain
+`VARCHAR(20)`, not a SQL `ENUM`, matching how every other short-string
+column in this schema is done; applied directly via `mysql.exe` since
+`setup.php` is mid-AV-block again (see §0) and confirmed with `DESCRIBE
+users`. `icon_apple()` added to `includes/icons.php` (path render-verified
+standalone before wiring in, same as every hand-typed brand SVG this file
+already has a rule about); the login/register social-button row is now
+three wide, which needed its own check - Google/Facebook fit two-up in the
+420px card fine, but "Facebook" plus a third icon in the same row doesn't
+fit a phone-width card without wrapping, so it stacks to one column below
+480px (added to the same breakpoint `auth-brand-features` already used) and
+stays three-across above it. Screenshotted at 375/480/500px to confirm.
+
+Verified live against the real dev database with a throwaway account
+(cleaned up after): a brand-new Google signup, a second Google login
+reusing the same row, a Facebook login with the same email linking onto
+that account instead of duplicating it, and logging back in via the
+original Google id afterward still resolving to the same row (by email,
+since its provider/id slot now points at Facebook) - all four confirmed
+by row count, not just return values. Google's and Facebook's own callback
+files were updated for the new `oauth_find_or_create_user()` signature
+(Google's `sub` claim / Facebook's `id` field as the provider id) and
+re-verified end to end, not just left assumed-compatible.
+
+**Environment variables still needed for this to do anything** (all blank
+by default - every button just shows disabled with an explanatory tooltip
+until its pair is filled in, independently per provider):
+`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+`FACEBOOK_OAUTH_CLIENT_ID`, `FACEBOOK_OAUTH_CLIENT_SECRET`,
+`APPLE_OAUTH_CLIENT_ID`, `APPLE_OAUTH_TEAM_ID`, `APPLE_OAUTH_KEY_ID`,
+`APPLE_OAUTH_PRIVATE_KEY`. Two deliberate deviations from the request's
+literal wording, both consistent with how this app already does things
+elsewhere: real values come from environment variables via the existing
+`getenv()`-first pattern in `config/config.php` (same as `DB_HOST`), not a
+new `.env.example`-loading mechanism this app has no parser for; and
+`oauth_provider` is a plain string column, not a literal SQL `ENUM`.
+
+**Share button.** `recipe.php` already had a working share icon wired to
+`navigator.share()` with a plain clipboard-copy fallback - not a disabled
+placeholder like the OAuth buttons were, just missing the two things asked
+for. Both added, in new `assets/js/recipe-share.js`:
+
+- The share payload now includes the recipe's own photo when the browser
+  can actually accept a file share (`navigator.canShare({files: [...]})`,
+  checked - not just assumed from `navigator.share` existing, since some
+  implementations support text/links but not files), fetched from the
+  recipe's existing `image_url` and wrapped in a `File`. No new image
+  resizing was built: this app has no server-side image-processing utility
+  anywhere (no GD/Imagick use exists in the codebase to reuse), so this
+  reuses the same Unsplash `?w=800` URL the page already displays at,
+  rather than adding a new resize pipeline for one feature. Any failure
+  along that path (offline, a CORS-restricted host, an unsupported type)
+  falls back to sharing just title/text/url - a missing photo never blocks
+  the share itself.
+- Browsers with no `navigator.share()` at all (the real fallback case -
+  desktop Firefox, older desktop Chrome/Edge) now get an actual menu
+  instead of a silent clipboard copy: WhatsApp (`wa.me`), Facebook's
+  public `sharer.php` dialog, and copy-link. Instagram and TikTok are
+  deliberately left out, with a code comment explaining why: neither has a
+  public, unauthenticated web endpoint for posting someone else's link the
+  way `wa.me`/`sharer.php` do - only their own native-app share sheet can,
+  which `navigator.share()` above already reaches on a phone where those
+  apps are installed. The menu is keyboard-operable (Tab cycles the three
+  items and exits/closes past the last one, Escape closes and returns
+  focus to the share button, an outside click closes it too) - checked
+  live, not assumed, given how many custom-menu keyboard bugs this project
+  has already found and fixed in the nav drawer (§2.12).
+
+`icon_whatsapp()` added to `includes/icons.php`, same render-verify-before-
+trusting treatment as `icon_apple()`. Verified live with a throwaway
+logged-in account: headless Chrome, it turns out, exposes a stub
+`navigator.share` even though nothing real is behind it - confirmed via
+`typeof`, then deliberately removed it for testing (standing in for a
+browser that genuinely lacks it) to exercise the actual fallback menu.
+With that done: menu opens with correct `wa.me`/`sharer.php` URLs
+(properly encoding the title and page URL), copy-link copies and shows the
+existing toast, Escape and Tab-cycling both behave as described above.
+
+`tests/oauth_test.php` (new, 13 tests: `oauth_provider_configured()` and
+`oauth_resolve_account()`, both pure) plus all 6 existing suites (149
+total) and `php -l`/`node --check` on every touched/new file pass.
+`oauth_find_or_create_user()`, `apple_oauth_client_secret()`, and the
+`oauth_*.php`/`oauth_*_callback.php` routes are deliberately not
+unit-tested - thin DB/network wrappers with no decision logic of their own,
+verified live instead as described above.
+
+---
+
 ## 3. The order to do it in
 
 Each step is independently shippable. Don't batch them.
@@ -974,6 +1106,26 @@ Each step is independently shippable. Don't batch them.
       pages, plus direct `.focus()` calls and a real dispatched Enter
       keypress proving the whole open/close/focus cycle actually works,
       plus a forced-reduced-motion check. See §2.12 for the full trail.
+- [x] **Step 15 — Apple Sign In, account linking, and a real Share button**
+      (§2.13) — done, real Apple credentials still needed to go live
+      Apple hand-rolled the same way Google/Facebook already were (no
+      Composer, by explicit choice) - `apple_oauth_client_secret()`'s
+      ES256 JWT + DER-to-raw signature conversion verified against a
+      throwaway generated key. `oauth_find_or_create_user()` reworked for
+      all three providers around a new pure `oauth_resolve_account()`
+      (provider+id match, else email-link, else create) -
+      `tests/oauth_test.php` (+13) plus a live throwaway-account
+      round-trip covering new signup, repeat login, cross-provider
+      linking, and linking back. New `oauth_provider`/`oauth_id` columns +
+      unique index. Login/register's social row is three-wide now, with
+      its own mobile stacking fix below 480px. Separately, `recipe.php`'s
+      existing (already-working) share button gained image sharing via
+      `canShare({files})` and a real WhatsApp/Facebook/copy-link fallback
+      menu (`assets/js/recipe-share.js`) for browsers with no
+      `navigator.share()` at all, keyboard-operable, Instagram/TikTok
+      deliberately excluded with a comment explaining why. All 149 tests
+      pass. See §2.13 for the full trail, including which 8 environment
+      variables still need real values.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

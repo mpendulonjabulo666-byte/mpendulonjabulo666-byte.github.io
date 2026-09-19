@@ -152,10 +152,26 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
             <div class="recipe-detail-header">
                 <h1><?= h($recipe['title']) ?></h1>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" id="share-btn" class="fav-btn print-hide" aria-label="Share recipe"
-                        data-title="<?= h($recipe['title']) ?>" data-text="<?= h($recipe['description']) ?>">
-                        <?= icon('share', 20) ?>
-                    </button>
+                    <div class="share-wrap print-hide">
+                        <button type="button" id="share-btn" class="fav-btn" aria-label="Share recipe"
+                            aria-haspopup="true" aria-expanded="false"
+                            data-title="<?= h($recipe['title']) ?>" data-text="<?= h($recipe['description']) ?>"
+                            data-image="<?= h((string)$recipe['image_url']) ?>">
+                            <?= icon('share', 20) ?>
+                        </button>
+                        <div id="share-menu" class="share-menu" role="menu" hidden>
+                            <a role="menuitem" tabindex="-1" id="share-whatsapp" class="share-menu-item" href="#" target="_blank" rel="noopener"><?= icon_whatsapp(18) ?> WhatsApp</a>
+                            <a role="menuitem" tabindex="-1" id="share-facebook" class="share-menu-item" href="#" target="_blank" rel="noopener"><?= icon_facebook(18) ?> Facebook</a>
+                            <!-- Instagram and TikTok have no public, unauthenticated web
+                                 endpoint for posting someone else's link/image the way
+                                 WhatsApp's wa.me and Facebook's sharer.php do - both only
+                                 accept content through their own native-app share sheet,
+                                 which is exactly what navigator.share() above already
+                                 reaches on a phone where those apps are installed. There's
+                                 nothing a browser-side link could hand them here. -->
+                            <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-menu-item">Copy link</button>
+                        </div>
+                    </div>
                     <form method="post" action="favorite_toggle.php" class="print-hide">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
@@ -358,36 +374,7 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
     });
 })();
 
-(function () {
-    var shareBtn = document.getElementById('share-btn');
-    var toast = document.getElementById('share-toast');
-
-    function showToast(text) {
-        toast.textContent = text;
-        toast.hidden = false;
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(function () { toast.hidden = true; }, 2500);
-    }
-
-    shareBtn.addEventListener('click', function () {
-        var shareData = {
-            title: shareBtn.getAttribute('data-title'),
-            text: shareBtn.getAttribute('data-text'),
-            url: window.location.href,
-        };
-        if (navigator.share) {
-            navigator.share(shareData).catch(function () { /* user cancelled - no-op */ });
-            return;
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareData.url)
-                .then(function () { showToast('Link copied!'); })
-                .catch(function () { showToast(shareData.url); });
-        } else {
-            showToast(shareData.url);
-        }
-    });
-})();
 </script>
+<script src="assets/js/recipe-share.js" defer></script>
 </body>
 </html>

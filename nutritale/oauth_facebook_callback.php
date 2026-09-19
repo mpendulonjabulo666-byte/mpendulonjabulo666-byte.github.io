@@ -39,11 +39,11 @@ $profile = oauth_http_json('GET', 'https://graph.facebook.com/v25.0/me', [
 // entirely otherwise (e.g. a phone-only account). No email here means no
 // way to match or create an account in an app that's keyed by email
 // throughout, so this is a hard stop either way.
-if (!$profile || empty($profile['email'])) {
+if (!$profile || empty($profile['email']) || empty($profile['id'])) {
     flash_set('error', "Facebook didn't share a confirmed email address, so we couldn't sign you in.");
     redirect('login.php');
 }
 
-$user = oauth_find_or_create_user($profile['email'], $profile['name'] ?? '');
+$user = oauth_find_or_create_user('facebook', $profile['id'], $profile['email'], $profile['name'] ?? '');
 oauth_login_user($user);
 redirect($user['is_admin'] ? 'admin.php' : 'index.php');

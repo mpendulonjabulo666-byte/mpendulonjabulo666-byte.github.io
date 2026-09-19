@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="auth-social-grid">
                     <a href="oauth_google.php" class="auth-social-btn"<?= oauth_google_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Google sign-in isn\'t set up on this server yet."' ?>><?= icon_google(20) ?> Google</a>
                     <a href="oauth_facebook.php" class="auth-social-btn"<?= oauth_facebook_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Facebook sign-in isn\'t set up on this server yet."' ?>><?= icon_facebook(20) ?> Facebook</a>
+                    <a href="oauth_apple.php" class="auth-social-btn"<?= oauth_apple_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Apple sign-in isn\'t set up on this server yet."' ?>><?= icon_apple(20) ?> Apple</a>
                 </div>
 
                 <p class="auth-switch-link">Don't have an account? <a href="register.php">Sign Up →</a></p>
