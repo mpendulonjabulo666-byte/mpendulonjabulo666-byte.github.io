@@ -1263,11 +1263,26 @@ a { color: inherit; text-decoration: none; }
     border-radius: 50%;
     overflow: hidden;
     background-size: cover;
-    /* The source photo is a tall portrait crop with all the food along its
-       right edge and plain backdrop on the left - centering it in a
-       square circle mostly shows the empty backdrop. */
-    background-position: 85% center;
+    background-position: center;
     box-shadow: inset 0 0 0 8px var(--landing-photo-ring);
+    /* A slow, subtle float+tilt - alive, not distracting. Paused by
+       default; hero-photo-motion.js only starts it once the element is
+       actually on screen (and stops it again once it scrolls off), so it
+       never runs invisibly. prefers-reduced-motion below wins over all of
+       that unconditionally - no animation is ever applied at all, not
+       just paused. */
+    animation: landing-hero-photo-float 7s ease-in-out infinite;
+    animation-play-state: paused;
+}
+.landing-hero-photo.is-in-view {
+    animation-play-state: running;
+}
+@keyframes landing-hero-photo-float {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-5px) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-hero-photo { animation: none; }
 }
 .landing-float-badge {
     position: absolute;
