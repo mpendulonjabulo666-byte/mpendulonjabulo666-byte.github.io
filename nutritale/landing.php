@@ -12,20 +12,19 @@ if (current_user()) {
 $recipeCountStmt = db()->query('SELECT COUNT(*) FROM recipes');
 $recipeCount = (int)$recipeCountStmt->fetchColumn();
 
-// Top List: real recipes, real (honest) ratings - render_stars() already
-// shows "No reviews yet" rather than a fabricated-looking "0.0 (0)" for a
-// recipe nobody's rated yet, same as everywhere else in the app. Ordered
-// so a recipe that does have real reviews surfaces first, rather than
-// implying a popularity ranking this fresh a site doesn't have yet.
-$topListStmt = db()->query(
-    'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
-     COALESCE(AVG(rr.rating), 0) AS avg_rating, COUNT(rr.rating) AS rating_count
-     FROM recipes r LEFT JOIN recipe_ratings rr ON rr.recipe_id = r.id
-     GROUP BY r.id
-     ORDER BY rating_count DESC, avg_rating DESC, r.id ASC
-     LIMIT 3'
-);
-$topList = $topListStmt->fetchAll();
+// The one CTA label/style repeated down the page (hero, after benefits,
+// final CTA) - kept as one constant specifically so it can never drift
+// into three slightly different asks ("Get started free" / "Try it free" /
+// "Create your free account", as the previous version of this page had).
+const LANDING_CTA_LABEL = 'Get Started Free';
+
+// REAL testimonials go here once the client has some - each one:
+//   ['photo' => 'assets/img/testimonials/whoever.jpg' (or '' for the
+//    placeholder avatar below), 'quote' => '...', 'name' => 'First name,
+//    context (e.g. "home cook" or "Cape Town")'].
+// Deliberately not fabricated - the review section below renders nothing
+// at all while this stays empty, rather than shipping fake social proof.
+$testimonials = [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,7 +41,7 @@ $topList = $topListStmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=5">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
 </head>
@@ -62,16 +61,17 @@ $topList = $topListStmt->fetchAll();
         <div class="landing-blob landing-blob-2"></div>
         <div class="landing-blob landing-blob-3"></div>
 
+        <!-- 1. HERO -->
         <section class="landing-hero">
             <div class="landing-hero-grid">
                 <div class="landing-hero-copy">
-                    <h1>Cook What You<br>Already Have</h1>
+                    <h1>Never Wonder What<br>to Cook Again</h1>
                     <p class="muted landing-hero-sub">
-                        <?= APP_NAME ?> turns your pantry into recipe ideas, your week into a meal plan, and your plan into a
-                        shopping list — with nutrition goals and ratings built in.
+                        Tell <?= APP_NAME ?> what's in your kitchen and get real recipes back — matched to your
+                        diet and checked against your allergies, with a shopping list for whatever's still missing.
                     </p>
                     <div class="landing-cta">
-                        <a href="register.php" class="btn btn-primary">Get started free</a>
+                        <a href="register.php" class="btn btn-primary"><?= LANDING_CTA_LABEL ?></a>
                         <a href="login.php" class="btn btn-text">I already have an account</a>
                     </div>
                     <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
@@ -84,120 +84,133 @@ $topList = $topListStmt->fetchAll();
                 </div>
             </div>
         </section>
-
-        <?php if ($topList): ?>
-            <section class="top-list-heading">
-                <h2>Top List</h2>
-                <p class="muted">A few of our recipes to get you started</p>
-            </section>
-            <section class="top-list-grid mb-16" style="margin-bottom:76px;">
-                <?php foreach ($topList as $r): ?>
-                    <div class="top-list-card landing-glass-card">
-                        <div class="top-list-photo" style="background-image:url('<?= h($r['image_url']) ?>');"></div>
-                        <?= render_stars((float)$r['avg_rating'], (int)$r['rating_count'], 15) ?>
-                        <h3><?= h($r['title']) ?></h3>
-                        <p><?= h($r['description']) ?></p>
-                        <div class="top-list-meta">
-                            <span><span><?= icon('clock', 14) ?> <?= (int)$r['cook_time_minutes'] ?> min</span><span><?= icon('flame', 14) ?> <?= (int)$r['calories'] ?> cal</span></span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </section>
-        <?php endif; ?>
     </div>
 
+    <!-- 2. TRUST BAR — real, true-today signals, not fabricated logos -->
+    <section class="landing-trustbar">
+        <div class="landing-trust-item"><?= icon('shield', 20) ?> Secure payments via PayFast</div>
+        <div class="landing-trust-item"><?= icon('lock', 20) ?> POPIA-aligned privacy</div>
+        <div class="landing-trust-item"><?= icon('wand', 20) ?> AI-powered allergen checking</div>
+        <div class="landing-trust-item"><?= icon('leaf', 20) ?> Built for South African kitchens</div>
+    </section>
+
+    <!-- 3. BENEFITS — value first, feature second -->
+    <section class="landing-section-heading">
+        <h2>Everything you need, nothing you don't</h2>
+    </section>
     <section class="feature-grid">
         <div class="feature-card landing-glass-card">
-            <?= icon('wand', 24) ?>
-            <h3>What Can I Make?</h3>
-            <p class="muted">Add the ingredients sitting in your kitchen and get ranked recipe matches — matched to your diet first, missing items called out. 3 free tries, then Premium.</p>
+            <?= icon('wand', 26) ?>
+            <h3>Cook with what you already have</h3>
+            <p class="muted">Stop staring into the fridge. List what's on hand and get ranked recipes back in
+                seconds — no last-minute grocery run required.</p>
         </div>
         <div class="feature-card landing-glass-card">
-            <?= icon('shopping-cart', 24) ?>
-            <h3>Ingredient marketplace</h3>
-            <p class="muted">Got surplus ingredients? List them for other members to buy, or pick up what you're missing from someone nearby.</p>
+            <?= icon('calendar', 26) ?>
+            <h3>Your week, planned in minutes</h3>
+            <p class="muted">Drop meals onto a weekly planner and get a shopping list built automatically —
+                one trip, nothing forgotten.</p>
         </div>
         <div class="feature-card landing-glass-card">
-            <?= icon('calendar', 24) ?>
-            <h3>Meal planner</h3>
-            <p class="muted">Drag recipes onto a weekly grid by meal, then export or print a shopping list built from what you planned.</p>
-        </div>
-        <div class="feature-card landing-glass-card">
-            <?= icon('flame', 24) ?>
-            <h3>Nutrition goals</h3>
-            <p class="muted">Set daily calorie and macro targets and watch progress bars fill in as you plan your day.</p>
-        </div>
-        <div class="feature-card landing-glass-card">
-            <?= icon('star', 24) ?>
-            <h3>Ratings &amp; reviews</h3>
-            <p class="muted">Every recipe carries real ratings from people who've cooked it — no guessing if it's any good.</p>
+            <?= icon('shield', 26) ?>
+            <h3>Recipes that respect your allergies</h3>
+            <p class="muted">Every AI suggestion is checked twice — once when we ask it to avoid your allergens,
+                again after, when we scan the result and throw out anything that slipped through.</p>
         </div>
     </section>
 
-    <section class="landing-vendor landing-glass-card">
-        <div class="landing-vendor-text">
-            <span class="tag mb-16"><?= icon('download', 12) ?> Free download</span>
-            <h2>The starter recipe book</h2>
-            <p class="muted">
-                8 balanced breakfasts, lunches and dinners — with ingredients, macros and step-by-step
-                method — bundled into one PDF. No account needed, yours free.
-            </p>
-            <a href="assets/downloads/nutritale-recipe-book.pdf" class="btn btn-primary" download>Download Now</a>
-        </div>
-        <div class="book-mockup">
-            <div class="book-mockup-inner">
-                <img src="assets/img/logo/book-mark.png" alt="The NutriTale starter recipe book" width="1024" height="525">
-                <span class="tag premium-tag book-badge">8 Free Recipes</span>
-            </div>
-        </div>
+    <!-- CTA repeat #2: after benefits -->
+    <section class="landing-cta-strip">
+        <p>Ready to see what you can make tonight?</p>
+        <a href="register.php" class="btn btn-primary"><?= LANDING_CTA_LABEL ?></a>
     </section>
 
-    <section class="landing-vendor landing-glass-card">
-        <div class="landing-vendor-text">
-            <span class="tag premium-tag mb-16"><?= icon('wand', 12) ?> Premium</span>
-            <h2>Unlimited "What Can I Make?"</h2>
-            <p class="muted">
-                Everyone gets 3 free ingredient lookups. Go Premium for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month
-                and get unlimited AI-matched recipe recommendations, ranked to your diet preferences first — cancel
-                any time.
-            </p>
-            <a href="register.php" class="btn btn-primary">Try it free</a>
-        </div>
-        <div class="landing-vendor-card card">
-            <div class="center-text mb-16"><?= icon('wand', 28) ?></div>
-            <span class="tag premium-tag">R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month</span>
-            <p class="mt-16 muted" style="font-size:13px;">Unlimited lookups &middot; diet-matched ranking &middot; cancel anytime</p>
-        </div>
+    <!-- 4. REVIEWS — structure only; stays hidden entirely until the
+         client has real testimonials to put in $testimonials above. No
+         fabricated quotes, ever. -->
+    <?php if ($testimonials): ?>
+        <section class="landing-section-heading">
+            <h2>What people are cooking up</h2>
+        </section>
+        <section class="landing-reviews-grid">
+            <?php foreach ($testimonials as $t): ?>
+                <div class="review-card landing-glass-card">
+                    <div class="review-avatar" style="<?= $t['photo'] !== '' ? "background-image:url('" . h($t['photo']) . "');" : '' ?>">
+                        <?= $t['photo'] === '' ? icon('user', 22) : '' ?>
+                    </div>
+                    <p class="review-quote">&ldquo;<?= h($t['quote']) ?>&rdquo;</p>
+                    <p class="review-name"><?= h($t['name']) ?></p>
+                </div>
+            <?php endforeach; ?>
+        </section>
+    <?php endif; ?>
+
+    <!-- 5. FAQ — native <details>/<summary>: expand/collapse with no JS,
+         and correct keyboard/screen-reader behaviour for free. -->
+    <section class="landing-section-heading">
+        <h2>Questions, answered</h2>
+    </section>
+    <section class="landing-faq">
+        <details class="faq-item">
+            <summary>Is it free to start?<?= icon('chevron-right', 16) ?></summary>
+            <p>Yes. Creating an account, browsing every recipe, and building meal plans costs nothing.
+                The AI-powered pantry matcher gives you 3 free tries before Premium.</p>
+        </details>
+        <details class="faq-item">
+            <summary>How does the AI know about my allergies?<?= icon('chevron-right', 16) ?></summary>
+            <p>You tell us what to avoid when you join. Every AI suggestion is then checked twice: once when
+                we instruct the AI to avoid it, and again afterward when we scan its answer in code and
+                discard anything that slipped through — the code check is what actually decides, not the AI's word.</p>
+        </details>
+        <details class="faq-item">
+            <summary>What happens after my free trial?<?= icon('chevron-right', 16) ?></summary>
+            <p>You keep everything else. Recipe browsing, meal planning, ratings, and the free rule-based
+                pantry matcher all keep working — only unlimited AI-generated ideas need Premium
+                (R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month).</p>
+        </details>
+        <details class="faq-item">
+            <summary>Is payment secure?<?= icon('chevron-right', 16) ?></summary>
+            <p>Yes. Upgrades go through PayFast, a licensed South African payment gateway —
+                <?= APP_NAME ?> never sees or stores your card details.</p>
+        </details>
+        <details class="faq-item">
+            <summary>Can I cancel anytime?<?= icon('chevron-right', 16) ?></summary>
+            <p>Yes, any time from your profile. No phone call, no waiting period — cancellation takes
+                effect immediately.</p>
+        </details>
     </section>
 
-    <section class="landing-vendor landing-glass-card">
-        <div class="landing-vendor-text">
-            <span class="tag premium-tag mb-16"><?= icon('wand', 12) ?> For creators</span>
-            <h2>Sell your recipes</h2>
-            <p class="muted">
-                Got recipes worth paying for? Turn on selling in your profile, price any recipe you create, and
-                buyers unlock the full ingredients and instructions after a secure PayFast checkout. You keep
-                a running ledger of every sale in your vendor dashboard.
-            </p>
-            <a href="register.php" class="btn btn-primary">Start selling</a>
-        </div>
-        <div class="landing-vendor-card page-hero-banner" style="background-image:url('assets/img/banners/landing-ribeye.jpg');min-height:220px;">
-            <div>
-                <div class="recipe-card-meta mb-16" style="color:rgba(255,255,255,0.85);"><span><?= icon('clock', 14) ?> 35 min</span><span><?= icon('flame', 14) ?> 520 cal</span></div>
-                <span class="tag premium-tag">R49.00</span>
-                <p class="mt-16" style="font-size:13px;">Ingredients &amp; instructions unlock after purchase</p>
-            </div>
-        </div>
-    </section>
-
+    <!-- 6. FINAL CTA -->
     <section class="landing-final-cta">
-        <h2>Ready to stop wondering what's for dinner?</h2>
-        <a href="register.php" class="btn btn-primary">Create your free account</a>
+        <p class="muted" style="margin:0 0 8px;">Stop wondering what's for dinner.</p>
+        <h2>Get started with <?= APP_NAME ?> today</h2>
+        <a href="register.php" class="btn btn-primary"><?= LANDING_CTA_LABEL ?></a>
     </section>
 </main>
 
+<!-- 7. FOOTER — essential links only. -->
 <footer class="landing-footer muted">
-    <?= APP_NAME ?> · <a href="login.php">Log in</a> · <a href="register.php">Sign up</a>
+    <div class="landing-footer-links">
+        <!--
+            Privacy Policy / Terms of Service / Refund Policy don't exist
+            as real pages yet anywhere in this app - these point at where
+            they should live once written (same top-level, page-per-file
+            convention as login.php/register.php/etc.), not at content
+            that exists today.
+        -->
+        <a href="privacy.php">Privacy Policy</a>
+        <a href="terms.php">Terms of Service</a>
+        <a href="refund.php">Refund Policy</a>
+        <!--
+            Placeholder - no real support inbox has been set up for this
+            app yet. Replace with a real, monitored address before launch.
+        -->
+        <a href="mailto:hello@nutritale.co.za">hello@nutritale.co.za</a>
+    </div>
+    <!-- Social follow icons go here once there are real NutriTale accounts
+         to link - none exist yet, so nothing is shown rather than linking
+         to a placeholder/guessed handle. -->
+    <p style="margin:14px 0 0;">&copy; <?= date('Y') ?> <?= APP_NAME ?>. All rights reserved.</p>
 </footer>
 </body>
 </html>
