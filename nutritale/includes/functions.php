@@ -6,6 +6,29 @@ function h(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+// No photo upload exists anywhere in this app yet (deliberately out of
+// scope where this was first added - the nav drawer) - every user gets a
+// circular initials avatar instead: first letter of the first and last
+// "words" in their name ("Njabulo Mpendulo" -> "NM"), or just the one
+// letter for a single-word name. Reuses --green-dark/--white, the one
+// colored-circle pairing this app already has audited contrast numbers
+// for (.btn-primary, .nav-icon-badge) in both themes, rather than
+// introducing a new color pairing nobody's checked. Marked aria-hidden
+// since every real call site pairs it with the same name as visible
+// text right next to it - a screen reader doesn't need "N M" read out
+// between them.
+function user_avatar(string $name, int $size = 34): string
+{
+    $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY);
+    $initials = $words ? mb_strtoupper(mb_substr($words[0], 0, 1)) : '';
+    if (count($words) > 1) {
+        $initials .= mb_strtoupper(mb_substr(end($words), 0, 1));
+    }
+    $fontSize = (int)round($size * 0.4);
+    return '<span class="user-avatar" style="width:' . $size . 'px;height:' . $size . 'px;font-size:' . $fontSize . 'px;" aria-hidden="true">'
+        . h($initials) . '</span>';
+}
+
 function current_user(): ?array
 {
     if (empty($_SESSION['user_id'])) {
@@ -58,6 +81,40 @@ function premium_enforce_expiry(array $user): array
     db()->prepare("UPDATE premium_subscriptions SET status = 'expired' WHERE user_id = ? AND status = 'active'")->execute([$user['id']]);
     $user['is_premium_member'] = 0;
     return $user;
+}
+
+// Real-time premium check for a user who isn't the current session -
+// premium_enforce_expiry() above only refreshes users.is_premium_member
+// lazily, when THAT account's own owner logs in, so it can stay stale for
+// however long a vendor doesn't visit the site themselves. Vendor
+// recipe-unpublishing (recipe.php, checkout.php) needs to know a vendor's
+// real, current status at the moment someone else is looking at or trying
+// to buy their recipe, not whenever the vendor next happens to log in -
+// so this checks premium_subscriptions directly instead of trusting the
+// flag alone. Same decision rule as premium_enforce_expiry() (a NULL
+// current_period_end is never treated as expired; no active subscription
+// row at all falls back to trusting the flag as-is, covering an
+// admin-comped account with no real PayFast subscription behind it) -
+// just without the side effect of writing back to another user's row.
+function user_is_currently_premium(int $userId): bool
+{
+    $flagStmt = db()->prepare('SELECT is_premium_member FROM users WHERE id = ?');
+    $flagStmt->execute([$userId]);
+    if (!$flagStmt->fetchColumn()) {
+        return false;
+    }
+
+    $subStmt = db()->prepare(
+        "SELECT current_period_end FROM premium_subscriptions
+         WHERE user_id = ? AND status = 'active'
+         ORDER BY current_period_end DESC LIMIT 1"
+    );
+    $subStmt->execute([$userId]);
+    $periodEnd = $subStmt->fetchColumn();
+    if ($periodEnd === false) {
+        return true;
+    }
+    return $periodEnd === null || strtotime($periodEnd) >= time();
 }
 
 function require_login(): array

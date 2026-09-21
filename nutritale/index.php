@@ -22,6 +22,39 @@ $diet = $_GET['diet'] ?? '';
 $where = [];
 $params = [];
 
+// Hidden recipes (recipes.is_published - CONTINUE.md §2.19) never show in
+// browse/search, same as an unpublished vendor recipe below, just for a
+// different reason (no per-recipe premium/lapse logic involved - an admin
+// just turned this one off).
+$where[] = 'r.is_published = 1';
+
+// A vendor recipe unpublishes from browse/search if its seller's own
+// Premium lapses (selling requires Premium - profile.php's vendor toggle).
+// First cut of this used users.is_premium_member directly, accepting the
+// same lazy-refresh tradeoff (only re-checked when that vendor's own
+// account next logs in) already used elsewhere in this app - but verified
+// live that this leaves a dangling listing: still browsable and
+// clickable, 404ing only once you actually open it (recipe.php/
+// checkout.php both check in real time already). That's a worse result
+// than just being consistent, so this mirrors user_is_currently_premium()'s
+// exact rule (includes/functions.php) in pure SQL instead - an active
+// subscription row with a future or NULL period_end publishes it; an
+// active row whose period_end has passed unpublishes it regardless of
+// what the flag still says; no subscription row at all (e.g. an
+// admin-comped account) falls back to trusting the flag. Non-vendor
+// recipes (the whole seed catalog, admin quick-adds) never reach any of
+// this - is_premium = 0 short-circuits it for all of them.
+$where[] = "(r.is_premium = 0
+    OR EXISTS (
+        SELECT 1 FROM premium_subscriptions ps
+        WHERE ps.user_id = r.created_by AND ps.status = 'active'
+          AND (ps.current_period_end IS NULL OR ps.current_period_end >= NOW())
+    )
+    OR (
+        NOT EXISTS (SELECT 1 FROM premium_subscriptions ps2 WHERE ps2.user_id = r.created_by AND ps2.status = 'active')
+        AND EXISTS (SELECT 1 FROM users vu WHERE vu.id = r.created_by AND vu.is_premium_member = 1)
+    ))";
+
 if ($q !== '') {
     $where[] = '(r.title LIKE ? OR EXISTS (SELECT 1 FROM recipe_ingredients ri WHERE ri.recipe_id = r.id AND ri.name LIKE ?))';
     $params[] = '%' . $q . '%';
@@ -133,7 +166,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

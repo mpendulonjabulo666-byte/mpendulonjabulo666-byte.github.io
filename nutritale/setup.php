@@ -60,7 +60,7 @@ try {
         require_once __DIR__ . '/data/seed_recipes.php';
         $recipes = nutritale_seed_recipes();
 
-        $insertRecipe = $pdo->prepare('INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, is_generated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)');
+        $insertRecipe = $pdo->prepare('INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, tier, is_generated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)');
         $insertDiet = $pdo->prepare('INSERT INTO recipe_diet_tags (recipe_id, diet_type) VALUES (?, ?)');
         $insertAllergen = $pdo->prepare('INSERT INTO recipe_allergens (recipe_id, allergen) VALUES (?, ?)');
         $insertIngredient = $pdo->prepare('INSERT INTO recipe_ingredients (recipe_id, name, quantity, unit, display_quantity, category, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)');
@@ -71,6 +71,7 @@ try {
             $insertRecipe->execute([
                 $r['id'], $r['title'], $r['description'], $r['image_url'], $r['meal_type'], $r['cuisine'],
                 $r['difficulty'], $r['cook_time'], $r['servings'], $r['calories'], $r['protein'], $r['carbs'], $r['fat'], $r['fiber'],
+                $r['tier'],
             ]);
             foreach ($r['diet_tags'] as $d) $insertDiet->execute([$r['id'], $d]);
             foreach ($r['allergens'] as $a) $insertAllergen->execute([$r['id'], $a]);
@@ -105,7 +106,7 @@ try {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

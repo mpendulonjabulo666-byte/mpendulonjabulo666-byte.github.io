@@ -9,7 +9,7 @@ if (current_user()) {
     redirect('index.php');
 }
 
-$recipeCountStmt = db()->query('SELECT COUNT(*) FROM recipes');
+$recipeCountStmt = db()->query('SELECT COUNT(*) FROM recipes WHERE is_published = 1');
 $recipeCount = (int)$recipeCountStmt->fetchColumn();
 
 // The one CTA label/style repeated down the page (hero, after benefits,
@@ -41,7 +41,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=5">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
 </head>

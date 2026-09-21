@@ -95,6 +95,7 @@ if ($pantry) {
          FROM recipes r
          LEFT JOIN recipe_diet_tags dt ON dt.recipe_id = r.id
          LEFT JOIN recipe_allergens al ON al.recipe_id = r.id
+         WHERE r.is_published = 1
          GROUP BY r.id ORDER BY r.title'
     );
     $recipes = $recipeStmt->fetchAll();
@@ -155,7 +156,7 @@ if ($pantry) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

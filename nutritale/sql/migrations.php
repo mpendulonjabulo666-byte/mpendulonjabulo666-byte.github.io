@@ -262,4 +262,104 @@ return [
             ADD COLUMN oauth_id VARCHAR(255) NULL AFTER oauth_provider,
             ADD UNIQUE INDEX uniq_oauth_provider_id (oauth_provider, oauth_id)
     ",
+
+    // Recipe-level Premium gate for the recipe library itself - separate
+    // from both is_premium/price above (the vendor marketplace's
+    // pay-per-recipe unlock, via recipe_purchases) and the AI pantry
+    // matcher's own trial-count gate (pantry.php) - neither of those is
+    // touched by this. A 'premium' recipe stays fully visible in every
+    // listing (title, photo, description, macros); only its ingredients/
+    // instructions are gated, in recipe.php, behind is_premium_member.
+    // Plain VARCHAR, not the literal SQL ENUM the original ask specified -
+    // same reasoning already applied to vendor_payouts.status and
+    // oauth_provider elsewhere in this file: avoids an ALTER ... MODIFY on
+    // a live column if a third tier is ever needed, consistent with every
+    // other status-like column in this schema.
+    '2026_09_20_recipe_tier' => "ALTER TABLE recipes ADD COLUMN tier VARCHAR(20) NOT NULL DEFAULT 'free' AFTER is_premium",
+
+    // Seeds the 40-recipe first import batch (heavy on South African
+    // cuisine - the existing 8-recipe catalog had none) on top of the
+    // tier column above. Reuses nutritale_seed_recipes() - the same single
+    // source of truth setup.php's own fresh-install seeding already reads
+    // from - rather than duplicating recipe content inline here, and skips
+    // any id already present so this is safe to run against a database
+    // that already has the original 8 (this dev machine) as well as a
+    // truly empty one (where setup.php's own seed step, which runs after
+    // migrations, will then find recipes already populated and skip).
+    '2026_09_20_recipe_batch1_seed' => function (PDO $pdo): void {
+        require_once __DIR__ . '/../data/seed_recipes.php';
+        $recipes = nutritale_seed_recipes();
+        $existingIds = $pdo->query('SELECT id FROM recipes')->fetchAll(PDO::FETCH_COLUMN);
+
+        $insertRecipe = $pdo->prepare(
+            'INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, tier, is_generated)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
+        );
+        $insertDiet = $pdo->prepare('INSERT INTO recipe_diet_tags (recipe_id, diet_type) VALUES (?, ?)');
+        $insertAllergen = $pdo->prepare('INSERT INTO recipe_allergens (recipe_id, allergen) VALUES (?, ?)');
+        $insertIngredient = $pdo->prepare('INSERT INTO recipe_ingredients (recipe_id, name, quantity, unit, display_quantity, category, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $insertStep = $pdo->prepare('INSERT INTO recipe_instructions (recipe_id, step_number, step_text) VALUES (?, ?, ?)');
+
+        foreach ($recipes as $r) {
+            if (in_array($r['id'], $existingIds, true)) {
+                continue;
+            }
+            $insertRecipe->execute([
+                $r['id'], $r['title'], $r['description'], $r['image_url'], $r['meal_type'], $r['cuisine'],
+                $r['difficulty'], $r['cook_time'], $r['servings'], $r['calories'], $r['protein'], $r['carbs'], $r['fat'], $r['fiber'],
+                $r['tier'],
+            ]);
+            foreach ($r['diet_tags'] as $d) $insertDiet->execute([$r['id'], $d]);
+            foreach ($r['allergens'] as $a) $insertAllergen->execute([$r['id'], $a]);
+            foreach ($r['ingredients'] as $i => $ing) {
+                $insertIngredient->execute([$r['id'], $ing[0], $ing[1], $ing[2], $ing[3], $ing[4], $i]);
+            }
+            foreach ($r['steps'] as $i => $step) {
+                $insertStep->execute([$r['id'], $i + 1, $step]);
+            }
+        }
+    },
+
+    // No column anywhere in this schema previously meant "hide this recipe
+    // without deleting it" - checked every table for status/active/
+    // published/hidden/deleted columns first (CONTINUE.md §2.18/§2.19 has
+    // the full search) and found none; an admin "removing" a recipe has
+    // always meant a hard DELETE (admin_recipe_delete.php). Minimal
+    // boolean, matching this schema's own convention for every other
+    // plain on/off flag (is_generated, is_premium, is_vendor, is_admin -
+    // all TINYINT(1) NOT NULL DEFAULT, not a VARCHAR status) rather than
+    // a status column with only two real values.
+    '2026_09_21_recipe_is_published' => 'ALTER TABLE recipes ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 1 AFTER tier',
+
+    // Hides the 45 recipes CONTINUE.md §2.18 found and couldn't explain -
+    // no file, script, or commit in this repo's history accounts for them
+    // (a 40-hour gap in this branch's own commits is the closest thing to
+    // a lead). A visibility change only, per the explicit instruction not
+    // to touch the data itself - every row, ingredient, and instruction
+    // stays exactly as it was, just no longer publicly browsable/
+    // searchable, so whoever eventually figures out where they came from
+    // still has everything to work with. Matched by exact id (captured
+    // live from the actual database, not re-derived from the timestamp
+    // range they happen to share) rather than by that timestamp range -
+    // a fixed, one-time correction for specific rows, not a rule that
+    // should keep matching anything else that ever lands in the same
+    // historical minute.
+    '2026_09_21_hide_mystery_recipes' => function (PDO $pdo): void {
+        $ids = [
+            'avocado-egg-power-bowl', 'balsamic-vinaigrette', 'beef-veggie-bowl', 'black-bean-avocado-bowl',
+            'blackberry-sage-refresher', 'buffalo-chicken-wings', 'caesar-dressing', 'cauliflower-rice-bowl',
+            'chicken-quinoa-bowl', 'chickpea-tahini-bowl', 'cottage-cheese-pineapple-bowl', 'creamy-tomato-pasta',
+            'dynamite-shrimp', 'edamame-brown-rice-bowl', 'farro-veggie-bowl', 'garlic-chicken-bowl',
+            'greek-dressing', 'greek-yogurt-berry-bowl', 'honey-mustard-dressing', 'lentil-veggie-bowl',
+            'mango-dragonfruit-refresher', 'miso-tofu-bowl', 'mixed-berry-nut-bowl', 'mozzarella-sticks',
+            'peanut-satay-bowl', 'pineapple-passionfruit-refresher', 'potato-croquettes', 'ranch-dressing',
+            'salmon-power-bowl', 'salmon-quinoa-bowl', 'sardine-avocado-bowl', 'shrimp-zoodle-bowl',
+            'spinach-mushroom-bowl', 'spring-rolls', 'steak-eggs-power-bowl', 'steak-sweet-potato-bowl',
+            'strawberry-aca-i-refresher', 'stuffed-mushrooms', 'tempeh-broccoli-bowl', 'thousand-island-dressing',
+            'tofu-veggie-stir-bowl', 'tuna-white-bean-bowl', 'turkey-avocado-bowl', 'turkey-meatball-bowl',
+            'turkey-sweet-potato-bowl',
+        ];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $pdo->prepare("UPDATE recipes SET is_published = 0 WHERE id IN ($placeholders)")->execute($ids);
+    },
 ];

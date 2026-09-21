@@ -62,6 +62,16 @@ if (!$recipe) {
     die('Recipe not found.');
 }
 
+// A hidden recipe (recipes.is_published - CONTINUE.md §2.19) behaves as
+// not found to everyone except admins, who still need to reach it -
+// that's the whole point of admin_recipes.php now listing it, to unhide/
+// complete/delete it later. Same "not found," not a locked/paywall state -
+// nothing about a hidden recipe implies there's anything to unlock.
+if (!$recipe['is_published'] && empty($user['is_admin'])) {
+    http_response_code(404);
+    die('Recipe not found.');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     db()->prepare('INSERT INTO recipe_views (recipe_id, user_id) VALUES (?, ?)')->execute([$id, $user['id']]);
 }
@@ -117,7 +127,33 @@ if ($recipe['is_premium'] && !$isOwner) {
     $purchaseStmt->execute([$user['id'], $id]);
     $hasPurchased = (bool)$purchaseStmt->fetch();
 }
-$isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user['is_admin']);
+
+// A vendor recipe unpublishes if its seller's own Premium lapses (selling
+// requires Premium - profile.php) - checked here, not just at the point of
+// a new purchase (checkout.php), so someone can't reach the full recipe
+// by simply not buying it. Grandfathered: the vendor's own view (so they
+// can see their delisted content and know to renew), anyone who already
+// paid (revoking access from an existing customer over something the
+// *seller* let lapse would be unfair to the buyer), and admins, same as
+// every other gate in this app.
+if ($recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user['is_admin'])
+    && $recipe['created_by'] !== null && !user_is_currently_premium((int)$recipe['created_by'])) {
+    http_response_code(404);
+    die('This recipe is not currently available.');
+}
+
+$isPurchaseLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user['is_admin']);
+
+// Recipe-library Premium gate, separate from the vendor marketplace
+// pay-per-recipe lock above (is_premium/price/recipe_purchases) and from
+// the AI pantry matcher's own trial-count gate (pantry.php) - neither of
+// those is touched here. Checked only when the purchase lock doesn't
+// already apply, so a recipe never shows two different "go pay" messages
+// at once (not a real scenario in this app's own data today - vendor
+// recipes and platform seed-catalog recipes are disjoint - but kept
+// explicit rather than assumed). Admins bypass both, same as everywhere
+// else in this app.
+$isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($user['is_premium_member']) && empty($user['is_admin']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,7 +170,7 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -269,12 +305,45 @@ $isLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empty($user[
                 </details>
             <?php endif; ?>
 
-            <?php if ($isLocked): ?>
+            <?php if ($isPurchaseLocked): ?>
                 <div class="paywall card">
                     <?= icon('wand', 28) ?>
                     <h2 style="margin:10px 0 4px;">Unlock the full recipe</h2>
                     <p class="muted" style="margin:0 0 16px;">Ingredients and step-by-step instructions for this premium recipe unlock after purchase.</p>
                     <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
+                </div>
+            <?php elseif ($isTierLocked): ?>
+                <!-- Real teaser content (first 2 ingredients, first step),
+                     not the full lists blurred over with CSS - a CSS blur
+                     still ships the underlying text to the browser, plainly
+                     readable via view-source, which would make this no real
+                     gate at all. Only this small, deliberately-safe slice
+                     is ever sent when tier-locked. -->
+                <div class="recipe-columns recipe-tier-locked">
+                    <div class="recipe-tier-teaser" aria-hidden="true">
+                        <div>
+                            <h2>Ingredients</h2>
+                            <ul class="ingredient-list">
+                                <?php foreach (array_slice($ingredients, 0, 2) as $ing): ?>
+                                    <li><?= h($ing['display_quantity']) ?> <?= h($ing['name']) ?></li>
+                                <?php endforeach; ?>
+                                <?php if (count($ingredients) > 2): ?><li>&hellip;</li><?php endif; ?>
+                            </ul>
+                        </div>
+                        <div>
+                            <h2>Instructions</h2>
+                            <ol class="step-list">
+                                <?php if ($steps): ?><li><?= h($steps[0]['step_text']) ?></li><?php endif; ?>
+                                <?php if (count($steps) > 1): ?><li>&hellip;</li><?php endif; ?>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="recipe-tier-lock-overlay">
+                        <?= icon('wand', 28) ?>
+                        <h2 style="margin:10px 0 4px;">Premium recipe</h2>
+                        <p class="muted" style="margin:0 0 16px;">Upgrade to NutriTale Premium to see the full ingredients and step-by-step instructions.</p>
+                        <a class="btn btn-primary" href="premium.php">Upgrade to view</a>
+                    </div>
                 </div>
             <?php else: ?>
                 <?php if ($recipe['is_premium'] && $hasPurchased): ?>

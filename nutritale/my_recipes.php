@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
 $canSubmit = !empty($user['is_admin']) || platform_setting('allow_recipe_submissions');
+$isCurrentlyPremium = !empty($user['is_admin']) || !empty($user['is_premium_member']);
 
 $stmt = db()->prepare('SELECT * FROM recipes WHERE created_by = ? ORDER BY created_at DESC');
 $stmt->execute([$user['id']]);
@@ -25,7 +26,7 @@ $recipes = $stmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -61,6 +62,9 @@ $recipes = $stmt->fetchAll();
                         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
                         <div class="recipe-card-body">
                             <h3><?= h($recipe['title']) ?></h3>
+                            <?php if ($recipe['is_premium'] && !$isCurrentlyPremium): ?>
+                                <p class="allergen-warning"><?= icon('alert-triangle', 12) ?> Unpublished - renew <a href="premium.php">Premium</a> to relist</p>
+                            <?php endif; ?>
                             <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
                         </div>
                     </a>

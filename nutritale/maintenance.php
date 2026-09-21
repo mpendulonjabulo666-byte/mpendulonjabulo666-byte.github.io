@@ -11,7 +11,7 @@
 <title>Down for maintenance · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 </head>
 <body>
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;">

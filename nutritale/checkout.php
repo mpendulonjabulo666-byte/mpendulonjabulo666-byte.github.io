@@ -18,6 +18,16 @@ if (!$recipe) {
 if ((int)$recipe['created_by'] === (int)$user['id']) {
     redirect('recipe.php?id=' . urlencode($recipeId));
 }
+// Vendor selling requires an active Premium subscription (profile.php) -
+// if it lapsed since this recipe was listed, block new purchases rather
+// than taking someone's money for a listing its own seller can no longer
+// legally offer. Checked in real time against the vendor's own account,
+// not the buyer's - see user_is_currently_premium()'s own header comment
+// for why a lazily-refreshed flag isn't good enough here.
+if ($recipe['created_by'] !== null && !user_is_currently_premium((int)$recipe['created_by'])) {
+    http_response_code(404);
+    die('This recipe is not currently available for purchase.');
+}
 
 $existingStmt = db()->prepare("SELECT 1 FROM recipe_purchases WHERE buyer_id = ? AND recipe_id = ? AND status = 'paid'");
 $existingStmt->execute([$user['id'], $recipeId]);
@@ -63,7 +73,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 </head>
 <body>
 <div class="auth-shell">

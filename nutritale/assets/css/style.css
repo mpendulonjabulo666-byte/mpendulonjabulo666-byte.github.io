@@ -406,7 +406,7 @@ a { color: inherit; text-decoration: none; }
 .app-nav-user {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     font-size: 14px;
 }
 /* Groups the profile link and the theme-toggle+logout pair into one row
@@ -416,6 +416,26 @@ a { color: inherit; text-decoration: none; }
 .app-nav-user-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .app-nav-user-actions { display: flex; align-items: center; gap: 10px; }
 .app-nav-leaf-accent { display: inline-flex; color: var(--green-dark); opacity: 0.7; }
+.app-nav-identity-link { display: flex; align-items: center; gap: 10px; }
+
+/* Initials avatar - see user_avatar() in includes/functions.php for why
+   it's --green-dark/--white (the one colored-circle pairing this app
+   already has audited contrast numbers for, in both themes) rather than
+   a new color. Width/height/font-size come from the helper's own inline
+   style so callers can size it per context without a class per size. */
+.user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: 50%;
+    background: var(--green-dark);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 4px 10px -4px rgba(20, 50, 32, 0.5);
+}
 
 .app-main {
     max-width: 1080px;
@@ -669,6 +689,38 @@ a { color: inherit; text-decoration: none; }
     color: var(--green-dark);
 }
 .paywall svg { color: var(--green); }
+
+/* Recipe-library tier gate (recipe.php's $isTierLocked branch) - a small,
+   real teaser (first 2 ingredients, first step - never the full lists)
+   rendered normally, blurred, with the upgrade card centered on top.
+   Different treatment from .paywall on purpose: that one replaces the
+   ingredients/instructions area entirely (a one-off purchase, nothing to
+   preview), this one shows a soft, enticing glimpse of real content since
+   the whole recipe unlocks with an ongoing membership, not a per-recipe buy. */
+.recipe-tier-locked { position: relative; min-height: 220px; }
+.recipe-tier-teaser {
+    filter: blur(4px);
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+}
+.recipe-tier-lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px -20px rgba(20, 40, 28, 0.35);
+    color: var(--green-dark);
+}
+.recipe-tier-lock-overlay svg { color: var(--green); }
+.recipe-tier-lock-overlay p { max-width: 360px; }
 
 .allergen-warning {
     color: var(--error);
@@ -1176,6 +1228,21 @@ a { color: inherit; text-decoration: none; }
     .app-nav-links a:hover, .app-nav-links a.is-active { background: var(--green-light); }
     .app-nav-links a.is-active { font-weight: 700; }
     .app-nav-user { flex-direction: column; align-items: stretch; gap: 12px; }
+    /* landing.php reuses .app-nav/.app-nav-user for its own plain top bar
+       (see the :not(.landing-nav) note at min-width:901px below) - it has
+       none of the drawer/toggle markup the column-stack above is actually
+       for, so without this override the theme toggle, "Log in", and "Get
+       started" stacked into three separate full-width rows at exactly
+       this same breakpoint, real crampedness confirmed live rather than
+       assumed. Restores a plain right-aligned row that wraps as a group
+       (not one child per line) if it ever runs out of room. */
+    .landing-nav .app-nav-user {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 16px;
+    }
 }
 /* The drawer's open/close slide is a real CSS transition, not decorative -
    same treatment as the landing hero photo's animation above: honoured
@@ -1198,6 +1265,18 @@ a { color: inherit; text-decoration: none; }
         bottom: 0;
         width: 240px;
         flex-direction: column;
+        /* The base .app-nav rule sets flex-wrap: wrap for the top-bar
+           layouts (landing's row, and this same selector before it
+           becomes a column here) - never overridden back to nowrap for
+           the column direction, so on a short viewport (content taller
+           than the window) the column itself wrapped into a second one
+           further right instead of just scrolling, even though
+           overflow-y: auto below already exists specifically to handle
+           that case. Found live: at a 543px-tall window, the nav links
+           and the user block (this step's new avatar included) rendered
+           entirely outside the visible 240px sidebar, pushed right by
+           roughly their own width. */
+        flex-wrap: nowrap;
         align-items: stretch;
         justify-content: flex-start;
         padding: 24px 18px;
@@ -1247,6 +1326,24 @@ a { color: inherit; text-decoration: none; }
    .landing-body so none of it leaks into the logged-in app, which keeps
    its existing flat, solid-card look until that gets its own pass. */
 .landing-body { background: var(--landing-bg); }
+
+/* .landing-nav overrides the base .app-nav rule's card look (solid
+   --white background, hard 1px --border line) - correct for the
+   logged-in app's own nav, but on this page it read as a hard rectangle
+   boxed off from the hero right below it rather than the top of the
+   same page. Background now matches .landing-body exactly, and the
+   divider is --landing-glass-border - the same low-opacity edge already
+   used for every other soft surface on this page (the glass cards, the
+   trust bar, the footer) - instead of the solid --border every other
+   page's nav uses. No box-shadow was ever set here (the boxy look was
+   the background+border combination alone, not a shadow), so none was
+   added. Not gated to a breakpoint - same treatment at every width; the
+   spacing/flex fixes already applied to .landing-nav .app-nav-user
+   elsewhere are untouched. */
+.landing-nav {
+    background: var(--landing-bg);
+    border-bottom: 1px solid var(--landing-glass-border);
+}
 
 .landing-main {
     max-width: 1080px;
@@ -1428,17 +1525,31 @@ a { color: inherit; text-decoration: none; }
 
 /* Trust bar: real, true-today claims (no fabricated customer/partner
    logos exist yet) at the same visual weight a logo row would carry. */
+/* Equal-width grid columns (auto-fit) rather than a centered flex row:
+   flex + justify-content:center gave every gap the same 28px, but the
+   items themselves read as an uneven cluster once wrapping kicked in
+   (2-and-2 or 3-and-1 splits, each row centered independently rather
+   than lining up). A grid cell per item - each the same width, each
+   centering its own icon+label pair - keeps the row reading as one
+   deliberate unit at any width, wrapping to fewer equal columns instead
+   of a ragged reflow. Wrapped in the same glass-card treatment already
+   used for the feature cards/FAQ below it, so it reads as a designed
+   panel rather than bare text floating over the blob background. */
 .landing-trustbar {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px 28px;
-    padding: 20px 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    align-items: center;
+    gap: 20px 12px;
+    padding: 22px 28px;
     margin: 0 0 56px;
     position: relative;
     z-index: 1;
+    background: var(--landing-glass-bg);
+    border: 1px solid var(--landing-glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--landing-glass-shadow);
 }
-.landing-trust-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.landing-trust-item { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
 .landing-trust-item svg { color: var(--green-dark); flex: none; }
 
 /* Slim CTA repeat between the benefits and reviews/FAQ sections - same
@@ -1609,8 +1720,13 @@ a { color: inherit; text-decoration: none; }
     padding: 40px 28px;
 }
 .auth-form-card { width: 100%; max-width: 420px; }
-.auth-form-card h1 { font-size: 30px; margin: 0 0 6px; }
-.auth-form-subtitle { margin: 0 0 22px; color: var(--muted); font-size: 14.5px; }
+/* The card itself is already centered within .auth-form-panel (flex
+   align-items/justify-content: center) - what wasn't centered was the
+   heading/subtitle text inside it, left over from before the logo above
+   and the tab pills below were both centered, leaving just these two
+   lines sitting off to the left between them. */
+.auth-form-card h1 { font-size: 30px; margin: 0 0 6px; text-align: center; }
+.auth-form-subtitle { margin: 0 0 22px; color: var(--muted); font-size: 14.5px; text-align: center; }
 
 .auth-tabs {
     display: flex;

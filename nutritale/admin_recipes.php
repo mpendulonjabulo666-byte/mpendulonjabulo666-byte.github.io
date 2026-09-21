@@ -48,7 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'quick
 $search = trim($_GET['q'] ?? '');
 $filterMealType = $_GET['meal_type'] ?? '';
 
-$where = ['r.is_generated = 1'];
+// Was WHERE r.is_generated = 1 - every recipe in the database regardless
+// of type now, per CONTINUE.md §2.19: this page is the one place an admin
+// can see and manage everything, including the seed catalog and the 45
+// hidden rows §2.18 couldn't explain (still visible here on purpose, so
+// there's somewhere to actually deal with them later). LEFT JOIN, not the
+// original INNER JOIN - a seed-catalog recipe's created_by is NULL, which
+// an INNER JOIN would have silently excluded even after dropping the
+// is_generated filter.
+$where = [];
 $params = [];
 if ($search !== '') {
     $where[] = 'r.title LIKE ?';
@@ -59,12 +67,13 @@ if ($filterMealType !== '' && in_array($filterMealType, $mealTypes, true)) {
     $params[] = $filterMealType;
 }
 
-$stmt = db()->prepare(
-    'SELECT r.*, u.name AS author_name, u.email AS author_email
-     FROM recipes r JOIN users u ON u.id = r.created_by
-     WHERE ' . implode(' AND ', $where) . '
-     ORDER BY r.created_at DESC'
-);
+$sql = 'SELECT r.*, u.name AS author_name, u.email AS author_email
+     FROM recipes r LEFT JOIN users u ON u.id = r.created_by';
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+$sql .= ' ORDER BY r.created_at DESC';
+$stmt = db()->prepare($sql);
 $stmt->execute($params);
 $recipes = $stmt->fetchAll();
 ?>
@@ -83,7 +92,7 @@ $recipes = $stmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -98,6 +107,9 @@ $recipes = $stmt->fetchAll();
 
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
+    <?php endif; ?>
+    <?php if ($error = flash_get('error')): ?>
+        <div class="alert alert-error"><?= h($error) ?></div>
     <?php endif; ?>
 
     <div class="card mb-16">
@@ -151,7 +163,7 @@ $recipes = $stmt->fetchAll();
         </form>
     </div>
 
-    <h1 class="mb-16" style="font-size:20px;"><?= icon('list', 20) ?> User-submitted recipes</h1>
+    <h1 class="mb-16" style="font-size:20px;"><?= icon('list', 20) ?> All recipes</h1>
 
     <form method="get" class="toolbar mb-16" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <input type="text" name="q" value="<?= h($search) ?>" placeholder="Search by title..." class="field" style="max-width:260px;">
@@ -173,7 +185,7 @@ $recipes = $stmt->fetchAll();
                 <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Author</th>
+                        <th>Type</th>
                         <th>Meal</th>
                         <th>Created</th>
                         <th></th>
@@ -181,18 +193,48 @@ $recipes = $stmt->fetchAll();
                 </thead>
                 <tbody>
                     <?php foreach ($recipes as $recipe): ?>
+                        <?php
+                        // Three real types, three different correct actions -
+                        // see CONTINUE.md §2.19 for why each is what it is.
+                        $isUserSubmitted = (bool)$recipe['is_generated'];
+                        $isHidden = !$isUserSubmitted && !$recipe['is_published'];
+                        ?>
                         <tr>
-                            <td><a href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></td>
-                            <td><?= h($recipe['author_name']) ?> <span class="muted">(<?= h($recipe['author_email']) ?>)</span></td>
+                            <td>
+                                <a href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a>
+                            </td>
+                            <td>
+                                <?php if ($isUserSubmitted): ?>
+                                    <span class="tag">User-submitted</span><br>
+                                    <span class="muted" style="font-size:12px;"><?= h($recipe['author_name'] ?? '') ?> (<?= h($recipe['author_email'] ?? '') ?>)</span>
+                                <?php elseif ($isHidden): ?>
+                                    <span class="tag" style="background:var(--error-bg);color:var(--error);">Hidden</span>
+                                <?php else: ?>
+                                    <span class="tag">Built-in catalog</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= h(ucfirst($recipe['meal_type'])) ?></td>
                             <td><?= h((new DateTime($recipe['created_at']))->format('M j, Y')) ?></td>
-                            <td style="display:flex;gap:6px;">
-                                <a href="add_recipe.php?id=<?= urlencode($recipe['id']) ?>" class="btn btn-text btn-small">Edit</a>
-                                <form method="post" action="admin_recipe_delete.php" onsubmit="return confirm('Remove this recipe?');">
-                                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                                    <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
-                                    <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Remove</button>
-                                </form>
+                            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <?php if ($isUserSubmitted): ?>
+                                    <a href="add_recipe.php?id=<?= urlencode($recipe['id']) ?>" class="btn btn-text btn-small">Edit</a>
+                                    <form method="post" action="admin_recipe_delete.php" onsubmit="return confirm('Remove this recipe?');">
+                                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                        <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                                        <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Remove</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="btn btn-text btn-small" style="opacity:0.5;cursor:not-allowed;" title="Built-in catalog recipe - not editable here">Edit</span>
+                                    <form method="post" action="admin_recipe_toggle_publish.php">
+                                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                        <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                                        <?php if ($isHidden): ?>
+                                            <button type="submit" class="btn btn-text btn-small"><?= icon('eye', 14) ?> Unhide</button>
+                                        <?php else: ?>
+                                            <button type="submit" class="btn btn-text btn-small" onclick="return confirm('Hide this recipe from browse/search?');"><?= icon('eye-off', 14) ?> Hide</button>
+                                        <?php endif; ?>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

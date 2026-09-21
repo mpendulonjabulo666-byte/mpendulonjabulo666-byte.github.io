@@ -87,6 +87,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         redirect('profile.php');
     } elseif ($form === 'vendor') {
         $isVendor = isset($_POST['is_vendor']) ? 1 : 0;
+        // Selling requires Premium - checked server-side, not just hidden
+        // client-side, since a stale page (checkbox rendered before an
+        // expiry) could still POST this. Turning selling OFF is always
+        // allowed, premium or not - no reason to block someone opting out.
+        // Admins bypass this, same as every other premium gate in the app.
+        if ($isVendor && empty($user['is_premium_member']) && empty($user['is_admin'])) {
+            flash_set('error', 'Selling recipes requires NutriTale Premium.');
+            redirect('profile.php');
+        }
         db()->prepare('UPDATE users SET is_vendor = ? WHERE id = ?')->execute([$isVendor, $user['id']]);
         flash_set('success', $isVendor ? 'Selling is now on — mark a recipe as premium from My Recipes to list it.' : 'Selling turned off.');
         redirect('profile.php');
@@ -156,7 +165,7 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -286,11 +295,15 @@ $goals = $goalStmt->fetch() ?: [];
     <div class="card mt-16">
         <h2 style="font-size:16px;margin-top:0;">Sell your recipes</h2>
         <p class="muted" style="margin-top:0;font-size:13px;">Turn this on to mark your own recipes as premium with a price. Buyers pay through PayFast to unlock the full recipe.</p>
+        <?php $canToggleVendor = !empty($user['is_premium_member']) || !empty($user['is_admin']); ?>
+        <?php if (!$canToggleVendor && !$user['is_vendor']): ?>
+            <p class="muted" style="font-size:12.5px;">Requires <a href="premium.php">NutriTale Premium</a> - R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month.</p>
+        <?php endif; ?>
         <form method="post">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="form" value="vendor">
-            <label class="pref-chip <?= $user['is_vendor'] ? 'is-active' : '' ?>" style="display:inline-flex;">
-                <input type="checkbox" name="is_vendor" <?= $user['is_vendor'] ? 'checked' : '' ?>>
+            <label class="pref-chip <?= $user['is_vendor'] ? 'is-active' : '' ?>" style="display:inline-flex;"<?= (!$canToggleVendor && !$user['is_vendor']) ? ' title="Requires NutriTale Premium"' : '' ?>>
+                <input type="checkbox" name="is_vendor" <?= $user['is_vendor'] ? 'checked' : '' ?> <?= (!$canToggleVendor && !$user['is_vendor']) ? 'disabled' : '' ?>>
                 I want to sell recipes
             </label>
             <button type="submit" class="btn btn-primary mt-16" style="display:block;">Save</button>

@@ -68,7 +68,7 @@ foreach ($stmt->fetchAll() as $row) {
     $dayTotals[$row['plan_date']] = ($dayTotals[$row['plan_date']] ?? 0) + (int)$row['calories'];
 }
 
-$recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll();
+$recipes = db()->query('SELECT id, title FROM recipes WHERE is_published = 1 ORDER BY title')->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -85,7 +85,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

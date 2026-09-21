@@ -46,6 +46,17 @@ define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 
+// Unsplash API (https://unsplash.com/developers) - powers
+// scripts/fetch_recipe_images.php, which sources real, properly-licensed
+// food photos for recipes with no image_url yet (the alternative is
+// hand-picking/hotlinking from wherever, which this app has already been
+// burned by once - see the landing page hero photo's own history). Leave
+// blank to skip that script entirely; nothing else in the app reads this.
+// Free tier: register an app at unsplash.com/oauth/applications, use its
+// "Access Key" (not the secret) here. Same getenv()-first pattern as
+// DB_HOST above, for hosts that inject it as an environment variable.
+define('UNSPLASH_ACCESS_KEY', getenv('UNSPLASH_ACCESS_KEY') ?: '');
+
 // Optional "Sign in with Google" / "Sign in with Facebook" on the login
 // and sign-up pages (includes/oauth.php + oauth_*.php). Same pattern as
 // GEMINI_API_KEY above: leave either pair blank to disable that one

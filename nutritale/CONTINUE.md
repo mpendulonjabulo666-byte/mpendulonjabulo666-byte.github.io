@@ -1038,6 +1038,628 @@ and the others already cover.
 
 ---
 
+### 2.15 — Landing page rebuild (Step 17)
+
+`landing.php` and `assets/css/style.css`'s landing rules reached the working
+tree as a full section-by-section rebuild before this step started; this step
+restored the AV-deleted `setup.php` (see §2.10 — same local-antivirus quirk,
+unrelated to this rebuild, no content changes), checked the result, and
+committed it. Structure, in order: hero (photo + CTA + live recipe count),
+trust bar (real, true-today claims only — no fabricated logos), a three-card
+benefits grid, a CTA strip, reviews, FAQ (native `<details>`/`<summary>`,
+five questions), a final CTA, and a footer.
+
+Two things worth flagging for whoever picks this up next, both deliberate and
+both already commented at the point of decision in `landing.php` itself:
+
+- **Reviews section is intentionally empty.** `$testimonials = []` at the top
+  of `landing.php`; the entire `<section class="landing-reviews-grid">` block
+  is wrapped in `<?php if ($testimonials): ?>` and renders nothing at all —
+  not an empty heading, not an empty grid — until real testimonials exist.
+  Confirmed via the raw HTTP response: no `review-card`/`landing-reviews-grid`
+  markup appears anywhere in the output.
+- **Footer links to three pages that don't exist yet** — `privacy.php`,
+  `terms.php`, `refund.php` (`landing.php`'s footer, ~line 201). They follow
+  this app's existing one-page-per-file convention (same as `login.php`,
+  `register.php`) so a future step just has to add the files; nothing else
+  needs to change. The support address (`hello@nutritale.co.za`) is also a
+  placeholder — no real inbox has been set up.
+
+The three CTA buttons (hero, after-benefits strip, final CTA) all read
+`LANDING_CTA_LABEL` ("Get Started Free") and all link to `register.php` —
+one constant specifically so they can't drift into three different asks, per
+the comment already at its declaration. Confirmed in the raw rendered HTML,
+not just the source: all three appear verbatim. (The nav bar's own "Get
+started" button is separate — a shorter label, by design, for the persistent
+top-bar CTA — not one of these three.)
+
+**Verification is incomplete — no real browser was loaded this step.** The
+Claude-in-Chrome extension did not connect (`tabs_context_mcp` failed with
+"Browser extension is not connected" on two attempts), and a headless-Edge
+fallback was abandoned after `--headless=new` appeared to hand off to the
+user's already-running Edge session instead of launching an isolated instance
+— continuing risked opening tabs in the user's real browser windows, which
+this step wasn't authorized to risk. What *was* verified: PHP's built-in dev
+server serving the page with a 200 (after also starting `mysqld`, which
+wasn't running — `enforce_maintenance_mode()` needs a live DB connection),
+the full rendered HTML fetched via `curl` and checked directly for the two
+items above, every referenced asset file (`overnight-oats-bowl.jpg`,
+`book-mark.png`, the three `<script>` tags) confirmed to exist on disk, and a
+full read of `theme-toggle.js`/`theme-init.js`/`hero-photo-motion.js` and the
+landing CSS block (dark-mode tokens, the 820px hero layout switch, the 700px
+type-size switch) turned up nothing broken. **Not done**: an actual look at
+light mode, dark mode, or a real mobile viewport rendered in a browser, or
+clicking the FAQ accordion live. Per §4's own rule, the checkbox below stays
+unticked until that happens.
+
+**Amendment (Step 18)**: the Claude-in-Chrome extension connected in that
+later step and `landing.php` was loaded live - desktop-width light and dark
+mode are now genuinely confirmed (see §2.16). The FAQ accordion click and an
+actual narrow-viewport render are still unconfirmed - the automation
+environment's `resize_window` reports success but never actually changes
+`window.innerWidth` (checked directly, repeatedly, across several tabs), so
+Step 18 couldn't force one either. Leaving this box unticked until a real
+narrow viewport and the FAQ's click behaviour are both seen.
+
+---
+
+### 2.16 — Four visual polish fixes, plus one incidental sidebar bug found while verifying them (Step 18)
+
+Four specific, named polish issues, each scoped to structure/styling only -
+no new features:
+
+- **Login/register heading centering** — `.auth-form-card h1` and
+  `.auth-form-subtitle` (`assets/css/style.css`) gain `text-align: center`.
+  The card container itself was already centered within `.auth-form-panel`
+  (flex `align-items`/`justify-content: center`, confirmed via
+  `getBoundingClientRect()` before touching anything) - only the heading and
+  subtitle text were left-aligned, sitting oddly between the already-centered
+  logo above and tab pills below. One shared CSS class, so `register.php`'s
+  "Create Account" heading picked up the same fix automatically - confirmed
+  live, not assumed.
+- **Landing header spacing** — root cause, found by reading the CSS rather
+  than guessing: `@media (max-width: 900px) { .app-nav-user { flex-direction:
+  column; ... } }` (added for the logged-in app's mobile drawer in Step 14)
+  was never scoped to exclude `.landing-nav`, so landing.php's plain top bar
+  - which has none of the drawer markup that rule exists for - inherited it
+  too, stacking the theme toggle, "Log in", and "Get started" into three
+  full-width rows at exactly that breakpoint. New override in the same media
+  query, `.landing-nav .app-nav-user { flex-direction: row; flex-wrap: wrap;
+  justify-content: flex-end; gap: 16px; }`, restores a right-aligned row that
+  wraps as one group if it ever runs out of room, instead of one child per
+  line. Base `.app-nav-user` gap widened 14px → 16px for both this bar and
+  the logged-in nav's own row usages, for a bit more breathing room
+  everywhere, not just here.
+- **Nav drawer avatar** — `user_avatar(string $name, int $size = 34)`, new in
+  `includes/functions.php`: initials from the first and last "words" in the
+  name ("Njabulo Mpendulo" → "NM", verified live against the real seeded
+  admin account, not a fixture), rendered as a `.user-avatar` circle. Reuses
+  `var(--green-dark)`/`var(--white)` - the one colored-circle pairing this
+  app already has audited contrast numbers for in both themes (`.btn-primary`,
+  Step 9) - rather than inventing a new color pairing nobody's checked;
+  confirmed live in both themes (`rgb(110,231,165)` bg / `rgb(26,33,29)` text
+  in dark mode, matching the audited `--green-dark`/`--white` values exactly).
+  `aria-hidden="true"` since every call site pairs it with the same name as
+  visible text right next to it. Wired into `includes/nav.php`'s user block
+  only, replacing the small settings-gear icon that used to sit there - built
+  as a standalone function specifically so `admin_users.php`/`profile.php`/
+  review cards can call it later, but none of those were touched this step
+  (out of scope - avatar-only ask was the nav drawer). **Photo upload is
+  still out of scope, per the request** - flagging it back as a real
+  follow-up: there is nowhere in this app to upload or store a profile photo,
+  and `user_avatar()`'s initials are the only identity marker until one
+  exists.
+- **Trust bar alignment** — `.landing-trustbar` switched from a centered flex
+  row (`justify-content: center`, which gave equal *gaps* but let wrapped
+  rows split unevenly, e.g. 2-and-2 vs 3-and-1, each centered independently)
+  to a CSS grid (`repeat(auto-fit, minmax(190px, 1fr))`), so every item gets
+  an equal-width column and wraps to fewer equal columns instead of a ragged
+  reflow at any width. Icon size (20px) and icon-label gap (now 10px, was
+  8px) were already consistent across all four items before this - confirmed
+  by reading `icon()`'s shared 24×24-viewBox implementation, not assumed.
+  Wrapped in the same glass-card treatment (`--landing-glass-bg`/
+  `-glass-border`/`-glass-shadow`, `--radius-lg`) the feature cards and FAQ
+  already use, so it reads as a designed panel over the blob background
+  rather than bare text - confirmed live in both themes, a real card with a
+  soft shadow, not a change only visible in the inspector.
+- **CSS cache-busting**: `style.css?v=4`/`?v=5` → `?v=7` across all 41 PHP
+  files that link it (one `sed` pass each; the historical
+  `nutritale-admin-suite.bundle`'s own `.patch` file, which is a record, not
+  live code, was deliberately left at its own `?v=3`). Two bumps landed in
+  one step (`v=6` then `v=7`) because the sidebar bug below was found and
+  fixed *after* the first bump, mid-verification - not two separate rounds
+  of CSS work.
+
+**The incidental bug**: verifying the avatar meant actually opening the
+logged-in sidebar live, which turned up a real, pre-existing, unrelated
+layout bug, not touched by anything above - `@media (min-width: 901px)
+{ .app-nav:not(.landing-nav) { flex-direction: column; ...} }` (the
+persistent sidebar, Step 14) never set `flex-wrap`, so it inherited
+`flex-wrap: wrap` from the base `.app-nav` rule. On a short viewport (this
+session's automation window rendered at 543px tall), the column-direction
+flex container "wrapped" into a *second column* once its content ran out of
+vertical room, instead of just scrolling - even though `overflow-y: auto`
+already exists on that exact rule specifically to handle overflow. Confirmed
+live via `getBoundingClientRect()`: the entire nav-links list and user block,
+avatar included, rendered at x≈218–406, almost entirely outside the visible
+240px-wide sidebar, readable nowhere on screen. One-line fix,
+`flex-wrap: nowrap;`, added to that same rule; re-verified live afterward -
+`x: 18` (correctly inside the sidebar's own padding), full nav list and the
+new avatar both visible and screenshotted in both themes. Never would have
+been caught without actually loading the sidebar in a browser at an unusual
+(but real - a shorter laptop window, or one with a lot of browser chrome)
+window height; filed here rather than left for someone to hit blind.
+
+**Verification**: real browser this time (Claude-in-Chrome connected this
+session; it hadn't in the prior one - see the Step 17 amendment above).
+Confirmed live, screenshotted, in both light and dark mode, at the
+session's available desktop width (1366px): the centered login/register
+heading, the landing header's spacing, the trust bar's grid layout and card
+treatment, and the sidebar avatar (logged in as the real seeded admin
+account, "NM" over `--green-dark`, correct in both themes). **Not
+confirmed**: an actual narrow/mobile-width render - `resize_window` reports
+success but never changed `window.innerWidth` in this environment, checked
+repeatedly and directly rather than assumed, across several fresh tabs and
+two full tab-group recreations. One tab, by chance, rendered at 285×507
+early in the session and caught the header bug's *original* broken state
+live before any fix; no equivalent narrow render was available afterward to
+confirm the fix at that same width by eye. Mitigated, not replaced: the
+fixed rule's parsed form was read back directly out of the browser's live
+CSSOM (`document.styleSheets`), confirming the exact selector and
+declarations the browser will apply, not just what the source file says -
+and both fixes use ordinary, well-supported flexbox/grid properties, not
+anything with the kind of unusual cross-axis interaction that caused the
+incidental sidebar bug above.
+
+---
+
+### 2.17 — Recipe-level Premium tier, a 40-recipe import batch, and a live-data surprise (Step 19)
+
+Three asks handled together: a new `tier` gate on the recipe library itself
+(separate from every existing premium mechanism), importing a 40-recipe
+batch (heavy on South African cuisine), and Unsplash-sourced photos for it.
+Read `data/seed_recipes.php` and the `recipes` schema first, as asked -
+that read turned up two things worth flagging before the rest of this makes
+sense.
+
+**Recipes already had an `is_premium` column - a different thing.** It's
+the vendor marketplace's pay-per-recipe unlock (`price`, `recipe_purchases`,
+`checkout.php`) - a vendor sells one specific recipe for a one-time price,
+unrelated to platform Premium *membership*. The new `tier` column is
+independent of it: `recipe.php` now computes `$isPurchaseLocked` (the
+existing mechanism, untouched) and a separate `$isTierLocked` (`tier ===
+'premium' && !is_premium_member && !is_admin`, purchase-lock checked first
+so a recipe never shows two different "go pay" messages at once - not a
+real case in this app's data today, since vendor recipes and seed-catalog
+recipes are disjoint, but enforced rather than assumed). Plain `VARCHAR(20)`,
+not the literal SQL `ENUM` the original ask specified - same reasoning
+already applied to `oauth_provider`/`vendor_payouts.status` elsewhere in
+this file: avoids an `ALTER ... MODIFY` on a live column if a third tier is
+ever needed.
+
+**The live database already had 54 recipes, not 8.** The original 8 (from
+`data/seed_recipes.php`) plus one real admin-added recipe plus **45 rows
+inserted 2026-09-18, not seeded by any file in this repo** - all 45 with no
+image, 38/45 with zero instructions (a broken-looking page if a real user
+opened one). No source file, script, or CONTINUE.md entry explains them.
+Found mid-task, before finalizing the tier split, since it changes the
+"how many free/premium" math this step's whole point is to report
+accurately. Asked directly rather than guessing: the decision was to leave
+all 45 completely untouched this step (not deleted, not edited) and report
+the *real* running total, not the 48 the original ask expected assuming an
+8-recipe baseline. They pick up `tier = 'free'` from the new column's
+`DEFAULT`, same as every other pre-existing row - harmless, but they remain
+a real, live, pre-existing product bug (incomplete recipes visible to real
+users in `index.php`'s public catalog right now) that still needs someone's
+attention, unrelated to anything this step did.
+
+**Existing 8 (the real seed catalog) → `tier = 'free'`.** They've been this
+app's always-fully-browsable demo catalog since before any premium-recipe
+concept existed, referenced constantly throughout this file as the
+baseline; retroactively locking them felt like the wrong call to make
+without being asked, and nothing in their content suggested otherwise.
+
+**Import batch**: 40 recipes converted from the supplied JSON into
+`data/seed_recipes.php`'s array shape. Ingredient lines ("2 cups maize meal
+(mieliemeal)") were machine-parsed into the existing
+`[name, qty, unit, display_quantity, category]` tuple - not hand-transcribed
+- via a small parser (kept in scratch, not shipped) that handles fractions,
+mixed numbers, and attached-unit forms ("500g", "1kg"), and a category
+guesser matching this schema's existing 5 categories (verified against the
+original 8's own category choices, e.g. `Cumin` → `pantry`, not `produce`).
+Found and fixed three real bugs in the parser while spot-checking its
+output before trusting it: a raw substring match let "mince" match inside
+"minced" (mistagging "garlic, minced" as protein), plural forms
+("tomatoes", "onions") failed a plain `\bword\b` boundary check entirely,
+and - the one that made it into the database before being caught, see
+below - an ingredient with no explicit quantity ("Oil for browning") had
+its full phrase written into *both* `name` and `display_quantity`, which
+`recipe.php`'s template renders as `{display_quantity} {name}` - a literal
+doubled phrase live on 40 recipes' pages. Caught by actually loading a
+recipe page, not by reading the template. Fixed in the parser, in
+`data/seed_recipes.php` (51 affected tuples), and with a live `UPDATE`
+against the 49 already-inserted database rows (2 of the 51 were duplicate
+ingredient names across different recipes counted differently by each
+check - not a discrepancy, just two different counting methods).
+`difficulty` (not in the source JSON) was computed from total time
+(prep+cook, summed - matching how the original 8 already conflate the two
+into one `cook_time` field); descriptions (also not in the source) were
+written per recipe, one sentence each, matching the original 8's own style.
+
+Migrations (`sql/migrations.php`): `2026_09_20_recipe_tier` (the `ALTER`)
+and `2026_09_20_recipe_batch1_seed` (a callable - the established pattern
+for seeding structured data with real parameter binding, same as the
+ingredient-taxonomy migration in Step 6). The callable re-reads
+`nutritale_seed_recipes()` and inserts whatever `id` isn't already present
+- safe on this dev DB (skips the original 8, plus the 45 mystery rows share
+no ids with the batch so nothing there is touched either) and safe on a
+truly fresh install (inserts all 48, and `setup.php`'s own seed step then
+finds `recipes` non-empty and skips, since migrations run first). Applied
+directly via a one-off PDO script, **not by running `setup.php`** - this
+dev machine's antivirus has repeatedly deleted `setup.php` when it runs and
+does dynamic schema DDL (§2.10's known quirk); both migrations are recorded
+in `schema_migrations` exactly as `setup.php` itself would have, so a
+normal run elsewhere sees them as already-applied and skips them too.
+`setup.php`'s own `INSERT` statement was still updated to include `tier`
+(a source edit only, never executed this step) so it stays correct for
+whoever eventually does run it fresh.
+
+**`admin_recipes.php` will not show these 40** (or the original 8, or the
+45 mystery rows) - checked live, not assumed. Its query filters
+`is_generated = 1` with an inner join requiring a real `created_by`; that
+page is specifically for admin quick-added recipes (`add recipe` form),
+architecturally distinct from the platform's seed catalog, which has always
+had `is_generated = 0, created_by = NULL` (true of the original 8 since
+Step 13 built that page). Not a bug introduced by this step - verified
+correct behavior by design, confirmed by reading the query before assuming
+otherwise. The 40 new recipes are correctly visible everywhere a real user
+actually browses the catalog: `index.php`'s listing (verified live -
+titles/photos/descriptions show for every tier, no lock indication in the
+listing) and each one's own `recipe.php` page.
+
+**Tier gate UI**: a locked premium recipe shows a real (small, safe)
+teaser - the first 2 ingredients and the first instruction step, genuinely
+rendered and then CSS-blurred - with a centered "Premium recipe / Upgrade
+to view" card linking to `premium.php`, instead of the existing
+`.paywall`'s full replacement treatment (kept as-is, unchanged, for the
+purchase-lock case only). Deliberately *not* a CSS blur over the *full*
+ingredient/instruction lists - that would still ship the real text to the
+browser, plainly readable via view-source, making the gate purely
+cosmetic. Verified live: view-source/`innerHTML` on a locked premium
+recipe confirmed a later ingredient ("Apricot jam") and a later instruction
+fragment ("180", from "Bake at 180°C") are genuinely absent from the page,
+not just visually hidden.
+
+**Verified live**, logged in as throwaway admin and non-premium accounts
+(created and deleted via direct SQL, cleaned up after): admin dashboard
+reports 94 total recipes (54 pre-existing + 40 new, matching the database
+exactly); a premium recipe (`Bobotie with Yellow Rice`) shows the blurred
+teaser + upgrade card to the non-premium account; a free recipe (`Tomato
+Bredie`) shows its full ingredients/instructions to the same account, fix
+for the duplicate-ingredient bug confirmed rendering correctly afterward;
+the admin account sees `admin_recipes.php` correctly showing only the one
+real admin-added recipe, not the catalog.
+
+**Running total, accurately** (not the 48 the original ask expected,
+per the mystery-45 finding above): **94 recipes** - 73 free (54
+pre-existing + 19 from this batch) / 21 premium (all from this batch, the
+existing 8 stayed free). Toward the eventual 20-free/80-premium split
+across 100 the batch's own note mentions: nowhere close yet at this
+checkpoint, expected given batch 1 skewed nearly even (19 free/21 premium)
+rather than premium-heavy - later batches will need to lean hard premium to
+correct the ratio by recipe 100, and the 45 mystery rows (all defaulted
+free) make that correction larger than originally planned for.
+
+**Unsplash images - blocked, by design, not by mistake.** No `.env` file
+exists anywhere in this project (confirmed); `UNSPLASH_ACCESS_KEY` added to
+`config/config.php` (blank default, same `getenv()`-first pattern as
+`DB_HOST`) with no key to put in it. `scripts/fetch_recipe_images.php`
+(new) is written and ready - searches Unsplash by `"{title} {cuisine}
+food"` per recipe (not a bare dish name, which returns unrelated results
+for an obscure regional dish), downloads the top result to
+`assets/img/recipes/{id}.jpg` (this app's own domain, not a permanent
+Unsplash CDN hotlink), fires Unsplash's official download-tracking ping,
+and records photographer attribution to `image_attribution.json` - all per
+Unsplash's API Guidelines. Confirmed it fails clearly (exit 1, explains
+why) with the key blank, rather than silently doing nothing. Deliberately
+does **not** auto-apply what it downloads: a second script,
+`apply_recipe_images.php` (new), only updates `recipes.image_url` for
+files still present in `assets/img/recipes/` after a human (or a future
+session that can actually view the downloaded files) has deleted any
+mismatch - the "visually sanity-check, don't take the first result
+blindly" instruction can't be honestly automated away, so the pipeline is
+split specifically to leave that step manual rather than fake it. **Real
+follow-up, not yet built anywhere**: Unsplash's terms require a visible
+"Photo by {name} on Unsplash" credit wherever a sourced photo is shown -
+nothing in `recipe_card.php`/`recipe.php` renders one today, for the
+original 8's images either. All 40 new recipes currently have
+`image_url = ''` (rendered as a blank/broken image tile, same as this
+app already does for the mystery 45).
+
+Not committed - reported back for review first, per the request.
+
+---
+
+### 2.18 — Six-item follow-up: mystery-recipe investigation, a re-verify that found two more bad rows, admin_recipes.php scoping, a barcode-scan scope surprise, and a real vendor/Premium gate (Step 20)
+
+Six numbered items, several explicitly investigate-first. In order:
+
+**1. The 45 mystery recipes, investigated, still untouched.** No `updated_at`
+or `user_id` column exists on `recipes` at all (checked - only `created_at`/
+`created_by`). All 45 share `created_by = NULL`, `is_generated = 0`,
+`cuisine = NULL`, `difficulty = 'easy'` - uniformly, across every row.
+Nothing in this repo (no script, no `.sql` file beyond `sql/schema.sql`)
+references any of their titles. No git commit or reflog entry falls near
+their `2026-09-17 16:46:55` timestamp - there's a **40-hour gap in this
+branch's commit history** (2026-09-16 08:29 to 2026-09-18 12:06) with zero
+commits. One real lead, not a match: the external admin-suite bundle
+(§2.14) has its own `INSERT INTO recipes` with `category`/`status` columns
+this schema doesn't have, `is_generated = 1`, and a real `created_by` -
+none of which matches what's actually in the database, so it's not a
+direct hit, just evidence someone was working with recipe-seeding code
+around that time. Best available explanation: an uncommitted, ad-hoc
+session ran exploratory data directly against this live database during
+that gap, with nothing saved to the repo and no cleanup. Still untouched.
+
+**2. Re-verified the 40 imported recipes against the fixed parser - found
+2 more bad rows.** Re-ran the (now three-bugs-fixed) ingredient parser
+fresh from the original batch JSON and diffed every field - ingredients,
+steps, macros, tier, diet tags, allergens - against both the live database
+and `data/seed_recipes.php`, not just re-trusting the earlier patch.
+Found 2 recipes (`malva-pudding`, `koeksisters`) whose "For sauce:"/"For
+syrup:" compound ingredient had a *third*, different bad value in the
+database - neither the original duplicate-text bug nor the fixed empty
+string, but **silently truncated to 50 characters** by
+`recipe_ingredients.display_quantity`'s own `VARCHAR(50)` limit on
+insert, before the duplicate-text fix even existed. That truncation broke
+the exact-match condition both the file-level regex fix and the earlier
+live `UPDATE` relied on (`display_quantity = name`), so this pair escaped
+both. Fixed with two targeted `UPDATE`s. Re-ran the full re-verify after:
+**zero mismatches across all 40 recipes**, confirmed against the file and
+the live database both. Flagging `VARCHAR(50)` itself as a real landmine
+for any future batch with a longer compound ingredient description -
+didn't widen it this step since nothing asked for a schema change here
+and the immediate two rows are already fixed, but it'll bite again.
+
+**3. `admin_recipes.php` widened-scope assessment - report only, not
+changed.** The listing query itself is small (~10 lines: drop
+`is_generated = 1`, `LEFT JOIN` instead of `INNER JOIN` on `created_by`,
+handle a null author). But doing only that breaks the page's own Edit/
+Remove actions silently: both `add_recipe.php`'s edit-fetch and
+`admin_recipe_delete.php`'s `DELETE` are deliberately scoped to
+`is_generated = 1` (Step 16's own boundary, protecting the seed catalog
+from this quick-add-oriented flow) - a newly-visible seed-catalog row's
+"Edit" link would 404, and "Remove" would delete 0 rows while still
+flashing "Recipe removed." (`admin_recipe_delete.php` never checks
+`rowCount()`) - a false success message. Not a query-only change if the
+buttons need to stay honest.
+
+**4. Unsplash - still blocked**, the key that was supposed to be added
+isn't there. Checked `config/config.php` directly (still `''`) and every
+environment-variable scope (Machine/User/Process, via
+`[Environment]::GetEnvironmentVariable`) - genuinely blank everywhere.
+`scripts/fetch_recipe_images.php` not run this step; nothing to report
+on matches yet.
+
+**5. Barcode scan - a real scope surprise, flagged before building
+anything.** The request described gating an *existing* feature (a camera
+icon that already opens a scanner). Checked `pantry.php` first as asked,
+then the whole codebase: **no barcode-scanning feature exists anywhere**
+- zero matches for "barcode", `getUserMedia`, or `BarcodeDetector` in any
+file, zero mentions in this file's own history. "Gate it" would actually
+mean building camera access, barcode detection, and (since this app has
+no such integration anywhere) a product-lookup backend against some
+external barcode database, from nothing - a real feature build, not a
+small gate. Held rather than assumed and built.
+
+**6. Vendor/Premium gate - confirmed missing, then built.** Checked
+directly: `profile.php`'s vendor-toggle handler had zero premium check
+(any account, free or Premium, could flip `is_vendor` on), and
+`premium_enforce_expiry()` (the app's one existing lapse-handling
+function) never touched `is_vendor` or recipe visibility at all - genuinely
+never built, not something an earlier session did and this missed.
+"Meal plans for sale" isn't a real feature anywhere either (only free
+admin-curated templates exist - Step 13) - nothing to unpublish there
+that doesn't already not exist.
+
+Built:
+- `profile.php`'s vendor-toggle form now rejects turning selling **on**
+  without an active Premium subscription (admins bypass, same as every
+  other gate in this app) - checked server-side, not just a disabled
+  checkbox client-side (a stale page load could still `POST` it).
+  Turning selling **off** is always allowed regardless of premium status.
+  The checkbox itself is natively `disabled` (not the `aria-disabled`
+  workaround the OAuth buttons need - a real `<input>` has native
+  `disabled`) with a "Requires NutriTale Premium" hint and a `premium.php`
+  link, only when currently both non-premium and not-already-a-vendor -
+  an existing vendor whose Premium has since lapsed keeps the ability to
+  turn selling off themselves.
+- New `user_is_currently_premium(int $userId)` in `includes/functions.php`
+  - checks a user's real, current Premium status against
+    `premium_subscriptions` directly, for a user who isn't the current
+    session. `premium_enforce_expiry()` (the existing mechanism) only
+    ever refreshes `users.is_premium_member` lazily, when that account's
+    *own* owner logs in - fine for gating what that person themselves can
+    do, not enough for "does this other person's vendor listing still
+    count as published," which needs to be right regardless of whether
+    the vendor happens to log back in. Same decision rule as
+    `premium_enforce_expiry()` (a `NULL` `current_period_end` is never
+    treated as expired; no active subscription row at all falls back to
+    trusting the flag, covering an admin-comped account), just without
+    the side effect of writing back to someone else's row.
+- `checkout.php` and `recipe.php` both now block a vendor recipe (new
+  purchase attempts, and viewing the full recipe at all) once its
+  seller's Premium has lapsed, via that real-time check - **grandfathered**:
+  the vendor's own view of their own recipe, anyone who already paid
+  (revoking access over something the *seller* let lapse would be unfair
+  to an existing buyer), and admins. `recipe.php`'s new check sits ahead
+  of the existing `$isPurchaseLocked` paywall logic and `die()`s with a 404
+  rather than showing the paywall, since "temporarily not for sale at all"
+  is a different state from "you haven't bought this yet."
+- `index.php`'s public listing excludes an unpublished vendor recipe too -
+  first cut used the simpler lazy flag (`users.is_premium_member`,
+  matching how the rest of the app already treats that column), but
+  **verified live that this leaves a dangling listing**: still browsable
+  and clickable, only 404ing once actually opened, since `recipe.php`/
+  `checkout.php` both already check in real time. Upgraded to mirror
+  `user_is_currently_premium()`'s exact rule in pure SQL (three `EXISTS`
+  clauses, no per-row PHP calls, no `ORDER BY`/`LIMIT`-inside-`EXISTS`
+  issues) rather than ship something inconsistent with what the detail
+  page does one click later.
+- `my_recipes.php` and `vendor.php` both show a vendor their own
+  unpublished listings with an inline "Unpublished - renew Premium to
+  relist" note, linked to `premium.php` - a vendor whose Premium lapsed
+  can still see their own dashboard and past sales, they just can't be
+  found or bought by anyone new until they renew.
+
+**Verified live end to end** with four throwaway accounts and a synthetic
+vendor recipe/purchase/subscription (created and fully deleted after,
+including the recipe's own ingredient/instruction rows and the purchase
+record): a non-premium account's attempt to enable selling was rejected
+server-side, DB confirmed `is_vendor` stayed `0`; the same recipe was
+correctly visible (title, purchase-locked paywall) while its vendor was
+active; lapsing the vendor's subscription (`current_period_end` moved to
+the past, `status` left `'active'` - the harder case, deliberately not
+just flipping the flag by hand) correctly 404'd both `recipe.php` and
+`checkout.php` for a third-party viewer and dropped it from `index.php`'s
+search entirely; the existing buyer and the vendor's own login both still
+saw the full recipe throughout; `my_recipes.php`/`vendor.php` both showed
+the unpublished note. Logging into the vendor account mid-test triggered
+the *real* `premium_enforce_expiry()` lazy downgrade (`status` flipped to
+`'expired'`) - confirmed a plain date-only "renewal" wasn't enough to
+bring it back (status still `'expired'`), matching what a real renewal
+needs to actually do (`status = 'active'` again, not just a later date);
+once simulated properly, the recipe correctly reappeared in search and
+the paywall replaced the 404 again.
+
+Not committed - reported back for review, per the request. Real recipe/
+tier count is unchanged by this step: **94 total, 73 free / 21 premium**.
+
+---
+
+### 2.19 — Hide the 45 mystery recipes, widen admin_recipes.php properly, log barcode scan as deferred (Step 21)
+
+Three items from §2.18's report, two built, one just logged.
+
+**New `recipes.is_published`, not an existing mechanism reused - because
+none existed.** Checked first, as asked: every `status`-like column in
+this schema belongs to a transaction or report workflow (`ai_generations`,
+`ingredient_listings`, `ingredient_orders`, `premium_subscriptions`,
+`recipe_purchases`, `recipe_reports`, `vendor_payouts`) - `recipes` itself
+has never had one, and "admin removes a recipe" has only ever meant a hard
+`DELETE` (`admin_recipe_delete.php`). Added the minimal thing: a plain
+`TINYINT(1) NOT NULL DEFAULT 1`, matching this schema's own convention for
+every other on/off flag (`is_generated`, `is_premium`, `is_vendor`,
+`is_admin`) rather than a status column with only two real values ever
+asked for. A second migration hides the exact 45 ids captured live from
+the database (not re-derived from the timestamp range they happen to
+share - a one-time correction for those specific rows, not a rule that
+should keep matching anything else that ever lands in the same historical
+minute). Visibility only, exactly as instructed - every row, ingredient,
+and instruction is untouched.
+
+**Every real browse/discover surface now respects it**, checked one by
+one rather than assumed from the two named in the request:
+- `index.php` - the obvious one, `r.is_published = 1` added to the query.
+- `recipe.php` - a hidden recipe behaves as **not found**, not a
+  locked/paywall state, to everyone except admins (who still need to
+  reach it - that's the whole point of it now showing on
+  `admin_recipes.php`).
+- `marketplace.php` - checked, never queries `recipes` at all (it's the
+  peer-to-peer *ingredient* marketplace) - nothing to change, confirmed
+  rather than assumed from the request's own wording.
+- `pantry.php` - its rule-based "what can I make" matcher queries
+  `recipes` with no filter at all; would have kept surfacing hidden/
+  broken recipes as pantry matches. Filtered.
+- `planner.php` - the "add a recipe" combobox on all 28 day/meal slots
+  loads every recipe unconditionally; a hidden one would have stayed
+  fully selectable there even though it can't be browsed to or opened
+  anymore. Filtered.
+- `landing.php` - the "54+ recipes ready to browse today" hero count was
+  counting hidden ones too, which is straightforwardly false advertising
+  once they're not actually browsable. Filtered.
+- `admin.php`'s dashboard "TOTAL RECIPES" stat and `admin_export.php`'s
+  CSV **deliberately left showing everything** - true inventory counts
+  for an admin-facing surface, not a public one; `admin_recipes.php` is
+  where the hidden ones are meant to be visible and manageable.
+
+**`admin_recipes.php` widened properly, not just the query.** Three real
+recipe types now show, each routed through its own genuinely correct
+existing path rather than one button trying to handle all of them:
+- **User-submitted** (`is_generated = 1` - quick-adds and member/vendor
+  `add_recipe.php` submissions alike; re-reading `add_recipe.php` in full
+  this time confirmed admins could already edit *any* `is_generated = 1`
+  recipe, not just admin-authored ones) - Edit/Remove **unchanged**,
+  already correct.
+- **Built-in catalog** (`is_generated = 0`, published - the original 8
+  plus the 40-recipe import batch) - no existing edit path exists for
+  this shape anywhere in the app. Rather than bypass ownership logic to
+  force the quick-add form onto it (explicitly ruled out), Edit is a
+  disabled control with a reason ("Built-in catalog recipe - not editable
+  here"), not a link that would 404.
+- **Hidden** (`is_generated = 0`, unpublished - the 45) - same disabled
+  Edit, but Remove is replaced with a **Hide/Unhide toggle**
+  (`admin_recipe_toggle_publish.php`, new - scoped to `is_generated = 0`
+  only, mirroring `admin_recipe_delete.php`'s own boundary) instead of a
+  dead-end disabled button. This *is* "manage them later," reusing the
+  exact mechanism just built rather than inventing a second one.
+
+Query: `LEFT JOIN` on `users`, not the original `INNER JOIN` - a
+built-in/hidden recipe's `created_by` is `NULL`, which the inner join
+would have silently excluded all over again even after dropping
+`is_generated = 1`. `is_generated = 1` recipes still show their real
+author; built-in/hidden ones show a type badge instead.
+
+**Found two more real bugs while making "no more silent 404s / false
+success messages" actually true, not just re-scoping the buttons**:
+- `admin_recipe_delete.php` flashed "Recipe removed." unconditionally,
+  never checking whether the `DELETE` actually matched a row - harmless
+  while every visible row genuinely was `is_generated = 1`, a real false
+  positive the moment the listing widened. Now checks `rowCount()`.
+- **`admin_recipes.php` never rendered an `error` flash at all** - only
+  `flash_get('success')` existed in the template. Found live: fixed the
+  delete handler above, tested it against a built-in recipe expecting to
+  see the new error message, and nothing appeared at all - the flash was
+  being set correctly and then silently swallowed on the very next page
+  render. Added the missing `flash_get('error')` block; re-tested,
+  confirmed the message now actually shows both there and on
+  `admin_recipe_toggle_publish.php`'s equivalent rejection.
+
+**Verified live** with throwaway regular and admin accounts (created and
+deleted after): a non-admin's search for four different hidden titles and
+a direct URL to one both came up empty/404; the same admin-only URL
+returned the full page; `admin_recipes.php` listed all 94 rows with the
+right badge on each (45 Hidden, 48 Built-in catalog, 1 User-submitted);
+toggling one hidden recipe live made it immediately searchable and
+directly reachable again, then hiding it back removed both - a real
+round trip, not just a flag flip checked in the database; attempting
+Remove against a built-in recipe and toggle-publish against a
+user-submitted one both now show the correct, honest error instead of a
+false success or dead silence, and neither actually touched the row.
+**Real counts, unchanged from the migration itself**: 94 total, 49
+visible (28 free / 21 premium), 45 hidden.
+
+**Barcode scanning - logged as deferred, `pantry.php` untouched.** Per
+§2.18: no camera access, barcode detection, or product-lookup integration
+exists anywhere in this codebase today. Real scope for its own step,
+after the demo:
+- Camera access via `getUserMedia` + a barcode-detection library (the
+  native `BarcodeDetector` API isn't available in every browser this app
+  needs to support - Safari support is inconsistent - so a JS polyfill/
+  library is the realistic choice, not assumed available for free).
+- Product lookup against the **Open Food Facts API**
+  (`world.openfoodfacts.org/api`) - free, no key needed, barcode → product
+  name/category, which is what would actually populate a pantry item from
+  a scan.
+- Needs its own premium gate once built (the original ask for this whole
+  thread), following the same pattern as the recipe-tier gate (§2.17) and
+  the vendor/Premium gate (§2.18): server-side enforcement, not just a
+  hidden button.
+
+Not committed - reported back for review, per the request.
+
+---
+
 ## 3. The order to do it in
 
 Each step is independently shippable. Don't batch them.
@@ -1212,6 +1834,172 @@ Each step is independently shippable. Don't batch them.
       Locked-account recovery added as one inline "Unlock" action on
       `admin_users.php` rather than the bundle's separate detail page.
       Verified live with throwaway accounts/recipes; all 149 tests pass.
+- [ ] **Step 17 — Landing page rebuild committed** (§2.15) — in the working
+      tree, committed, browser check still outstanding
+      `landing.php` + `assets/css/style.css`'s landing rules (hero, trust
+      bar, benefits, reviews staged empty, FAQ, footer). Restored the
+      AV-deleted `setup.php` first (no content change — same §2.10 local-AV
+      quirk). Confirmed via the raw HTTP response, not a browser: reviews
+      render nothing at all while `$testimonials` is empty, and all three
+      CTA buttons share the same label and destination. The
+      Claude-in-Chrome extension wouldn't connect this step, and a headless-
+      Edge fallback was abandoned rather than risk hijacking the user's own
+      open browser windows — so light mode, dark mode, mobile width, and the
+      FAQ accordion's actual click behaviour are still unverified in a real
+      browser. See §2.15 for the full trail. Desktop light/dark now confirmed
+      live in Step 18 below — mobile width and the FAQ click are still open.
+- [ ] **Step 18 — Four visual polish fixes, plus one incidental sidebar bug**
+      (§2.16) — done, real narrow-viewport confirmation still outstanding
+      Login/register heading centering (shared `.auth-form-card h1`/
+      `.auth-form-subtitle`), the landing header's mobile spacing (root
+      cause: a Step 14 media query never scoped to exclude `.landing-nav`),
+      a new reusable `user_avatar()` initials-avatar helper wired into the
+      nav drawer, and the trust bar rebuilt as an equal-column grid in the
+      existing glass-card style. `style.css?v=4`/`?v=5` → `?v=7` across all
+      41 pages that link it. Found and fixed one real, pre-existing,
+      unrelated bug while verifying the avatar live: the persistent sidebar
+      (Step 14) had no `flex-wrap: nowrap`, so on a short viewport its
+      column layout wrapped into a second, off-panel column instead of
+      scrolling — the entire nav and the new avatar were unreachable at that
+      window height until fixed. All four fixes plus the sidebar bugfix
+      confirmed live, screenshotted, in both themes at the session's
+      available desktop width; a real narrow/mobile render was not
+      obtainable this session (`resize_window` never actually changed
+      `window.innerWidth`, checked directly and repeatedly) — mitigated by
+      reading the fixed rules back out of the live CSSOM rather than just
+      trusting the source file. See §2.16 for the full trail, including the
+      one thing explicitly flagged back as a follow-up: there is still
+      nowhere in this app to upload a real profile photo.
+- [ ] **Step 19 — Recipe tier gate + 40-recipe import batch** (§2.17) —
+      schema/import done and verified live; Unsplash sourcing blocked on a
+      key; not committed yet, pending review
+      New `tier` column (`recipes`, plain `VARCHAR` not the literal `ENUM`
+      asked for - same reasoning as `oauth_provider`), independent of the
+      pre-existing `is_premium` vendor-marketplace lock. `recipe.php` gates
+      a locked premium recipe behind a real (small, safe) blurred teaser +
+      "Upgrade to view" card, not a CSS blur over the full content -
+      confirmed live that the full ingredients/instructions never reach
+      the browser for a locked recipe. **Found mid-task and flagged before
+      proceeding**: the live database already had 54 recipes, not the 8
+      the original ask assumed - 45 of them inserted 2026-09-18 with no
+      image and mostly no instructions, from no file in this repo. Left
+      completely untouched per instruction; the accurate running total is
+      **94 recipes, 73 free / 21 premium** (not 48) - see §2.17 for the
+      full reasoning and for why those 45 are still a real, separate,
+      unresolved bug worth someone's attention. 40 new recipes converted
+      from the supplied batch via a small ingredient-line parser (kept in
+      scratch); found and fixed three real parser bugs while checking its
+      output, including one (a duplicated ingredient phrase) that had
+      already reached 49 live database rows before being caught by
+      actually loading a recipe page - fixed in the parser, the source
+      file, and with a live `UPDATE` against those rows. Migrations
+      applied directly via PDO, not by running `setup.php` (this machine's
+      known antivirus quirk, §2.10) - both recorded in `schema_migrations`
+      exactly as `setup.php` itself would. `admin_recipes.php` doesn't
+      list these 40 (or the original 8) - confirmed by design, not a bug:
+      that page is scoped to admin quick-added recipes only. Unsplash
+      sourcing is written and ready (`scripts/fetch_recipe_images.php` +
+      `apply_recipe_images.php`, split specifically so a photo match gets
+      a real visual check before it goes live) but has no key to run with
+      - no `.env` exists in this project, and `UNSPLASH_ACCESS_KEY` in
+      `config/config.php` is blank; flagged back rather than guessed at.
+      All 40 new recipes currently have no image. See §2.17 for the full
+      trail, verification steps, and every follow-up this turned up.
+- [ ] **Step 20 — Six-item follow-up** (§2.18) — vendor/Premium gate done
+      and verified live; three items investigated and reported only; one
+      built scope-corrected mid-implementation; two blocked, reported
+      Investigated and reported without changing anything: the 45 mystery
+      recipes (no `updated_at`/`user_id` column exists to check; a
+      40-hour gap in this branch's own commit history with zero commits
+      is the closest thing to a lead); whether widening
+      `admin_recipes.php` is a simple query change (it isn't, once the
+      page's own Edit/Remove buttons need to keep telling the truth -
+      both are deliberately scoped to `is_generated = 1`, Step 16's own
+      boundary); barcode-scan gating, which turned out to mean *building*
+      camera access, barcode detection, and a product-lookup backend from
+      nothing (checked the whole codebase, not just `pantry.php` - none
+      of it exists anywhere), not adding a gate to something that already
+      does. Unsplash sourcing still blocked - the key the request said
+      was added isn't actually in `config/config.php` or any environment
+      variable scope, checked directly.
+      Re-verified the 40 recipes from Step 19 against the now-fully-fixed
+      ingredient parser (fresh re-parse from the original source JSON,
+      diffed field-by-field against both the live database and
+      `data/seed_recipes.php`, not just re-trusting the earlier patch) -
+      found 2 more bad rows (`malva-pudding`, `koeksisters`) that the
+      original fix's exact-match condition missed because
+      `recipe_ingredients.display_quantity`'s own `VARCHAR(50)` had
+      silently truncated them first. Fixed directly; re-verify now passes
+      clean across all 40. Real total unchanged: **94 recipes, 73 free /
+      21 premium**.
+      Built the vendor/Premium gate, confirmed missing by reading the
+      actual code (`profile.php`'s vendor toggle had zero premium check;
+      `premium_enforce_expiry()` never touched `is_vendor` or recipe
+      visibility) rather than assumed: enabling "sell your recipes" now
+      requires Premium (admins bypass), and a vendor's premium-priced
+      recipes unpublish - from `index.php`'s listing, from `recipe.php`,
+      and from new purchases via `checkout.php` - the moment their
+      subscription's real `current_period_end` passes, checked in real
+      time via a new `user_is_currently_premium()` rather than the
+      existing lazy `is_premium_member` flag (which only refreshes when
+      the vendor's own account logs in - not good enough for someone
+      *else* browsing their listing). Existing buyers, the vendor's own
+      view, and admins are grandfathered through the lock. Verified live
+      end to end with four throwaway accounts and a synthetic vendor
+      recipe (all deleted after): rejection of a non-premium toggle
+      attempt, visible-while-active, correctly 404s/drops-from-listing
+      the moment a subscription's date lapses (even before the lazy flag
+      catches up), grandfathered access holds for the existing buyer and
+      the vendor's own login throughout, and a properly-simulated renewal
+      (both `status` and the date, matching what a real renewal actually
+      needs) brings it back. See §2.18 for the full trail on all six
+      items.
+- [ ] **Step 21 — Hide the 45 mystery recipes, widen admin_recipes.php,
+      log barcode scan as deferred** (§2.19) — hide + widen done and
+      verified live; barcode scan logged only, `pantry.php` untouched;
+      not committed
+      No existing "unpublished recipe" mechanism anywhere in this schema
+      (checked every table's `status`-like column first - all belong to
+      transaction/report workflows, none to `recipes`) - added a minimal
+      `recipes.is_published` (plain `TINYINT(1)`, this schema's own
+      convention for a binary flag) rather than reuse or invent a
+      workaround. Hid the exact 45 ids from §2.18 by id, not by
+      timestamp range. Every real browse/discover surface now respects
+      it - `index.php`, `recipe.php` (404 to non-admins, admins still
+      reach it), `pantry.php`'s matcher and `planner.php`'s recipe picker
+      (both found live, neither was named in the original ask but both
+      would have kept surfacing/offering hidden recipes), and
+      `landing.php`'s "recipes ready to browse" count. `admin.php`'s
+      dashboard stat and `admin_export.php`'s CSV deliberately still show
+      everything - true inventory for an admin, not a public claim.
+      `admin_recipes.php` now lists all 94 recipes with a real type badge
+      per row (User-submitted / Built-in catalog / Hidden) and routes
+      Edit/Remove through whatever's actually correct for each: unchanged
+      for `is_generated = 1` (already worked, re-confirmed by re-reading
+      `add_recipe.php` in full); a disabled Edit with a stated reason for
+      the built-in catalog (no existing edit path, not forced); a new
+      Hide/Unhide toggle (`admin_recipe_toggle_publish.php`) in place of
+      Remove for the 45, so this step's own new mechanism is exactly
+      "where you go manage them later." Found and fixed two more real
+      bugs while verifying this, not just re-scoping buttons:
+      `admin_recipe_delete.php` flashed "Recipe removed." unconditionally
+      even when its `DELETE` matched zero rows, and separately
+      `admin_recipes.php` never rendered an `error` flash *at all* - the
+      fixed delete handler's honest rejection was being set correctly and
+      then silently swallowed on the next page render, caught only by
+      actually looking for the message and finding nothing. Verified live
+      end to end with throwaway accounts: hidden recipes absent from
+      search and 404 directly for a regular user, visible/reachable for
+      an admin; a real hide→unhide→hide round trip through the new
+      toggle, not just a database flag check; Remove against a built-in
+      recipe and the toggle against a user-submitted one both correctly
+      rejected with a real visible message, and neither touched the row.
+      Real counts unchanged from the migration: **94 total, 49 visible
+      (28 free / 21 premium), 45 hidden**. Barcode scanning logged as its
+      own deferred, unscoped-until-designed feature (camera access +
+      barcode detection + the free Open Food Facts API for product
+      lookup, plus its own Premium gate once built) - `pantry.php` itself
+      not touched, per the instruction. See §2.19 for the full trail.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

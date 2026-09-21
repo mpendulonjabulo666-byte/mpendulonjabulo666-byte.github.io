@@ -70,7 +70,7 @@ $payoutHistory = $payoutHistoryStmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=4">
+<link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -103,9 +103,15 @@ $payoutHistory = $payoutHistoryStmt->fetchAll();
                     <tr><th>Recipe</th><th>Price</th><th>Sold</th><th>Your earnings</th><th></th></tr>
                 </thead>
                 <tbody>
+                    <?php $vendorCurrentlyPremium = !empty($user['is_admin']) || !empty($user['is_premium_member']); ?>
                     <?php foreach ($recipes as $r): ?>
                         <tr>
-                            <td><a href="recipe.php?id=<?= urlencode($r['id']) ?>"><?= h($r['title']) ?></a></td>
+                            <td>
+                                <a href="recipe.php?id=<?= urlencode($r['id']) ?>"><?= h($r['title']) ?></a>
+                                <?php if (!$vendorCurrentlyPremium): ?>
+                                    <br><span class="muted" style="font-size:11.5px;color:var(--error);"><?= icon('alert-triangle', 11) ?> Unpublished - renew Premium to relist</span>
+                                <?php endif; ?>
+                            </td>
                             <td>R<?= number_format((float)$r['price'], 2) ?></td>
                             <td><?= (int)$r['sales_count'] ?></td>
                             <td>R<?= number_format((float)$r['net_revenue'], 2) ?></td>
