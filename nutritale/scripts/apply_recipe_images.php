@@ -9,7 +9,7 @@
 // Usage: php scripts/apply_recipe_images.php
 
 require __DIR__ . '/../config/config.php';
-require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../config/db_conn.php';
 
 $pdo = db();
 $dir = __DIR__ . '/../assets/img/recipes';

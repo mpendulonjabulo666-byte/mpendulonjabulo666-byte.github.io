@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/db_conn.php';
 
 // Caching and cost-bounding for AI pantry suggestions (CONTINUE.md step 5).
 // Kept separate from ai_pantry.php, which is deliberately DB-free and

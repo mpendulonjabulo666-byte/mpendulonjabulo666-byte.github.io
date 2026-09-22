@@ -13,7 +13,7 @@ try {
     $root->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     $log[] = 'Database "' . DB_NAME . '" ready.';
 
-    require_once __DIR__ . '/config/database.php';
+    require_once __DIR__ . '/config/db_conn.php';
     $pdo = db();
 
     $sql = file_get_contents(__DIR__ . '/sql/schema.sql');

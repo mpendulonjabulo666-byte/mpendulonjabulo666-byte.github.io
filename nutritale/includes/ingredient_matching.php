@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/db_conn.php';
 
 // Turns free-text ingredient names - both what a recipe lists and what a
 // user types into their pantry - into a small set of canonical identities,

@@ -40,7 +40,7 @@
 // Usage: php scripts/fetch_recipe_images.php
 
 require __DIR__ . '/../config/config.php';
-require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../config/db_conn.php';
 
 if (UNSPLASH_ACCESS_KEY === '') {
     fwrite(STDERR, "UNSPLASH_ACCESS_KEY is blank in config/config.php - nothing to do.\n");

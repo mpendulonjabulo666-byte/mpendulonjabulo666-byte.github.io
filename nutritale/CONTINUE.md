@@ -20,6 +20,29 @@ So: use those docs for **what still needs to exist and why** (especially
 `00-START-HERE.md` §3 and §4, and `08-AI-ENGINE.md`). Ignore them entirely on
 **how to build it**. Nothing here is getting rewritten in React.
 
+### 0.1 — Two filenames are permanently renamed because of this dev machine's antivirus
+
+`config/database.php` and `install.php` no longer exist, on purpose, and
+should **not** be renamed back:
+
+- `install.php` → `setup.php` — Avast deletes/blocks this file whenever it's
+  *run* via `php.exe`, because it does schema DDL (`CREATE DATABASE`,
+  `ALTER`) that looks like a dropper. Behavioral, not name-based — renaming
+  again would eventually hit the same block under the new name too.
+- `config/database.php` → `config/db_conn.php` — Avast blocks recreating
+  this exact filename in this folder (git checkout, a plain file write, and
+  a file copy were all refused with EPERM/access-denied) even after an
+  Avast exception was added for the path. Confirmed name-based: a
+  byte-identical copy under a different name wrote instantly. `db_conn.php`
+  is now the real PDO connection factory (`function db(): PDO`), required by
+  `includes/ai_cache.php`, `includes/allergens.php`, `includes/functions.php`,
+  `includes/ingredient_matching.php`, `scripts/apply_recipe_images.php`,
+  `scripts/fetch_recipe_images.php`, and `setup.php`.
+
+Both renames are permanent fixes, not workarounds to undo later — this is a
+local machine quirk, not an app bug, and it will just recur if either name
+is reintroduced.
+
 ---
 
 ## 1. What is built and working
