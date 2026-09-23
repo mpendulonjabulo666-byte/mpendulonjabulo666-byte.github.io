@@ -1,6 +1,6 @@
 <?php
-// Rendered by enforce_maintenance_mode() (includes/functions.php) - never
-// requested directly, so it assumes config.php/functions.php/icons.php
+// Rendered by enforce_maintenance_mode() (includes/functions_core.php) - never
+// requested directly, so it assumes config.php/functions_core.php/icons.php
 // are already loaded and just prints a response for the current request.
 ?>
 <!DOCTYPE html>

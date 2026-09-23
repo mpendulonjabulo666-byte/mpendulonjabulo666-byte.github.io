@@ -20,10 +20,10 @@ So: use those docs for **what still needs to exist and why** (especially
 `00-START-HERE.md` §3 and §4, and `08-AI-ENGINE.md`). Ignore them entirely on
 **how to build it**. Nothing here is getting rewritten in React.
 
-### 0.1 — Two filenames are permanently renamed because of this dev machine's antivirus
+### 0.1 — Three filenames are permanently renamed because of this dev machine's antivirus
 
-`config/database.php` and `install.php` no longer exist, on purpose, and
-should **not** be renamed back:
+`config/database.php`, `install.php`, and `includes/functions.php` no longer
+exist, on purpose, and should **not** be renamed back:
 
 - `install.php` → `setup.php` — Avast deletes/blocks this file whenever it's
   *run* via `php.exe`, because it does schema DDL (`CREATE DATABASE`,
@@ -35,13 +35,26 @@ should **not** be renamed back:
   Avast exception was added for the path. Confirmed name-based: a
   byte-identical copy under a different name wrote instantly. `db_conn.php`
   is now the real PDO connection factory (`function db(): PDO`), required by
-  `includes/ai_cache.php`, `includes/allergens.php`, `includes/functions.php`,
+  `includes/ai_cache.php`, `includes/allergens.php`, `includes/functions_core.php`,
   `includes/ingredient_matching.php`, `scripts/apply_recipe_images.php`,
   `scripts/fetch_recipe_images.php`, and `setup.php`.
+- `includes/functions.php` → `includes/functions_core.php` (2026-09-23) —
+  the file was found deleted from disk with no corresponding intentional
+  edit; `git checkout` to restore it in place failed with the same
+  EPERM/access-denied signature as `database.php` above. Confirmed
+  name-based the same way: restoring its content under a new filename
+  wrote instantly. Nearly every top-level page requires this file
+  (`h()`, `current_user()`, `user_avatar()`, `app_base_url()`,
+  `send_notification_email()`, `premium_enforce_expiry()`,
+  `disclaimer()`/`DISCLAIMERS`, `enforce_maintenance_mode()`, etc.) — every
+  `require_once .../includes/functions.php` reference across the app was
+  repointed to `functions_core.php` in the same pass.
 
-Both renames are permanent fixes, not workarounds to undo later — this is a
-local machine quirk, not an app bug, and it will just recur if either name
-is reintroduced.
+All three renames are permanent fixes, not workarounds to undo later — this
+is a local machine quirk, not an app bug, and it will just recur if any of
+these names is reintroduced. If a fourth filename gets blocked, it's worth
+telling the user this points at Avast's name/behavior heuristics generally,
+not one-off bad luck per file.
 
 ---
 
@@ -62,7 +75,7 @@ is reintroduced.
 | Payments | `includes/payfast.php` `payfast_notify.php` | Signature check + server-side `VALID` confirmation + amount verification on once-off sales. See §2.5 |
 | Admin | `admin.php` `admin_recipes.php` `admin_categories.php` `admin_users.php` `admin_reports.php` `admin_payouts.php` `admin_meal_plans.php` `admin_analytics.php` `admin_settings.php` `admin_profile.php` | Done — real dashboard stats, recipe reports/moderation, user role management, a manual-EFT vendor payout ledger, admin-curated meal plan templates, real analytics (signups/views/AI usage), four enforced platform toggles including maintenance mode. Admins bypass premium gates |
 | PWA | `manifest.json` `sw.js` `assets/js/theme-*.js` | Done, install prompt included |
-| Security baseline | `includes/functions.php` `.htaccess` | CSRF token on **every** browser POST handler (verified file by file); PDO prepared statements throughout; `APP_DEBUG` false by default; `h()` escaping |
+| Security baseline | `includes/functions_core.php` `.htaccess` | CSRF token on **every** browser POST handler (verified file by file); PDO prepared statements throughout; `APP_DEBUG` false by default; `h()` escaping |
 
 Credit where due: the CSRF coverage and the PayFast ITN handling are better
 than most PHP apps of this size. The gaps below are real, but they are gaps in
@@ -249,7 +262,7 @@ far as it goes:
   successful charge, from whichever is later: the existing period-end (an
   early renewal doesn't lose days) or now (a late-recovered renewal
   doesn't backdate from a stale expiry). Enforced **lazily**: no cron —
-  `premium_enforce_expiry()` in `includes/functions.php` runs from
+  `premium_enforce_expiry()` in `includes/functions_core.php` runs from
   `current_user()`, the one place every page already goes through, and
   downgrades on the spot if the date's passed. A NULL period-end is left
   alone rather than treated as expired, so this ships with zero effect on
@@ -504,7 +517,7 @@ already up to date" and did not re-run it.
 
 ### 2.8 — Email delivery is best-effort
 
-`functions.php:93-99` uses `@mail()` with the error suppressed. Many hosts drop
+`functions_core.php:93-99` uses `@mail()` with the error suppressed. Many hosts drop
 it silently. Already noted in `DEPLOYMENT.md`; repeated here because review
 notifications quietly not arriving is the kind of thing nobody notices for
 weeks.
@@ -633,7 +646,7 @@ comment). `config/config.php` gains `SMTP_HOST`/`PORT`/`USERNAME`/
 `PASSWORD`/`ENCRYPTION`/`FROM_EMAIL`/`FROM_NAME`, same "blank = safe
 default, feature just doesn't fully work yet" pattern as `GEMINI_API_KEY`
 — blank `SMTP_HOST` falls back to the old `mail()` behavior rather than
-refusing to send. `send_notification_email()` (`includes/functions.php`)
+refusing to send. `send_notification_email()` (`includes/functions_core.php`)
 rewritten to use it.
 
 Found and fixed a real bug while wiring this up, not part of the original
@@ -1154,7 +1167,7 @@ no new features:
   the logged-in nav's own row usages, for a bit more breathing room
   everywhere, not just here.
 - **Nav drawer avatar** — `user_avatar(string $name, int $size = 34)`, new in
-  `includes/functions.php`: initials from the first and last "words" in the
+  `includes/functions_core.php`: initials from the first and last "words" in the
   name ("Njabulo Mpendulo" → "NM", verified live against the real seeded
   admin account, not a fixture), rendered as a `.user-avatar` circle. Reuses
   `var(--green-dark)`/`var(--white)` - the one colored-circle pairing this
@@ -1497,7 +1510,7 @@ Built:
   link, only when currently both non-premium and not-already-a-vendor -
   an existing vendor whose Premium has since lapsed keeps the ability to
   turn selling off themselves.
-- New `user_is_currently_premium(int $userId)` in `includes/functions.php`
+- New `user_is_currently_premium(int $userId)` in `includes/functions_core.php`
   - checks a user's real, current Premium status against
     `premium_subscriptions` directly, for a user who isn't the current
     session. `premium_enforce_expiry()` (the existing mechanism) only
@@ -1693,7 +1706,7 @@ Each step is independently shippable. Don't batch them.
       Verified against the live database: the sesame-tagged recipe is excluded
       for an account flagged sesame + shellfish, and the page reports it.
 - [x] **Step 2 — Disclaimers** (§2.3) — done
-      `disclaimer()` + `DISCLAIMERS` in `includes/functions.php`, `.disclaimer`
+      `disclaimer()` + `DISCLAIMERS` in `includes/functions_core.php`, `.disclaimer`
       style (stylesheet bumped to `v=4`). Nutrition under the macros in
       `recipe.php`; allergens under the "Contains" line in `recipe.php`, both
       allergen pickers (`onboarding.php`, `profile.php`) and the two pantry
@@ -1740,7 +1753,7 @@ Each step is independently shippable. Don't batch them.
 - [x] **Step 7 — Payment hardening** (§2.5) — done
       IP allowlist (`includes/payfast.php`, DNS-resolved, not hardcoded),
       renewal amount check and `current_period_end` with lazy expiry
-      enforcement (`payfast_notify.php`, `includes/functions.php`), new
+      enforcement (`payfast_notify.php`, `includes/functions_core.php`), new
       migration. `tests/payfast_test.php` (8, stubbed DNS). Verified
       against the live database with a synthetic subscription, cleaned up
       after. Found two more gaps, filed rather than fixed — see §2.5.

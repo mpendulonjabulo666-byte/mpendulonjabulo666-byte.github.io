@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/functions_core.php';
 
 // Minimal OAuth2 "authorization code" sign-in for Google, Facebook, and
 // Apple, added alongside the redesigned login/register pages. Every

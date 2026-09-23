@@ -418,7 +418,7 @@ a { color: inherit; text-decoration: none; }
 .app-nav-leaf-accent { display: inline-flex; color: var(--green-dark); opacity: 0.7; }
 .app-nav-identity-link { display: flex; align-items: center; gap: 10px; }
 
-/* Initials avatar - see user_avatar() in includes/functions.php for why
+/* Initials avatar - see user_avatar() in includes/functions_core.php for why
    it's --green-dark/--white (the one colored-circle pairing this app
    already has audited contrast numbers for, in both themes) rather than
    a new color. Width/height/font-size come from the helper's own inline

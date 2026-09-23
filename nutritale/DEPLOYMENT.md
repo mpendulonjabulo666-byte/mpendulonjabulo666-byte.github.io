@@ -121,7 +121,7 @@ default, no real money can move. Before accepting real payments:
    define('PAYFAST_MERCHANT_KEY', 'your-real-merchant-key');
    define('PAYFAST_PASSPHRASE', 'your-passphrase');
    ```
-4. Confirm `app_base_url()` (in `includes/functions.php`) resolves to
+4. Confirm `app_base_url()` (in `includes/functions_core.php`) resolves to
    your real HTTPS domain — PayFast calls the `notify_url` it's given
    server-to-server, so this must be publicly reachable, not
    `localhost`.
@@ -189,7 +189,7 @@ thing to do before real payments go live.
   disable it — the rule-based recipe matcher on the same page has no
   dependency on this and always works. Get a free key at
   [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-- Email sending: `send_notification_email()` in `includes/functions.php`
+- Email sending: `send_notification_email()` in `includes/functions_core.php`
   sends via real SMTP (PHPMailer, vendored in `includes/PHPMailer/` — see
   its `README.md`) once `config/config.php`'s `SMTP_HOST` is set; left
   blank, it falls back to PHP's `mail()`, which many hosts block or

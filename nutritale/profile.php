@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
 require_once __DIR__ . '/includes/payfast.php';
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         // CONTINUE.md §2.5 / Step 12 — previously the only ways a
         // subscription ever ended were PayFast's own cancellation ITN or
         // letting it lapse (see premium_enforce_expiry() in
-        // includes/functions.php). This calls PayFast's subscriptions API
+        // includes/functions_core.php). This calls PayFast's subscriptions API
         // directly rather than just flipping our own flag, so a stopped
         // subscription here means PayFast really will stop billing it.
         $subStmt = db()->prepare("SELECT * FROM premium_subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1");

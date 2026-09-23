@@ -7,7 +7,7 @@
 // session/CSRF here, and it must always respond 200 quickly.
 
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/payfast.php';
 
 http_response_code(200);
@@ -82,7 +82,7 @@ if ($sub) {
         // renewal that fired a little early shouldn't lose those days) or
         // now (a late-recovered renewal after a lapse shouldn't backdate
         // from a stale expiry). See premium_enforce_expiry() in
-        // includes/functions.php for the other half of this - what
+        // includes/functions_core.php for the other half of this - what
         // happens once this date passes with no further successful charge.
         $extendFrom = max(strtotime($sub['current_period_end'] ?? 'now') ?: time(), time());
         $newPeriodEnd = date('Y-m-d H:i:s', strtotime('+1 month', $extendFrom));

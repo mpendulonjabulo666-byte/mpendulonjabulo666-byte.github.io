@@ -209,6 +209,28 @@ function app_base_url(): string
     return $scheme . '://' . $_SERVER['HTTP_HOST'] . $dir . '/';
 }
 
+// gtag.js snippet for GA_MEASUREMENT_ID (config.php) - blank constant means
+// no GA4 property configured yet, so print nothing rather than a script
+// tag with an empty src. 'G-XXXXXXXXXX' (the shipped placeholder) is left
+// to print as-is: GA silently ignores an invalid measurement ID instead of
+// erroring, so this doesn't need to special-case the placeholder.
+function ga4_script(): string
+{
+    if (GA_MEASUREMENT_ID === '') {
+        return '';
+    }
+    $id = h(GA_MEASUREMENT_ID);
+    return <<<HTML
+<script async src="https://www.googletagmanager.com/gtag/js?id={$id}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '{$id}');
+</script>
+HTML;
+}
+
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf_token'])) {

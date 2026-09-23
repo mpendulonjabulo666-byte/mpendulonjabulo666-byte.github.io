@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/functions_core.php';
 
 // The core "what's owed" rule, kept as a pure function (no DB) so it can be
 // unit-tested directly - see tests/vendor_payouts_test.php - the same shape

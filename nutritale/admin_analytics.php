@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 
 $user = require_admin();
 
 // Every number below comes from a table this app already writes to in the
 // course of normal use (signups, recipe.php page loads, ai_generations,
-// favorites) - see includes/functions.php's platform_setting() sibling
+// favorites) - see includes/functions_core.php's platform_setting() sibling
 // migrations for what each table backs. Nothing here is sampled,
 // estimated, or a placeholder. What's deliberately NOT here: session
 // length / time-on-site, which would need real client-side instrumentation

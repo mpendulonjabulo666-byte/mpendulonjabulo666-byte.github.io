@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/recipe_card.php';
 
@@ -37,7 +37,7 @@ $where[] = 'r.is_published = 1';
 // clickable, 404ing only once you actually open it (recipe.php/
 // checkout.php both check in real time already). That's a worse result
 // than just being consistent, so this mirrors user_is_currently_premium()'s
-// exact rule (includes/functions.php) in pure SQL instead - an active
+// exact rule (includes/functions_core.php) in pure SQL instead - an active
 // subscription row with a future or NULL period_end publishes it; an
 // active row whose period_end has passed unpublishes it regardless of
 // what the flag still says; no subscription row at all (e.g. an

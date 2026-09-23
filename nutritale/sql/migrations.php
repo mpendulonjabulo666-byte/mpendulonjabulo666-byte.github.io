@@ -100,7 +100,7 @@ return [
     // migration runs - deliberately not backfilled, since we don't know
     // any pre-migration subscription's real paid-through date and a wrong
     // guess could downgrade someone who's still legitimately paying. See
-    // premium_enforce_expiry() in includes/functions.php, which treats
+    // premium_enforce_expiry() in includes/functions_core.php, which treats
     // NULL as "not tracked yet, don't touch" rather than "expired."
     '2026_09_15_premium_period_end' => 'ALTER TABLE premium_subscriptions ADD COLUMN current_period_end DATETIME NULL AFTER status',
 
@@ -128,7 +128,7 @@ return [
 
     // Admin suite build: backs admin_settings.php's real, enforced platform
     // toggles (see enforce_maintenance_mode() and platform_setting() in
-    // includes/functions.php). Single fixed row (id=1) rather than a
+    // includes/functions_core.php). Single fixed row (id=1) rather than a
     // key/value table - there are exactly four named switches, not an
     // open-ended list, so named columns are simpler to read and to guard
     // with a CHECK on id than a generic settings store would be.

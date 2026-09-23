@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/functions_core.php';
 
 // Served at /sitemap.xml via the .htaccess rewrite below, not as a static
 // file - app_base_url() already derives the real scheme+host from the
