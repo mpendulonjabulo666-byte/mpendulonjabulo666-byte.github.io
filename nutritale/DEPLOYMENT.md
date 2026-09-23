@@ -177,7 +177,8 @@ thing to do before real payments go live.
 ## Environment-specific values to double check
 
 - `config/config.php`: `DB_*`, `PAYFAST_*`, `PLATFORM_COMMISSION_PCT`,
-  `PREMIUM_MONTHLY_PRICE`, `PANTRY_FREE_USES`
+  `PREMIUM_MONTHLY_PRICE`, `AI_PANTRY_FREE_DAILY_CAP`, `AI_PANTRY_DAILY_CAP`,
+  `AI_PANTRY_COOLDOWN_SECONDS`
 - `config/config.php`: `APP_DEBUG` ships `false` (errors are logged, not
   shown to visitors) — that's the correct production setting. Only flip
   it to `true` temporarily while actively debugging on your own machine,

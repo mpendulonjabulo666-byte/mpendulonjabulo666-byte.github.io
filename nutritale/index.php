@@ -154,9 +154,11 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recipes · <?= APP_NAME ?></title>
+<meta name="description" content="Browse <?= APP_NAME ?>'s recipe library filtered by diet and allergy needs, or head to your pantry for AI-generated meal ideas from what you already have.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">

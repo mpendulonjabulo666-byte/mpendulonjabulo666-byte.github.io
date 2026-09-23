@@ -9,8 +9,13 @@ require_once __DIR__ . '/includes/ingredient_matching.php';
 $user = require_login();
 
 $isPremiumOrAdmin = $user['is_premium_member'] || $user['is_admin'];
-$usesLeft = max(0, PANTRY_FREE_USES - (int)$user['pantry_free_uses_used']);
-$isBlocked = !$isPremiumOrAdmin && $usesLeft <= 0;
+// Ingredient add/remove/clear is always free and never gated - only an
+// actual AI generation (the ai_suggest handler below) is capped, by a
+// per-day count (AI_PANTRY_FREE_DAILY_CAP / AI_PANTRY_DAILY_CAP) rather
+// than the old lifetime "3 free trials ever" counter - see config.php.
+$aiDailyCap = $isPremiumOrAdmin ? AI_PANTRY_DAILY_CAP : AI_PANTRY_FREE_DAILY_CAP;
+$aiUsedToday = ai_daily_attempt_count((int)$user['id']);
+$aiCapReached = $aiUsedToday >= $aiDailyCap;
 
 $pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
 $pantryStmt->execute([$user['id']]);
@@ -28,11 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $action = $_POST['action'] ?? '';
     if ($action === 'add') {
         $raw = trim($_POST['ingredient_name'] ?? '');
-        if ($raw !== '' && !$isBlocked) {
+        if ($raw !== '') {
             // "chicken, spinach, rice" (the field's own placeholder text)
             // becomes three rows, not one - see split_pantry_entry().
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
-            // Adding ingredients is free. Only an AI generation spends a trial use.
             foreach (split_pantry_entry($raw) as $name) {
                 $stmt->execute([$user['id'], $name]);
             }
@@ -42,27 +46,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $name]);
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
-    } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry && empty($user['is_admin']) && !platform_setting('enable_ai_matching')) {
+    } elseif ($action === 'ai_suggest' && $pantry && empty($user['is_admin']) && !platform_setting('enable_ai_matching')) {
         $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => 'AI recipe matching is temporarily turned off by the site admin.'];
-    } elseif ($action === 'ai_suggest' && !$isBlocked && $pantry) {
+    } elseif ($action === 'ai_suggest' && $pantry) {
         $pantryHash = ai_pantry_hash($pantry, $dietPrefs, $userAllergens);
         $cached = ai_cache_lookup((int)$user['id'], $pantryHash, AI_PANTRY_CACHE_DAYS);
+        $secondsSinceLast = ai_seconds_since_last_attempt((int)$user['id']);
         if ($cached !== null) {
             // Nothing new was generated, so nothing new is charged for:
-            // no trial use spent, no daily-cap count added.
+            // no daily-cap count added, no cooldown started.
             $_SESSION['ai_pantry_ideas'] = $cached + ['from_cache' => true];
-        } elseif ($isPremiumOrAdmin && ai_daily_attempt_count((int)$user['id']) >= AI_PANTRY_DAILY_CAP) {
-            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached today's AI suggestion limit ("
-                . AI_PANTRY_DAILY_CAP . '). Try again tomorrow.'];
+        } elseif ($aiCapReached) {
+            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached today's AI suggestion limit ($aiDailyCap). "
+                . ($isPremiumOrAdmin ? 'Try again tomorrow.' : 'Try again tomorrow, or go Premium for a higher daily limit.')];
+        } elseif ($secondsSinceLast !== null && $secondsSinceLast < AI_PANTRY_COOLDOWN_SECONDS) {
+            $wait = AI_PANTRY_COOLDOWN_SECONDS - $secondsSinceLast;
+            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "Please wait $wait more second" . ($wait === 1 ? '' : 's') . ' before requesting new ideas.'];
         } else {
             $result = gemini_pantry_ideas($pantry, $dietPrefs, $userAllergens);
             if (($result['attempts'] ?? 0) > 0) {
                 ai_log_generation((int)$user['id'], $pantryHash, $result);
             }
             $_SESSION['ai_pantry_ideas'] = $result;
-            if (!$isPremiumOrAdmin) {
-                db()->prepare('UPDATE users SET pantry_free_uses_used = pantry_free_uses_used + 1 WHERE id = ?')->execute([$user['id']]);
-            }
         }
     }
     redirect('pantry.php');
@@ -144,6 +149,7 @@ if ($pantry) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>What Can I Make? · <?= APP_NAME ?></title>
@@ -171,27 +177,18 @@ if ($pantry) {
 
     <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
-            <?= $usesLeft > 0 ? "$usesLeft free ingredient" . ($usesLeft === 1 ? '' : 's') . ' left on your trial.' : 'Your free trial is used up.' ?>
-            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for unlimited use.
+            <?= $aiCapReached ? "You've used today's $aiDailyCap free AI idea generations." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left today.' ?>
+            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for a higher daily limit.
         </p>
     <?php endif; ?>
 
     <div class="card mb-16">
-        <?php if ($isBlocked): ?>
-            <div class="paywall" style="padding:20px;">
-                <?= icon('wand', 24) ?>
-                <h2 style="margin:8px 0 4px;font-size:17px;">You've used your <?= PANTRY_FREE_USES ?> free trials</h2>
-                <p class="muted" style="margin:0 0 14px;font-size:13.5px;">Upgrade to Premium for unlimited ingredient lookups and diet-matched recommendations.</p>
-                <a href="premium.php" class="btn btn-primary">Go Premium — R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month</a>
-            </div>
-        <?php else: ?>
-            <form method="post" style="display:flex;gap:8px;">
-                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
-                <input type="hidden" name="action" value="add">
-                <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
-                <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
-            </form>
-        <?php endif; ?>
+        <form method="post" style="display:flex;gap:8px;">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="add">
+            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+            <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
+        </form>
 
         <?php if ($pantry): ?>
             <div class="tag-row mt-16">
@@ -227,12 +224,14 @@ if ($pantry) {
                         <?= disclaimer('allergens') ?>
                     <?php endif; ?>
                 </div>
-                <?php if (!$isBlocked): ?>
+                <?php if (!$aiCapReached): ?>
                     <form method="post">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="ai_suggest">
                         <button type="submit" class="btn btn-primary btn-small"><?= icon('wand', 14) ?> Get AI ideas</button>
                     </form>
+                <?php else: ?>
+                    <p class="muted" style="font-size:12.5px;margin:0;">Today's limit reached<?= $isPremiumOrAdmin ? '' : ' — ' ?><?= $isPremiumOrAdmin ? '.' : '<a href="premium.php" style="color:var(--green-dark);font-weight:600;">go Premium</a> for more.' ?></p>
                 <?php endif; ?>
             </div>
 

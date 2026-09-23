@@ -29,9 +29,11 @@ $testimonials = [];
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= APP_NAME ?> — Cook what you have, plan what you need</title>
+<meta name="description" content="Turn what's already in your kitchen into real meals. NutriTale gives you AI-powered recipe ideas from your pantry, allergy-safe filtering, meal planning, and shopping lists that build themselves.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
@@ -192,11 +194,12 @@ $testimonials = [];
 <footer class="landing-footer muted">
     <div class="landing-footer-links">
         <!--
-            Privacy Policy / Terms of Service / Refund Policy don't exist
-            as real pages yet anywhere in this app - these point at where
-            they should live once written (same top-level, page-per-file
-            convention as login.php/register.php/etc.), not at content
-            that exists today.
+            Stub pages (privacy.php/terms.php/refund.php) - each just says
+            "not published yet" plus a contact email, noindex'd, so these
+            links don't 404 from the public landing page while the real
+            policies (Premium billing, marketplace terms, data collection -
+            legal/business content, not something to fabricate here) are
+            still being written.
         -->
         <a href="privacy.php">Privacy Policy</a>
         <a href="terms.php">Terms of Service</a>

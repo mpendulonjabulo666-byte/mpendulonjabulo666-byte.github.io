@@ -70,6 +70,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meal Plans · Admin · <?= APP_NAME ?></title>

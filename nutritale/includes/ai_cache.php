@@ -47,6 +47,27 @@ function ai_daily_attempt_count(int $userId): int
     return (int)$stmt->fetchColumn();
 }
 
+// Seconds since this user's last logged attempt (any status), or null if
+// they've never made one. Checked against AI_PANTRY_COOLDOWN_SECONDS
+// before a *new* Gemini call - never before a cache hit, which costs
+// nothing and shouldn't be throttled. The diff is computed by MySQL
+// itself (TIMESTAMPDIFF against its own NOW()), not PHP's time() against
+// a fetched timestamp string - this dev machine's MySQL runs with
+// time_zone=SYSTEM while PHP is set to UTC (see CONTINUE.md's login-
+// lockout note for the same bug already caught there), so comparing a
+// MySQL-written created_at against PHP's clock came back negative in
+// testing. Keeping both sides of the comparison on MySQL's own clock,
+// same fix shape as ai_cache_lookup()/ai_daily_attempt_count() below
+// already use, avoids the mismatch entirely rather than trying to
+// correct for an offset that varies by deployment.
+function ai_seconds_since_last_attempt(int $userId): ?int
+{
+    $stmt = db()->prepare('SELECT TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) FROM ai_generations WHERE user_id = ?');
+    $stmt->execute([$userId]);
+    $seconds = $stmt->fetchColumn();
+    return $seconds !== null ? (int)$seconds : null;
+}
+
 // Records one AI pantry request. Only called for a request that actually
 // reached Gemini at least once - pantry.php skips this for a result whose
 // 'attempts' is 0 (blocked before any call, e.g. no API key configured),
