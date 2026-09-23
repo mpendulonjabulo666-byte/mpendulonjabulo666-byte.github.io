@@ -31,7 +31,6 @@ define('PAYFAST_PASSPHRASE', '');
 // recipe sales and ingredient marketplace sales.
 define('PLATFORM_COMMISSION_PCT', 10);
 define('PREMIUM_MONTHLY_PRICE', 99.00);
-define('PANTRY_FREE_USES', 3);
 
 // Google Gemini API (https://aistudio.google.com/apikey) — powers the
 // "Get AI ideas" button on the pantry page (real AI-generated meal ideas
@@ -39,9 +38,8 @@ define('PANTRY_FREE_USES', 3);
 // above it). Leave blank to disable the AI button entirely. Get a free
 // key at aistudio.google.com and paste it here on your server — never
 // commit a real key to git. GEMINI_MAX_OUTPUT_TOKENS caps how long each
-// response is allowed to be, and every call also counts against the
-// same PANTRY_FREE_USES trial limit as the rest of the pantry page, so
-// usage (and cost) stays bounded per free user.
+// response is allowed to be; every call also counts against the daily
+// caps below, so usage (and cost) stays bounded per user.
 define('GEMINI_API_KEY', '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
@@ -112,23 +110,37 @@ define('APPLE_OAUTH_TEAM_ID', getenv('APPLE_OAUTH_TEAM_ID') ?: '');
 define('APPLE_OAUTH_KEY_ID', getenv('APPLE_OAUTH_KEY_ID') ?: '');
 define('APPLE_OAUTH_PRIVATE_KEY', getenv('APPLE_OAUTH_PRIVATE_KEY') ?: '');
 
-// Free users are already bounded by PANTRY_FREE_USES above, but premium
-// and admin accounts skip that counter entirely (see pantry.php) and
-// were previously unmetered - see CONTINUE.md §2.4. These two bound them:
+// AI pantry-suggestion usage caps, all enforced in pantry.php via
+// includes/ai_cache.php's ai_generations-backed counters - see
+// CONTINUE.md §2.4/§2.20 for the full history (this replaced an earlier
+// lifetime "3 free trials ever" counter, users.pantry_free_uses_used,
+// which had no daily or time-window concept at all).
 //
 //   AI_PANTRY_CACHE_DAYS — an identical request (same pantry, diet prefs
 //   and allergens - see ai_pantry_hash() in includes/ai_pantry.php) within
 //   this many days is served from ai_generations instead of calling
-//   Gemini again. Costs nobody a trial use or a daily-cap count, since
-//   nothing new was generated.
+//   Gemini again. Costs nobody a daily-cap count, since nothing new was
+//   generated.
 //
-//   AI_PANTRY_DAILY_CAP — applied to premium AND admin accounts, not just
-//   premium: both were equally unmetered before this, and "admin" isn't
-//   the same guarantee as "trusted operator" on every deployment. Counts
-//   Gemini calls (attempts), not button presses - a retry that regenerates
-//   because of an allergen violation still costs one. See includes/ai_cache.php.
+//   AI_PANTRY_FREE_DAILY_CAP — free (non-premium, non-admin) accounts,
+//   from the day they sign up, no separate elevated trial period.
+//
+//   AI_PANTRY_DAILY_CAP — premium AND admin accounts, not just premium:
+//   both were equally unmetered before this work started, and "admin"
+//   isn't the same guarantee as "trusted operator" on every deployment.
+//
+//   AI_PANTRY_COOLDOWN_SECONDS — minimum gap between two real Gemini
+//   calls from the same user, regardless of tier. Only gates an actual
+//   new generation, never a cache hit (see pantry.php's ai_suggest
+//   handler - the cache lookup runs first).
+//
+// All three counters count Gemini calls (attempts), not button presses -
+// a retry that regenerates because of an allergen violation still costs
+// one. See includes/ai_cache.php.
 define('AI_PANTRY_CACHE_DAYS', 3);
-define('AI_PANTRY_DAILY_CAP', 30);
+define('AI_PANTRY_FREE_DAILY_CAP', 2);
+define('AI_PANTRY_DAILY_CAP', 20);
+define('AI_PANTRY_COOLDOWN_SECONDS', 30);
 
 // Outgoing email (password resets, "someone rated your recipe" notices).
 // Leave SMTP_HOST blank to fall back to PHP's mail(), which many hosts
@@ -149,12 +161,65 @@ define('SMTP_ENCRYPTION', 'tls'); // 'tls', 'ssl', or '' for an unencrypted conn
 define('SMTP_FROM_EMAIL', 'no-reply@example.com');
 define('SMTP_FROM_NAME', APP_NAME);
 
+// Google Analytics 4 (analytics.google.com) - the gtag.js snippet is
+// wired into every page's <head> already (see ga4_script() in
+// includes/functions_core.php), keyed off this one constant. 'G-XXXXXXXXXX' is
+// a placeholder, not a real property - GA silently ignores an invalid
+// measurement ID (no page-breaking error, just no data received), so
+// leaving it as-is is safe until a real GA4 property exists. Replace with
+// the real Measurement ID (Admin > Data Streams > your stream, in your
+// GA4 property) - no other code change needed. Leave entirely blank
+// ('') to remove the script from every page instead, same convention as
+// GEMINI_API_KEY/UNSPLASH_ACCESS_KEY above.
+define('GA_MEASUREMENT_ID', 'G-XXXXXXXXXX');
+
 // Set to true only while actively debugging locally — it prints full PHP
 // errors (file paths, stack traces, sometimes query fragments) straight
 // into the browser, which is a real information leak on a live site.
 // Leave false in production; check your host's PHP error log instead
 // (errors are always logged regardless of this setting).
 define('APP_DEBUG', false);
+
+// True only for a genuinely HTTPS request - same check app_base_url()
+// (includes/functions_core.php) already used for building PayFast return URLs,
+// defined here instead so the session cookie setup below (which runs
+// before functions_core.php is ever loaded) can use it too; app_base_url()
+// now calls this instead of duplicating the check. Doesn't account for a
+// TLS-terminating reverse proxy (no X-Forwarded-Proto handling) - neither
+// did the pre-existing check, and DEPLOYMENT.md's two recommended
+// production paths (shared hosting, a plain VPS) don't sit behind one;
+// Railway, which does, is already marked not-for-production there for
+// unrelated reasons (see CONTINUE.md §2.5).
+function is_https_request(): bool
+{
+    return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+}
+
+// Session cookie hardening: HttpOnly (JavaScript can never read it via
+// document.cookie - the whole point), Secure (never sent over plain HTTP,
+// skipped automatically on this local dev server since is_https_request()
+// is false there), and SameSite. Explicit here rather than left to
+// whatever php.ini a given host happens to ship with - the previous
+// behavior for all three flags. SameSite=Lax, not Strict: verified
+// directly against this app's own code, not assumed - Strict withholds
+// the cookie on the *cross-site top-level redirect back into the app*
+// that both PayFast (checkout_return.php/premium_return.php, which call
+// require_login()) and every OAuth provider (oauth_verify_state() reads
+// $_SESSION['oauth_state_...'], set right before redirecting out) depend
+// on - Strict would silently break real payment confirmations and every
+// Google/Facebook/Apple sign-in, every time. Lax still blocks the classic
+// cross-site POST CSRF vector (the thing SameSite actually exists to stop)
+// while allowing a top-level GET redirect to carry the cookie, which is
+// why it's the OWASP/browser-vendor-recommended default for a session
+// cookie specifically, not a weaker fallback.
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => is_https_request(),
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

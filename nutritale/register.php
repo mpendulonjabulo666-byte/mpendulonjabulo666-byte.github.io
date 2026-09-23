@@ -25,7 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($name === '') $errors[] = 'Please enter your name.';
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Please enter a valid email address.';
-        if (strlen($password) < 8) $errors[] = 'Password must be at least 8 characters.';
+        // Checked server-side regardless of what the form's own pattern/
+        // client-side hint already enforced - the one place this actually
+        // matters, since a request can always skip the browser entirely.
+        if (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9]/', $password)) {
+            $errors[] = 'Password must be at least 8 characters and include a letter and a number.';
+        }
         if ($password !== $confirm) $errors[] = 'Passwords do not match.';
 
         if (!$errors) {
@@ -50,9 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create account · <?= APP_NAME ?></title>
+<meta name="description" content="Create your free <?= APP_NAME ?> account for personalized recipe ideas from what's already in your pantry, plus meal planning and shopping lists.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
@@ -112,8 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </label>
                     <label class="auth-field-icon">
                         <?= icon('lock', 18) ?>
-                        <input type="password" name="password" placeholder="Create a password" aria-label="Password" required minlength="8">
+                        <input type="password" name="password" placeholder="Create a password" aria-label="Password" required minlength="8" pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}" title="At least 8 characters, with a letter and a number">
                     </label>
+                    <!-- Client-side minlength/pattern above are a UX nicety
+                         only - a request can always skip the browser
+                         entirely, so register.php re-checks the exact same
+                         rule server-side (the one that actually matters)
+                         regardless of what this form enforced. -->
+                    <p class="muted" style="font-size:12px;margin:-12px 0 14px;">Must be at least 8 characters, with a letter and a number.</p>
                     <!-- A confirm-password field, kept even though the
                          mockup's card didn't have one: it catches a typo
                          before it locks someone out of a brand-new

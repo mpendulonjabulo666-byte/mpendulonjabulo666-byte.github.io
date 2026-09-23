@@ -362,4 +362,26 @@ return [
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $pdo->prepare("UPDATE recipes SET is_published = 0 WHERE id IN ($placeholders)")->execute($ids);
     },
+
+    // Security hardening pass: rate limiting on login.php, tracked by
+    // (IP, email) pair rather than email alone - the existing
+    // users.failed_attempts/locked_until columns (added long before this)
+    // already rate-limit a *known* email regardless of which IP is
+    // attacking it, which genuinely does protect a real account from a
+    // distributed brute force. What they can't do is limit an attacker
+    // spraying many *different* email guesses from one IP, since a login
+    // against an email with no matching row never touches those columns
+    // at all. This table adds that missing layer on top, not instead of
+    // it - one row per failed attempt, cleared for that (IP, email) pair
+    // on a successful login. VARCHAR(45) on ip_address specifically fits
+    // the longest possible IPv6 text form, not just IPv4.
+    '2026_09_21_login_attempts' => "
+        CREATE TABLE login_attempts (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            ip_address VARCHAR(45) NOT NULL,
+            email VARCHAR(190) NOT NULL,
+            attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ip_email_time (ip_address, email, attempted_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
 ];

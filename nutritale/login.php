@@ -13,6 +13,11 @@ $email = '';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+// The (IP, email) layer below reuses both of these too - same 5-in-15
+// policy, applied to a pairing the pre-existing users.failed_attempts/
+// locked_until columns can't cover on their own (an email with no
+// matching row never touches those columns at all - see
+// sql/migrations.php's 2026_09_21_login_attempts for the full reasoning).
 // A simple, honest version of "remember me": extends this browser's own
 // session cookie lifetime rather than issuing a separate persistent
 // login token - real, not decorative (checking the box does keep you
@@ -26,15 +31,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        // Checked before the per-user lockout below, and before touching
+        // password_hash at all - this is the layer that covers an email
+        // with no matching account, which the per-user columns never see.
+        // Cutoff computed in PHP, not MySQL's NOW() - the pre-existing
+        // locked_until mechanism below never touches MySQL's own clock for
+        // exactly this reason: this dev machine's MySQL runs with
+        // time_zone=SYSTEM while config.php explicitly sets PHP to UTC, so
+        // NOW() and strtotime() disagreed by the system's real UTC offset -
+        // caught live, not from reading the code (a first version of this
+        // showed "try again in 135 minutes" instead of 15). Every
+        // attempted_at value this app writes and reads is now a PHP-
+        // generated UTC string, never MySQL's CURRENT_TIMESTAMP, so the two
+        // can't drift apart no matter what timezone MySQL's server happens
+        // to be running in.
+        $cutoff = (new DateTime())->modify('-' . LOCKOUT_MINUTES . ' minutes')->format('Y-m-d H:i:s');
+        $ipAttemptStmt = db()->prepare(
+            'SELECT COUNT(*), MAX(attempted_at) FROM login_attempts
+             WHERE ip_address = ? AND email = ? AND attempted_at > ?'
+        );
+        $ipAttemptStmt->execute([$ip, $email, $cutoff]);
+        [$recentAttempts, $lastAttemptAt] = $ipAttemptStmt->fetch(PDO::FETCH_NUM);
+        $ipLocked = (int)$recentAttempts >= MAX_LOGIN_ATTEMPTS;
 
         $stmt = db()->prepare('SELECT id, name, password_hash, failed_attempts, locked_until, is_admin FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        if ($user && $user['locked_until'] && new DateTime($user['locked_until']) > new DateTime()) {
+        if ($ipLocked) {
+            // Rolling, not a fixed timer from the first failure - each
+            // further attempt while already over the threshold pushes the
+            // window later, same as bumping into a "please wait" wall
+            // repeatedly rather than one that quietly expires while an
+            // attacker is still actively guessing.
+            $minutesLeft = max(1, (int)ceil((strtotime($lastAttemptAt) + LOCKOUT_MINUTES * 60 - time()) / 60));
+            $errors[] = "Too many attempts. Try again in $minutesLeft minute" . ($minutesLeft === 1 ? '' : 's') . '.';
+        } elseif ($user && $user['locked_until'] && new DateTime($user['locked_until']) > new DateTime()) {
             $minutesLeft = max(1, (int)ceil((strtotime($user['locked_until']) - time()) / 60));
             $errors[] = "Too many failed attempts. Try again in $minutesLeft minute" . ($minutesLeft === 1 ? '' : 's') . ', or reset your password.';
         } elseif (!$user || !password_verify($password, $user['password_hash'])) {
+            db()->prepare('INSERT INTO login_attempts (ip_address, email, attempted_at) VALUES (?, ?, ?)')
+                ->execute([$ip, $email, (new DateTime())->format('Y-m-d H:i:s')]);
             if ($user) {
                 $attempts = (int)$user['failed_attempts'] + 1;
                 $lockedUntil = null;
@@ -47,13 +86,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $errors[] = 'Incorrect email or password.';
         } else {
+            db()->prepare('DELETE FROM login_attempts WHERE ip_address = ? AND email = ?')->execute([$ip, $email]);
             db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
             if (!empty($_POST['remember_me'])) {
-                session_set_cookie_params(REMEMBER_ME_DAYS * 86400);
-                // The session is already open (config.php starts it) -
-                // params only take effect for a *new* cookie, so re-send
-                // it under the new lifetime rather than the default one.
-                setcookie(session_name(), session_id(), time() + REMEMBER_ME_DAYS * 86400, '/');
+                // The session is already open (config.php starts it) - the
+                // new lifetime only takes effect on a freshly re-sent
+                // cookie, so re-send it explicitly rather than the default
+                // one. Both calls use the full options-array form and
+                // repeat every flag config.php's own session_set_cookie_params()
+                // set (httponly/secure/samesite) - the old single-argument
+                // form used here previously silently reset all of those
+                // back to PHP's defaults (secure=false, httponly=false, no
+                // samesite) the moment "remember me" was checked, undoing
+                // the hardening for exactly the sessions it's meant to
+                // protect the longest.
+                $cookieOptions = [
+                    'expires' => time() + REMEMBER_ME_DAYS * 86400,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => is_https_request(),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ];
+                session_set_cookie_params($cookieOptions);
+                setcookie(session_name(), session_id(), $cookieOptions);
             }
             $_SESSION['user_id'] = (int)$user['id'];
             redirect($user['is_admin'] ? 'admin.php' : 'index.php');
@@ -64,9 +120,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?= ga4_script() ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Log in · <?= APP_NAME ?></title>
+<meta name="description" content="Log in to <?= APP_NAME ?> to get back to your saved recipes, meal plans, and pantry-based AI meal ideas.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
