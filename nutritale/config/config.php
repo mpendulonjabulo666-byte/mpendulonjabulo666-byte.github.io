@@ -171,7 +171,7 @@ define('SMTP_FROM_NAME', APP_NAME);
 // GA4 property) - no other code change needed. Leave entirely blank
 // ('') to remove the script from every page instead, same convention as
 // GEMINI_API_KEY/UNSPLASH_ACCESS_KEY above.
-define('GA_MEASUREMENT_ID', 'G-XXXXXXXXXX');
+define('GA_MEASUREMENT_ID', 'G-6GHNGG305J');
 
 // Set to true only while actively debugging locally — it prints full PHP
 // errors (file paths, stack traces, sometimes query fragments) straight
