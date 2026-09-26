@@ -1,0 +1,1961 @@
+From 397b4f422b234b912c8016aa0179651e5980032d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 19 Sep 2026 18:34:23 +0000
+Subject: [PATCH] Rebuild admin.php into a full admin suite (implements
+ NutriTale Admin.dc.html)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Nine real, DB-backed sections — dashboard, recipes, categories, users,
+reports, meal plans, analytics, settings, admin profile — replacing the
+old single-purpose quick-add page. Matches the Claude Design mockup's
+deep-green/gold visual system.
+
+Schema additions (idempotent via install.php on existing DBs too):
+- recipes: category, status, updated_at
+- users: last_login_at (set on login)
+- new tables: content_reports, curated_meal_plans, admin_settings
+
+Where the mockup had numbers with no real backing (categories, "in
+review" status, engagement analytics), this wires them to genuine
+queries instead (favorites, ratings, meal_plan_items, pantry usage)
+rather than keeping fabricated sample data. Settings toggles persist
+for real but aren't yet read anywhere else in the app.
+
+New standalone pages: admin_recipe_edit.php (create/edit, any recipe),
+admin_user_view.php (role/premium/unlock controls), admin_export.php
+(CSV export for recipes/users).
+
+Verified end-to-end against a local MariaDB: fresh install, migration
+of an existing DB missing the new columns, and every POST action
+(recipe create, settings toggle, report resolve, meal plan create/
+toggle, profile save, user role/premium/unlock) — clean with no PHP
+warnings/notices anywhere.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01K7hNAgxDEnugoKoCGZhU2B
+---
+ nutritale/admin.php                     | 296 ++++++++++----------
+ nutritale/admin_export.php              |  40 +++
+ nutritale/admin_recipe_edit.php         | 350 ++++++++++++++++++++++++
+ nutritale/admin_user_view.php           | 111 ++++++++
+ nutritale/assets/js/admin-sidebar.js    |  28 ++
+ nutritale/includes/admin/analytics.php  |  82 ++++++
+ nutritale/includes/admin/categories.php |  45 +++
+ nutritale/includes/admin/dashboard.php  |  80 ++++++
+ nutritale/includes/admin/mealplans.php  |  75 +++++
+ nutritale/includes/admin/profile.php    |  48 ++++
+ nutritale/includes/admin/recipes.php    | 108 ++++++++
+ nutritale/includes/admin/reports.php    |  80 ++++++
+ nutritale/includes/admin/settings.php   |  46 ++++
+ nutritale/includes/admin/users.php      |  81 ++++++
+ nutritale/includes/admin_helpers.php    | 151 ++++++++++
+ nutritale/includes/icons.php            |  14 +
+ nutritale/install.php                   |  17 ++
+ nutritale/login.php                     |   2 +-
+ nutritale/sql/schema.sql                |  44 ++-
+ 19 files changed, 1558 insertions(+), 140 deletions(-)
+ create mode 100644 nutritale/admin_export.php
+ create mode 100644 nutritale/admin_recipe_edit.php
+ create mode 100644 nutritale/admin_user_view.php
+ create mode 100644 nutritale/assets/js/admin-sidebar.js
+ create mode 100644 nutritale/includes/admin/analytics.php
+ create mode 100644 nutritale/includes/admin/categories.php
+ create mode 100644 nutritale/includes/admin/dashboard.php
+ create mode 100644 nutritale/includes/admin/mealplans.php
+ create mode 100644 nutritale/includes/admin/profile.php
+ create mode 100644 nutritale/includes/admin/recipes.php
+ create mode 100644 nutritale/includes/admin/reports.php
+ create mode 100644 nutritale/includes/admin/settings.php
+ create mode 100644 nutritale/includes/admin/users.php
+ create mode 100644 nutritale/includes/admin_helpers.php
+
+diff --git a/nutritale/admin.php b/nutritale/admin.php
+index 1e39766..58dc7a7 100644
+--- a/nutritale/admin.php
++++ b/nutritale/admin.php
+@@ -2,172 +2,192 @@
+ require_once __DIR__ . '/config/config.php';
+ require_once __DIR__ . '/includes/functions.php';
+ require_once __DIR__ . '/includes/icons.php';
++require_once __DIR__ . '/includes/admin_helpers.php';
+ 
+ $user = require_admin();
+ 
+-$mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+-$quickAddErrors = [];
++$allowedPages = array_column(ADMIN_NAV, 0);
++$page = $_GET['page'] ?? 'dashboard';
++if (!in_array($page, $allowedPages, true)) {
++    $page = 'dashboard';
++}
+ 
+-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'quick_add') {
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+     if (!csrf_check()) {
+-        $quickAddErrors[] = 'Your session expired. Please try again.';
+-    } else {
++        flash_set('error', 'Your session expired. Please try again.');
++        redirect('admin.php?page=' . $page);
++    }
++    $action = $_POST['action'] ?? '';
++
++    if ($action === 'toggle_setting') {
++        $key = $_POST['key'] ?? '';
++        if (array_key_exists($key, ADMIN_SETTINGS_DEFAULTS)) {
++            admin_set_setting($key, !admin_setting($key));
++        }
++        redirect('admin.php?page=settings');
++    }
++
++    if ($action === 'resolve_report') {
++        $id = (int)($_POST['id'] ?? 0);
++        db()->prepare("UPDATE content_reports SET status = 'resolved', resolved_at = NOW() WHERE id = ? AND status = 'open'")->execute([$id]);
++        flash_set('success', 'Report resolved.');
++        redirect('admin.php?page=reports');
++    }
++
++    if ($action === 'create_mealplan') {
+         $title = trim($_POST['title'] ?? '');
+-        $imageUrl = trim($_POST['image_url'] ?? '');
+-        $mealType = $_POST['meal_type'] ?? 'dinner';
+-        $cookTime = (int)($_POST['cook_time'] ?? 20) ?: 20;
+-        $servings = (int)($_POST['servings'] ?? 2) ?: 2;
+-        $calories = (int)($_POST['calories'] ?? 0);
+-        $ingredientLines = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', $_POST['ingredients'] ?? '')))));
+-        $stepLines = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', $_POST['instructions'] ?? '')))));
+-
+-        if ($title === '') $quickAddErrors[] = 'Title is required.';
+-        if (!in_array($mealType, $mealTypes, true)) $quickAddErrors[] = 'Invalid meal type.';
+-        if (!$ingredientLines) $quickAddErrors[] = 'Add at least one ingredient (one per line).';
+-        if (!$stepLines) $quickAddErrors[] = 'Add at least one instruction step (one per line).';
+-
+-        if (!$quickAddErrors) {
+-            $recipeId = 'r-' . preg_replace('/-+/', '-', preg_replace('/[^a-z0-9]+/', '-', strtolower($title))) . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+-            db()->prepare(
+-                'INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, difficulty, cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, is_generated, is_premium, price, created_by)
+-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 1, 0, NULL, ?)'
+-            )->execute([$recipeId, $title, '', $imageUrl, $mealType, '', 'easy', $cookTime, $servings, $calories, $user['id']]);
+-
+-            $insIng = db()->prepare('INSERT INTO recipe_ingredients (recipe_id, name, quantity, unit, display_quantity, category, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)');
+-            foreach ($ingredientLines as $i => $line) $insIng->execute([$recipeId, $line, 0, '', $line, 'other', $i]);
+-
+-            $insStep = db()->prepare('INSERT INTO recipe_instructions (recipe_id, step_number, step_text) VALUES (?, ?, ?)');
+-            foreach ($stepLines as $i => $line) $insStep->execute([$recipeId, $i + 1, $line]);
+-
+-            flash_set('success', 'Recipe added — it\'s free for everyone right away.');
+-            redirect('admin.php');
++        $description = trim($_POST['description'] ?? '');
++        $status = ($_POST['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
++        if ($title === '') {
++            flash_set('error', 'Give the meal plan a title.');
++        } else {
++            db()->prepare('INSERT INTO curated_meal_plans (title, description, status, created_by) VALUES (?, ?, ?, ?)')
++                ->execute([$title, $description, $status, $user['id']]);
++            flash_set('success', 'Meal plan created.');
++        }
++        redirect('admin.php?page=mealplans');
++    }
++
++    if ($action === 'toggle_mealplan_status') {
++        $id = (int)($_POST['id'] ?? 0);
++        $stmt = db()->prepare('SELECT status FROM curated_meal_plans WHERE id = ?');
++        $stmt->execute([$id]);
++        $current = $stmt->fetchColumn();
++        if ($current !== false) {
++            $next = $current === 'published' ? 'draft' : 'published';
++            db()->prepare('UPDATE curated_meal_plans SET status = ? WHERE id = ?')->execute([$next, $id]);
+         }
++        redirect('admin.php?page=mealplans');
+     }
++
++    if ($action === 'save_admin_profile') {
++        $name = trim($_POST['name'] ?? '');
++        $email = trim($_POST['email'] ?? '');
++        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
++            flash_set('error', 'Enter a valid name and a valid email address.');
++        } else {
++            $dupe = db()->prepare('SELECT id FROM users WHERE email = ? AND id != ?');
++            $dupe->execute([$email, $user['id']]);
++            if ($dupe->fetch()) {
++                flash_set('error', 'Another account already uses that email.');
++            } else {
++                db()->prepare('UPDATE users SET name = ?, email = ? WHERE id = ?')->execute([$name, $email, $user['id']]);
++                flash_set('success', 'Profile updated.');
++            }
++        }
++        redirect('admin.php?page=profile');
++    }
++
++    redirect('admin.php?page=' . $page);
+ }
+ 
+-$stmt = db()->prepare(
+-    'SELECT r.*, u.name AS author_name, u.email AS author_email
+-     FROM recipes r JOIN users u ON u.id = r.created_by
+-     WHERE r.is_generated = 1
+-     ORDER BY r.created_at DESC'
+-);
+-$stmt->execute();
+-$recipes = $stmt->fetchAll();
++$openReportCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE status = 'open'")->fetchColumn();
++$searchQuery = trim($_GET['q'] ?? '');
++$pageTitles = [
++    'dashboard' => 'Dashboard', 'recipes' => 'Recipes', 'categories' => 'Categories', 'users' => 'Users',
++    'reports' => 'Reports', 'mealplans' => 'Meal plans', 'analytics' => 'Analytics', 'settings' => 'Settings',
++    'profile' => 'Admin profile',
++];
+ ?>
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+-<title>Admin · <?= APP_NAME ?></title>
++<title><?= h($pageTitles[$page]) ?> · Admin · <?= APP_NAME ?></title>
+ <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
+ <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
+ <link rel="manifest" href="manifest.json">
+-<meta name="theme-color" content="#2fae66">
++<meta name="theme-color" content="#1f3d2b">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="default">
+ <meta name="apple-mobile-web-app-title" content="NutriTale">
+-<script src="assets/js/theme-init.js"></script>
+-<link rel="stylesheet" href="assets/css/style.css?v=3">
+-<script src="assets/js/theme-toggle.js" defer></script>
++<script src="assets/js/admin-sidebar.js"></script>
++<link rel="preconnect" href="https://fonts.googleapis.com">
++<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
++<style>
++  * { box-sizing: border-box; }
++  body { margin: 0; background: #f3f6f3; font-family: 'DM Sans', -apple-system, Helvetica, Arial, sans-serif; color: #1f3d2b; }
++  a { color: #1f3d2b; text-decoration: none; }
++  a:hover { color: #2f6b45; }
++  .row:hover { background: #f8faf7; }
++  .lift { transition: transform 160ms ease, box-shadow 160ms ease; }
++  .lift:hover { transform: translateY(-2px); box-shadow: 0 18px 32px -20px rgba(20,50,32,0.4); }
++  input, select, textarea, button { font-family: inherit; }
++  .admin-shell { display: grid; grid-template-columns: 250px minmax(0,1fr); min-height: 100vh; }
++  html[data-admin-collapsed="1"] .admin-shell { grid-template-columns: 86px minmax(0,1fr); }
++  html[data-admin-collapsed="1"] .admin-label { display: none !important; }
++  html[data-admin-collapsed="1"] .admin-nav-btn,
++  html[data-admin-collapsed="1"] .admin-logout-btn { justify-content: center; }
++  .admin-nav-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #b9cdc0; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
++  .admin-nav-btn.is-active { background: #f2f7f1; color: #1f3d2b; border-color: rgba(201,162,39,0.55); }
++  .admin-nav-btn:hover:not(.is-active) { background: rgba(238,245,238,0.08); }
++  .admin-alert { padding: 12px 16px; border-radius: 10px; font-size: 13.5px; margin: 0 34px 18px; }
++  .admin-alert-success { background: #eef6ea; color: #2a6340; border: 1px solid rgba(47,107,69,0.3); }
++  .admin-alert-error { background: #fbeaea; color: #963a2a; border: 1px solid rgba(176,57,31,0.3); }
++</style>
+ </head>
+ <body>
+-<?php include __DIR__ . '/includes/nav.php'; ?>
+-<main class="app-main">
+-    <?php if ($success = flash_get('success')): ?>
+-        <div class="alert alert-success"><?= h($success) ?></div>
+-    <?php endif; ?>
++<div class="admin-shell">
++
++  <aside style="display:flex; flex-direction:column; gap:26px; padding:24px 16px; background:linear-gradient(180deg,#1f3d2b,#152c1e); color:#eef5ee;">
++    <div style="display:flex; align-items:center; gap:12px; padding:0 8px;">
++      <img src="assets/img/logo/book-mark.png" alt="NutriTale" width="46" height="30" style="display:block; flex:none;">
++      <span class="admin-label" style="display:flex; flex-direction:column; gap:3px; min-width:0;">
++        <span style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; line-height:1;">NutriTale</span>
++        <span style="font-size:9.5px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:#c9a227;">Admin suite</span>
++      </span>
++    </div>
+ 
+-    <h1 class="mb-16"><?= icon('shield', 20) ?> Admin portal</h1>
+-
+-    <div class="card mb-16">
+-        <h2 style="margin-top:0;font-size:17px;"><?= icon('plus', 18) ?> Quick add recipe</h2>
+-        <p class="muted" style="font-size:13px;margin:0 0 16px;">
+-            The fastest way to add a recipe — it's published free for everyone immediately, no review needed.
+-        </p>
+-
+-        <?php foreach ($quickAddErrors as $error): ?>
+-            <div class="alert alert-error"><?= h($error) ?></div>
+-        <?php endforeach; ?>
+-
+-        <form method="post">
+-            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+-            <input type="hidden" name="action" value="quick_add">
+-
+-            <label class="field">
+-                <span>Title</span>
+-                <input type="text" name="title" required>
+-            </label>
+-            <label class="field">
+-                <span>Image URL</span>
+-                <input type="url" name="image_url" placeholder="https://...">
+-                <span class="muted" style="font-size:12px;">Use a real food photo (e.g. from Unsplash) — not an AI-generated image.</span>
+-            </label>
+-
+-            <div class="form-grid mb-16">
+-                <label class="field">
+-                    <span>Meal type</span>
+-                    <select name="meal_type">
+-                        <?php foreach ($mealTypes as $mt): ?>
+-                            <option value="<?= h($mt) ?>"><?= ucfirst($mt) ?></option>
+-                        <?php endforeach; ?>
+-                    </select>
+-                </label>
+-                <label class="field"><span>Cook time (min)</span><input type="number" name="cook_time" value="20" min="1"></label>
+-                <label class="field"><span>Servings</span><input type="number" name="servings" value="2" min="1"></label>
+-                <label class="field"><span>Calories</span><input type="number" name="calories" min="0"></label>
+-            </div>
+-
+-            <label class="field">
+-                <span>Ingredients (one per line)</span>
+-                <textarea name="ingredients" rows="5" placeholder="2 cups rice&#10;500g chicken breast&#10;1 onion, diced" required></textarea>
+-            </label>
+-            <label class="field">
+-                <span>Instructions (one step per line)</span>
+-                <textarea name="instructions" rows="5" placeholder="Rinse the rice.&#10;Season and sear the chicken.&#10;Simmer everything together for 20 minutes." required></textarea>
+-            </label>
+-
+-            <button type="submit" class="btn btn-primary">Add recipe</button>
+-        </form>
++    <nav style="display:flex; flex-direction:column; gap:4px;">
++      <div class="admin-label" style="padding:0 10px 6px; font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#8aa596;">Administration</div>
++      <?php foreach (ADMIN_NAV as [$id, $label, $iconName]): ?>
++        <a class="admin-nav-btn<?= $page === $id ? ' is-active' : '' ?>" href="admin.php?page=<?= h($id) ?>" title="<?= h($label) ?>">
++          <span style="display:inline-flex; flex:none;"><?= icon($iconName, 19) ?></span>
++          <span class="admin-label" style="flex:1; min-width:0;"><?= h($label) ?></span>
++        </a>
++      <?php endforeach; ?>
++    </nav>
++
++    <div style="margin-top:auto; padding-top:16px; border-top:1px solid rgba(238,245,238,0.16);">
++      <a class="admin-logout-btn" href="logout.php" style="display:flex; align-items:center; gap:12px; width:100%; padding:12px; border:0; border-radius:10px; color:#b9cdc0; font-size:14px; font-weight:600;">
++        <span style="display:inline-flex; flex:none;"><?= icon('logout', 19) ?></span>
++        <span class="admin-label">Log out</span>
++      </a>
++    </div>
++  </aside>
++
++  <main style="min-width:0;">
++    <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; height:76px; padding:0 30px; background:#fff; border-bottom:1px solid #e1e8e2;">
++      <form method="get" action="admin.php" style="display:flex; align-items:center; gap:10px; width:390px; max-width:45%; padding:12px 16px; background:#f5f7f5; border:1px solid #e3e9e4; border-radius:10px;">
++        <input type="hidden" name="page" value="recipes">
++        <span style="display:inline-flex; color:#6f8377; flex:none;"><?= icon('search', 17) ?></span>
++        <input type="search" name="q" value="<?= $page === 'recipes' ? h($searchQuery) : '' ?>" placeholder="Search recipes…" aria-label="Search recipes" style="flex:1; min-width:0; border:0; background:none; outline:none; font-size:13.5px; color:#1f3d2b;">
++      </form>
++      <div style="display:flex; align-items:center; gap:16px;">
++        <a href="admin.php?page=reports" aria-label="Notifications" style="position:relative; display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid #e3e9e4; border-radius:11px; background:#fff; color:#1f3d2b;">
++          <?= icon('bell', 19) ?>
++          <?php if ($openReportCount > 0): ?>
++            <span style="position:absolute; top:-5px; right:-5px; min-width:19px; height:19px; padding:0 5px; border-radius:999px; background:#b0391f; color:#fff; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center;"><?= $openReportCount > 99 ? '99+' : $openReportCount ?></span>
++          <?php endif; ?>
++        </a>
++        <span style="display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600;">
++          <?= h($user['name']) ?>
++          <span style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:50%; background:#1f3d2b; color:#f3e2b0; font-size:13px; font-weight:700;"><?= h(admin_initials($user['name'])) ?></span>
++        </span>
++      </div>
+     </div>
+ 
+-    <h1 class="mb-16"><?= icon('list', 20) ?> User-submitted recipes</h1>
+-
+-    <?php if (!$recipes): ?>
+-        <p class="muted">No user-submitted recipes yet.</p>
+-    <?php else: ?>
+-        <div class="card" style="overflow-x:auto;">
+-            <table class="admin-table">
+-                <thead>
+-                    <tr>
+-                        <th>Title</th>
+-                        <th>Author</th>
+-                        <th>Meal</th>
+-                        <th>Created</th>
+-                        <th></th>
+-                    </tr>
+-                </thead>
+-                <tbody>
+-                    <?php foreach ($recipes as $recipe): ?>
+-                        <tr>
+-                            <td><a href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></td>
+-                            <td><?= h($recipe['author_name']) ?> <span class="muted">(<?= h($recipe['author_email']) ?>)</span></td>
+-                            <td><?= h(ucfirst($recipe['meal_type'])) ?></td>
+-                            <td><?= h((new DateTime($recipe['created_at']))->format('M j, Y')) ?></td>
+-                            <td>
+-                                <form method="post" action="admin_recipe_delete.php" onsubmit="return confirm('Remove this recipe?');">
+-                                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+-                                    <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+-                                    <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Remove</button>
+-                                </form>
+-                            </td>
+-                        </tr>
+-                    <?php endforeach; ?>
+-                </tbody>
+-            </table>
+-        </div>
++    <?php if ($success = flash_get('success')): ?>
++      <div class="admin-alert admin-alert-success" style="margin-top:20px;"><?= h($success) ?></div>
+     <?php endif; ?>
+-</main>
++    <?php if ($error = flash_get('error')): ?>
++      <div class="admin-alert admin-alert-error" style="margin-top:20px;"><?= h($error) ?></div>
++    <?php endif; ?>
++
++    <?php require __DIR__ . '/includes/admin/' . $page . '.php'; ?>
++  </main>
++</div>
+ </body>
+ </html>
+diff --git a/nutritale/admin_export.php b/nutritale/admin_export.php
+new file mode 100644
+index 0000000..c4ec1ad
+--- /dev/null
++++ b/nutritale/admin_export.php
+@@ -0,0 +1,40 @@
++<?php
++require_once __DIR__ . '/config/config.php';
++require_once __DIR__ . '/includes/functions.php';
++
++require_admin();
++
++$type = $_GET['type'] ?? '';
++if (!in_array($type, ['recipes', 'users'], true)) {
++    http_response_code(400);
++    die('Unknown export type.');
++}
++
++header('Content-Type: text/csv; charset=utf-8');
++header('Content-Disposition: attachment; filename="nutritale-' . $type . '-' . date('Y-m-d') . '.csv"');
++
++$out = fopen('php://output', 'w');
++
++if ($type === 'recipes') {
++    fputcsv($out, ['ID', 'Title', 'Category', 'Meal type', 'Status', 'Author', 'Created', 'Updated']);
++    $stmt = db()->query(
++        "SELECT r.id, r.title, r.category, r.meal_type, r.status, COALESCE(u.name, 'NutriTale') AS author,
++                r.created_at, r.updated_at
++         FROM recipes r LEFT JOIN users u ON u.id = r.created_by ORDER BY r.created_at DESC"
++    );
++    foreach ($stmt as $row) {
++        fputcsv($out, [$row['id'], $row['title'], $row['category'], $row['meal_type'], $row['status'], $row['author'], $row['created_at'], $row['updated_at']]);
++    }
++} else {
++    fputcsv($out, ['ID', 'Name', 'Email', 'Admin', 'Vendor', 'Premium', 'Last login', 'Joined']);
++    $stmt = db()->query('SELECT id, name, email, is_admin, is_vendor, is_premium_member, last_login_at, created_at FROM users ORDER BY created_at DESC');
++    foreach ($stmt as $row) {
++        fputcsv($out, [
++            $row['id'], $row['name'], $row['email'], $row['is_admin'] ? 'Yes' : 'No',
++            $row['is_vendor'] ? 'Yes' : 'No', $row['is_premium_member'] ? 'Yes' : 'No',
++            $row['last_login_at'] ?? '', $row['created_at'],
++        ]);
++    }
++}
++
++fclose($out);
+diff --git a/nutritale/admin_recipe_edit.php b/nutritale/admin_recipe_edit.php
+new file mode 100644
+index 0000000..7904619
+--- /dev/null
++++ b/nutritale/admin_recipe_edit.php
+@@ -0,0 +1,350 @@
++<?php
++require_once __DIR__ . '/config/config.php';
++require_once __DIR__ . '/includes/functions.php';
++require_once __DIR__ . '/includes/icons.php';
++require_once __DIR__ . '/includes/admin_helpers.php';
++
++$admin = require_admin();
++
++$dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
++$allergenOptions = ['dairy', 'eggs', 'gluten', 'nuts', 'soy', 'fish', 'sesame', 'shellfish'];
++$mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
++$difficulties = ['easy', 'medium', 'hard'];
++$ingredientCategories = ['produce', 'protein', 'dairy', 'grains', 'pantry', 'other'];
++
++$editId = $_GET['id'] ?? null;
++$recipe = [
++    'title' => '', 'description' => '', 'image_url' => '', 'meal_type' => 'dinner', 'cuisine' => '',
++    'category' => '', 'status' => 'published', 'difficulty' => 'easy', 'cook_time' => 20, 'servings' => 2,
++    'calories' => '', 'protein' => '', 'carbs' => '', 'fat' => '', 'fiber' => '',
++];
++$selectedDiets = [];
++$selectedAllergens = [];
++$ingredients = [['', '', '', '', 'other']];
++$steps = [''];
++$errors = [];
++$isGenerated = false;
++
++if ($editId) {
++    $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ?');
++    $stmt->execute([$editId]);
++    $existing = $stmt->fetch();
++    if (!$existing) {
++        http_response_code(404);
++        die('Recipe not found.');
++    }
++    $isGenerated = (bool)$existing['is_generated'];
++    $recipe = [
++        'title' => $existing['title'], 'description' => $existing['description'], 'image_url' => $existing['image_url'],
++        'meal_type' => $existing['meal_type'], 'cuisine' => $existing['cuisine'], 'category' => $existing['category'] ?? '',
++        'status' => $existing['status'] ?? 'published', 'difficulty' => $existing['difficulty'],
++        'cook_time' => $existing['cook_time_minutes'], 'servings' => $existing['servings'], 'calories' => $existing['calories'],
++        'protein' => $existing['protein_g'], 'carbs' => $existing['carbs_g'], 'fat' => $existing['fat_g'], 'fiber' => $existing['fiber_g'],
++    ];
++    $selectedDiets = db()->prepare('SELECT diet_type FROM recipe_diet_tags WHERE recipe_id = ?');
++    $selectedDiets->execute([$editId]);
++    $selectedDiets = $selectedDiets->fetchAll(PDO::FETCH_COLUMN);
++    $selectedAllergens = db()->prepare('SELECT allergen FROM recipe_allergens WHERE recipe_id = ?');
++    $selectedAllergens->execute([$editId]);
++    $selectedAllergens = $selectedAllergens->fetchAll(PDO::FETCH_COLUMN);
++    $ingStmt = db()->prepare('SELECT name, quantity, unit, display_quantity, category FROM recipe_ingredients WHERE recipe_id = ? ORDER BY order_index');
++    $ingStmt->execute([$editId]);
++    $ingredients = array_map(fn($r) => [$r['name'], $r['quantity'], $r['unit'], $r['display_quantity'], $r['category']], $ingStmt->fetchAll()) ?: $ingredients;
++    $stepStmt = db()->prepare('SELECT step_text FROM recipe_instructions WHERE recipe_id = ? ORDER BY step_number');
++    $stepStmt->execute([$editId]);
++    $steps = $stepStmt->fetchAll(PDO::FETCH_COLUMN) ?: $steps;
++}
++
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
++    if (!csrf_check()) {
++        $errors[] = 'Your session expired. Please try again.';
++    } else {
++        $recipe['title'] = trim($_POST['title'] ?? '');
++        $recipe['description'] = trim($_POST['description'] ?? '');
++        $recipe['image_url'] = trim($_POST['image_url'] ?? '');
++        $recipe['meal_type'] = $_POST['meal_type'] ?? 'dinner';
++        $recipe['cuisine'] = trim($_POST['cuisine'] ?? '');
++        $recipe['category'] = trim($_POST['category'] ?? '');
++        $recipe['status'] = ($_POST['status'] ?? 'published') === 'hidden' ? 'hidden' : 'published';
++        $recipe['difficulty'] = $_POST['difficulty'] ?? 'easy';
++        $recipe['cook_time'] = (int)($_POST['cook_time'] ?? 0);
++        $recipe['servings'] = (int)($_POST['servings'] ?? 0);
++        $recipe['calories'] = (int)($_POST['calories'] ?? 0);
++        $recipe['protein'] = (int)($_POST['protein'] ?? 0);
++        $recipe['carbs'] = (int)($_POST['carbs'] ?? 0);
++        $recipe['fat'] = (int)($_POST['fat'] ?? 0);
++        $recipe['fiber'] = (int)($_POST['fiber'] ?? 0);
++
++        $selectedDiets = array_intersect($_POST['diet_types'] ?? [], $dietOptions);
++        $selectedAllergens = array_intersect($_POST['allergens'] ?? [], $allergenOptions);
++
++        $ingNames = $_POST['ing_name'] ?? [];
++        $ingQty = $_POST['ing_qty'] ?? [];
++        $ingUnit = $_POST['ing_unit'] ?? [];
++        $ingDisplay = $_POST['ing_display'] ?? [];
++        $ingCategory = $_POST['ing_category'] ?? [];
++        $ingredients = [];
++        foreach ($ingNames as $i => $name) {
++            $name = trim($name);
++            if ($name === '') continue;
++            $ingredients[] = [$name, (float)($ingQty[$i] ?? 0), trim($ingUnit[$i] ?? ''), trim($ingDisplay[$i] ?? ''), $ingCategory[$i] ?? 'other'];
++        }
++        $steps = array_values(array_filter(array_map('trim', $_POST['step_text'] ?? [])));
++
++        if ($recipe['title'] === '') $errors[] = 'Please enter a title.';
++        if (!in_array($recipe['meal_type'], $mealTypes, true)) $errors[] = 'Invalid meal type.';
++        if ($recipe['cook_time'] <= 0) $errors[] = 'Cook time must be greater than 0.';
++        if ($recipe['servings'] <= 0) $errors[] = 'Servings must be greater than 0.';
++        if (!$ingredients) $errors[] = 'Add at least one ingredient.';
++        if (!$steps) $errors[] = 'Add at least one instruction step.';
++
++        if (!$errors) {
++            if ($editId) {
++                $recipeId = $editId;
++                $upd = db()->prepare(
++                    'UPDATE recipes SET title=?, description=?, image_url=?, meal_type=?, cuisine=?, category=?, status=?,
++                     difficulty=?, cook_time_minutes=?, servings=?, calories=?, protein_g=?, carbs_g=?, fat_g=?, fiber_g=? WHERE id=?'
++                );
++                $upd->execute([
++                    $recipe['title'], $recipe['description'], $recipe['image_url'], $recipe['meal_type'], $recipe['cuisine'],
++                    $recipe['category'] ?: null, $recipe['status'], $recipe['difficulty'], $recipe['cook_time'], $recipe['servings'],
++                    $recipe['calories'], $recipe['protein'], $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $recipeId,
++                ]);
++                db()->prepare('DELETE FROM recipe_diet_tags WHERE recipe_id = ?')->execute([$recipeId]);
++                db()->prepare('DELETE FROM recipe_allergens WHERE recipe_id = ?')->execute([$recipeId]);
++                db()->prepare('DELETE FROM recipe_ingredients WHERE recipe_id = ?')->execute([$recipeId]);
++                db()->prepare('DELETE FROM recipe_instructions WHERE recipe_id = ?')->execute([$recipeId]);
++            } else {
++                $recipeId = 'r-' . preg_replace('/-+/', '-', preg_replace('/[^a-z0-9]+/', '-', strtolower($recipe['title']))) . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
++                $ins = db()->prepare(
++                    'INSERT INTO recipes (id, title, description, image_url, meal_type, cuisine, category, status, difficulty,
++                     cook_time_minutes, servings, calories, protein_g, carbs_g, fat_g, fiber_g, is_generated, is_premium, price, created_by)
++                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NULL, ?)'
++                );
++                $ins->execute([
++                    $recipeId, $recipe['title'], $recipe['description'], $recipe['image_url'], $recipe['meal_type'], $recipe['cuisine'],
++                    $recipe['category'] ?: null, $recipe['status'], $recipe['difficulty'], $recipe['cook_time'], $recipe['servings'],
++                    $recipe['calories'], $recipe['protein'], $recipe['carbs'], $recipe['fat'], $recipe['fiber'], $admin['id'],
++                ]);
++            }
++
++            $insDiet = db()->prepare('INSERT INTO recipe_diet_tags (recipe_id, diet_type) VALUES (?, ?)');
++            foreach ($selectedDiets as $d) $insDiet->execute([$recipeId, $d]);
++            $insAllergen = db()->prepare('INSERT INTO recipe_allergens (recipe_id, allergen) VALUES (?, ?)');
++            foreach ($selectedAllergens as $a) $insAllergen->execute([$recipeId, $a]);
++            $insIng = db()->prepare('INSERT INTO recipe_ingredients (recipe_id, name, quantity, unit, display_quantity, category, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)');
++            foreach ($ingredients as $i => $ing) {
++                $display = $ing[3] !== '' ? $ing[3] : trim($ing[1] . ' ' . $ing[2]);
++                $insIng->execute([$recipeId, $ing[0], $ing[1], $ing[2], $display, $ing[4], $i]);
++            }
++            $insStep = db()->prepare('INSERT INTO recipe_instructions (recipe_id, step_number, step_text) VALUES (?, ?, ?)');
++            foreach ($steps as $i => $step) $insStep->execute([$recipeId, $i + 1, $step]);
++
++            flash_set('success', $editId ? 'Recipe updated.' : 'Recipe created.');
++            redirect('admin.php?page=recipes');
++        }
++    }
++}
++
++$existingCategories = db()->query("SELECT DISTINCT category FROM recipes WHERE category IS NOT NULL AND category != '' ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
++?>
++<!DOCTYPE html>
++<html lang="en">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1">
++<title><?= $editId ? 'Edit recipe' : 'Add recipe' ?> · Admin · <?= APP_NAME ?></title>
++<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
++<link rel="manifest" href="manifest.json">
++<meta name="theme-color" content="#1f3d2b">
++<link rel="preconnect" href="https://fonts.googleapis.com">
++<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
++<style>
++  * { box-sizing: border-box; }
++  body { margin: 0; background: #f3f6f3; font-family: 'DM Sans', -apple-system, Helvetica, Arial, sans-serif; color: #1f3d2b; }
++  a { color: #1f3d2b; }
++  .field { display: block; margin-bottom: 14px; }
++  .field span { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #4b5d52; }
++  input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #e1e8e2; border-radius: 10px; background: #fff; font-family: inherit; font-size: 14px; color: #1f3d2b; }
++  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
++  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
++  .btn-primary { background: #1f3d2b; color: #fdf8e8; border-color: rgba(201,162,39,0.6); }
++  .btn-text { background: #fff; color: #1f3d2b; border-color: #e1e8e2; }
++  .pref-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid #e1e8e2; border-radius: 999px; font-size: 12.5px; cursor: pointer; margin: 0 6px 6px 0; }
++  .pref-chip.is-active { background: #f2f7f1; border-color: rgba(201,162,39,0.5); }
++  .dynamic-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
++  .remove-row { border: 1px solid #e1e8e2; background: #fff; border-radius: 8px; width: 36px; height: 36px; flex: none; cursor: pointer; }
++  .alert-error { padding: 12px 16px; border-radius: 10px; background: #fbeaea; color: #963a2a; border: 1px solid rgba(176,57,31,0.3); margin-bottom: 14px; font-size: 13.5px; }
++</style>
++</head>
++<body>
++<main style="max-width:760px; margin:0 auto; padding:30px 20px 60px;">
++  <a href="admin.php?page=recipes" style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#6f8377; margin-bottom:14px;"><?= icon('chevron-left', 14) ?> Back to recipes</a>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:30px; margin:0 0 20px;"><?= $editId ? 'Edit recipe' : 'Add a recipe' ?></h1>
++
++  <?php foreach ($errors as $error): ?>
++    <div class="alert-error"><?= h($error) ?></div>
++  <?php endforeach; ?>
++
++  <form method="post" style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:24px;">
++    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
++
++    <label class="field"><span>Title</span><input type="text" name="title" value="<?= h($recipe['title']) ?>" required></label>
++    <label class="field"><span>Description</span><input type="text" name="description" value="<?= h($recipe['description']) ?>"></label>
++    <label class="field"><span>Image URL</span><input type="url" name="image_url" value="<?= h($recipe['image_url']) ?>" placeholder="https://..."></label>
++
++    <div class="form-grid" style="margin-bottom:14px;">
++      <label class="field"><span>Meal type</span>
++        <select name="meal_type">
++          <?php foreach ($mealTypes as $mt): ?>
++            <option value="<?= h($mt) ?>" <?= $recipe['meal_type'] === $mt ? 'selected' : '' ?>><?= ucfirst($mt) ?></option>
++          <?php endforeach; ?>
++        </select>
++      </label>
++      <label class="field"><span>Category</span>
++        <input type="text" name="category" list="category-options" value="<?= h($recipe['category']) ?>" placeholder="e.g. Healthy Bowls">
++        <datalist id="category-options">
++          <?php foreach ($existingCategories as $c): ?><option value="<?= h($c) ?>"><?php endforeach; ?>
++        </datalist>
++      </label>
++      <label class="field"><span>Status</span>
++        <select name="status">
++          <option value="published" <?= $recipe['status'] === 'published' ? 'selected' : '' ?>>Published</option>
++          <option value="hidden" <?= $recipe['status'] === 'hidden' ? 'selected' : '' ?>>Hidden</option>
++        </select>
++      </label>
++      <label class="field"><span>Cuisine</span><input type="text" name="cuisine" value="<?= h($recipe['cuisine']) ?>"></label>
++      <label class="field"><span>Difficulty</span>
++        <select name="difficulty">
++          <?php foreach ($difficulties as $diff): ?>
++            <option value="<?= h($diff) ?>" <?= $recipe['difficulty'] === $diff ? 'selected' : '' ?>><?= ucfirst($diff) ?></option>
++          <?php endforeach; ?>
++        </select>
++      </label>
++      <label class="field"><span>Cook time (min)</span><input type="number" name="cook_time" value="<?= h($recipe['cook_time']) ?>" min="1" required></label>
++      <label class="field"><span>Servings</span><input type="number" name="servings" value="<?= h($recipe['servings']) ?>" min="1" required></label>
++    </div>
++
++    <div class="form-grid" style="margin-bottom:14px;">
++      <label class="field"><span>Calories</span><input type="number" name="calories" value="<?= h($recipe['calories']) ?>" min="0"></label>
++      <label class="field"><span>Protein (g)</span><input type="number" name="protein" value="<?= h($recipe['protein']) ?>" min="0"></label>
++      <label class="field"><span>Carbs (g)</span><input type="number" name="carbs" value="<?= h($recipe['carbs']) ?>" min="0"></label>
++      <label class="field"><span>Fat (g)</span><input type="number" name="fat" value="<?= h($recipe['fat']) ?>" min="0"></label>
++      <label class="field"><span>Fiber (g)</span><input type="number" name="fiber" value="<?= h($recipe['fiber']) ?>" min="0"></label>
++    </div>
++
++    <div style="margin-bottom:18px;">
++      <span style="display:block; margin-bottom:8px; font-size:12px; font-weight:700; color:#4b5d52;">Diet tags</span>
++      <?php foreach ($dietOptions as $d): ?>
++        <label class="pref-chip <?= in_array($d, $selectedDiets, true) ? 'is-active' : '' ?>">
++          <input type="checkbox" name="diet_types[]" value="<?= h($d) ?>" <?= in_array($d, $selectedDiets, true) ? 'checked' : '' ?> style="width:auto;">
++          <?= h(ucfirst($d)) ?>
++        </label>
++      <?php endforeach; ?>
++    </div>
++
++    <div style="margin-bottom:18px;">
++      <span style="display:block; margin-bottom:8px; font-size:12px; font-weight:700; color:#4b5d52;">Allergens present</span>
++      <?php foreach ($allergenOptions as $a): ?>
++        <label class="pref-chip <?= in_array($a, $selectedAllergens, true) ? 'is-active' : '' ?>">
++          <input type="checkbox" name="allergens[]" value="<?= h($a) ?>" <?= in_array($a, $selectedAllergens, true) ? 'checked' : '' ?> style="width:auto;">
++          <?= h(ucfirst($a)) ?>
++        </label>
++      <?php endforeach; ?>
++    </div>
++
++    <div style="margin-bottom:18px;">
++      <span style="display:block; margin-bottom:8px; font-size:12px; font-weight:700; color:#4b5d52;">Ingredients</span>
++      <div id="ingredient-rows">
++        <?php foreach ($ingredients as $ing): ?>
++          <div class="dynamic-row">
++            <input type="text" name="ing_name[]" placeholder="Name" value="<?= h($ing[0]) ?>">
++            <input type="text" name="ing_qty[]" placeholder="Qty" value="<?= h($ing[1]) ?>" style="max-width:70px;">
++            <input type="text" name="ing_unit[]" placeholder="Unit" value="<?= h($ing[2]) ?>" style="max-width:80px;">
++            <input type="text" name="ing_display[]" placeholder="Display (e.g. 1/2 cup)" value="<?= h($ing[3]) ?>">
++            <select name="ing_category[]" style="max-width:110px;">
++              <?php foreach ($ingredientCategories as $c): ?>
++                <option value="<?= h($c) ?>" <?= ($ing[4] ?? 'other') === $c ? 'selected' : '' ?>><?= ucfirst($c) ?></option>
++              <?php endforeach; ?>
++            </select>
++            <button type="button" class="remove-row">×</button>
++          </div>
++        <?php endforeach; ?>
++      </div>
++      <button type="button" class="btn btn-text" id="add-ingredient">+ Add ingredient</button>
++    </div>
++
++    <div style="margin-bottom:22px;">
++      <span style="display:block; margin-bottom:8px; font-size:12px; font-weight:700; color:#4b5d52;">Instructions</span>
++      <div id="step-rows">
++        <?php foreach ($steps as $step): ?>
++          <div class="dynamic-row">
++            <input type="text" name="step_text[]" placeholder="Step" value="<?= h($step) ?>">
++            <button type="button" class="remove-row">×</button>
++          </div>
++        <?php endforeach; ?>
++      </div>
++      <button type="button" class="btn btn-text" id="add-step">+ Add step</button>
++    </div>
++
++    <button type="submit" class="btn btn-primary"><?= $editId ? 'Save changes' : 'Create recipe' ?></button>
++  </form>
++
++  <?php if ($editId && $isGenerated): ?>
++    <form method="post" action="admin_recipe_delete.php" onsubmit="return confirm('Permanently delete this recipe?');" style="margin-top:16px;">
++      <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
++      <input type="hidden" name="recipe_id" value="<?= h($editId) ?>">
++      <button type="submit" class="btn btn-text" style="color:#b0391f; border-color:rgba(176,57,31,0.3);"><?= icon('trash', 14) ?> Delete recipe</button>
++    </form>
++  <?php elseif ($editId): ?>
++    <p style="margin-top:16px; font-size:12.5px; color:#6f8377;">This is a starter recipe from the seed catalogue — it can be hidden above, but not deleted.</p>
++  <?php endif; ?>
++</main>
++
++<template id="ingredient-row-template">
++  <div class="dynamic-row">
++    <input type="text" name="ing_name[]" placeholder="Name">
++    <input type="text" name="ing_qty[]" placeholder="Qty" style="max-width:70px;">
++    <input type="text" name="ing_unit[]" placeholder="Unit" style="max-width:80px;">
++    <input type="text" name="ing_display[]" placeholder="Display (e.g. 1/2 cup)">
++    <select name="ing_category[]" style="max-width:110px;">
++      <?php foreach ($ingredientCategories as $c): ?>
++        <option value="<?= h($c) ?>"><?= ucfirst($c) ?></option>
++      <?php endforeach; ?>
++    </select>
++    <button type="button" class="remove-row">×</button>
++  </div>
++</template>
++<template id="step-row-template">
++  <div class="dynamic-row">
++    <input type="text" name="step_text[]" placeholder="Step">
++    <button type="button" class="remove-row">×</button>
++  </div>
++</template>
++
++<script>
++function wireRemoveButtons(container) {
++    container.querySelectorAll('.remove-row').forEach(function (btn) {
++        btn.onclick = function () {
++            if (container.children.length > 1) btn.closest('.dynamic-row').remove();
++        };
++    });
++}
++var ingredientRows = document.getElementById('ingredient-rows');
++var stepRows = document.getElementById('step-rows');
++wireRemoveButtons(ingredientRows);
++wireRemoveButtons(stepRows);
++
++document.getElementById('add-ingredient').onclick = function () {
++    var tpl = document.getElementById('ingredient-row-template');
++    ingredientRows.appendChild(tpl.content.cloneNode(true));
++    wireRemoveButtons(ingredientRows);
++};
++document.getElementById('add-step').onclick = function () {
++    var tpl = document.getElementById('step-row-template');
++    stepRows.appendChild(tpl.content.cloneNode(true));
++    wireRemoveButtons(stepRows);
++};
++</script>
++</body>
++</html>
+diff --git a/nutritale/admin_user_view.php b/nutritale/admin_user_view.php
+new file mode 100644
+index 0000000..79e4261
+--- /dev/null
++++ b/nutritale/admin_user_view.php
+@@ -0,0 +1,111 @@
++<?php
++require_once __DIR__ . '/config/config.php';
++require_once __DIR__ . '/includes/functions.php';
++require_once __DIR__ . '/includes/icons.php';
++require_once __DIR__ . '/includes/admin_helpers.php';
++
++$admin = require_admin();
++
++$id = (int)($_GET['id'] ?? 0);
++$stmt = db()->prepare('SELECT * FROM users WHERE id = ?');
++$stmt->execute([$id]);
++$target = $stmt->fetch();
++if (!$target) {
++    http_response_code(404);
++    die('User not found.');
++}
++
++$notice = null;
++if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
++    $action = $_POST['action'] ?? '';
++    if ($action === 'toggle_admin') {
++        if ($id === (int)$admin['id']) {
++            $notice = 'You cannot change your own admin access from here.';
++        } else {
++            db()->prepare('UPDATE users SET is_admin = ? WHERE id = ?')->execute([$target['is_admin'] ? 0 : 1, $id]);
++            redirect('admin_user_view.php?id=' . $id);
++        }
++    } elseif ($action === 'toggle_premium') {
++        db()->prepare('UPDATE users SET is_premium_member = ? WHERE id = ?')->execute([$target['is_premium_member'] ? 0 : 1, $id]);
++        redirect('admin_user_view.php?id=' . $id);
++    } elseif ($action === 'unlock') {
++        db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$id]);
++        redirect('admin_user_view.php?id=' . $id);
++    }
++}
++
++$recipeCountStmt = db()->prepare('SELECT COUNT(*) FROM recipes WHERE created_by = ?');
++$recipeCountStmt->execute([$id]);
++$recipeCount = (int) $recipeCountStmt->fetchColumn();
++
++$favoriteCountStmt = db()->prepare('SELECT COUNT(*) FROM favorites WHERE user_id = ?');
++$favoriteCountStmt->execute([$id]);
++$favoriteCount = (int) $favoriteCountStmt->fetchColumn();
++
++$isLocked = $target['locked_until'] && new DateTime($target['locked_until']) > new DateTime();
++?>
++<!DOCTYPE html>
++<html lang="en">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1">
++<title><?= h($target['name']) ?> · Admin · <?= APP_NAME ?></title>
++<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
++<link rel="manifest" href="manifest.json">
++<meta name="theme-color" content="#1f3d2b">
++<link rel="preconnect" href="https://fonts.googleapis.com">
++<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
++<style>
++  * { box-sizing: border-box; }
++  body { margin: 0; background: #f3f6f3; font-family: 'DM Sans', -apple-system, Helvetica, Arial, sans-serif; color: #1f3d2b; }
++  a { color: #1f3d2b; }
++  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid #e1e8e2; background: #fff; color: #1f3d2b; }
++  .btn-danger { color: #b0391f; border-color: rgba(176,57,31,0.3); }
++</style>
++</head>
++<body>
++<main style="max-width:640px; margin:0 auto; padding:30px 20px 60px;">
++  <a href="admin.php?page=users" style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#6f8377; margin-bottom:14px;"><?= icon('chevron-left', 14) ?> Back to users</a>
++
++  <?php if ($notice): ?><div style="padding:12px 16px; border-radius:10px; background:#fbeaea; color:#963a2a; border:1px solid rgba(176,57,31,0.3); margin-bottom:14px; font-size:13.5px;"><?= h($notice) ?></div><?php endif; ?>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:24px; margin-bottom:16px;">
++    <div style="display:flex; align-items:center; gap:16px;">
++      <span style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; flex:none; border-radius:18px; background:#1f3d2b; color:#f3e2b0; font-size:20px; font-weight:700;"><?= h(admin_initials($target['name'])) ?></span>
++      <div>
++        <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:24px; margin:0 0 4px;"><?= h($target['name']) ?></h1>
++        <div style="font-size:13.5px; color:#6f8377;"><?= h($target['email']) ?></div>
++      </div>
++    </div>
++    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;">
++      <?= admin_pill($target['is_admin'] ? 'Administrator' : ($target['is_vendor'] ? 'Vendor' : 'Member'), $target['is_admin'] ? 'gold' : 'gray') ?>
++      <?= admin_pill($target['is_premium_member'] ? 'Premium' : 'Free', $target['is_premium_member'] ? 'green' : 'gray') ?>
++      <?php if ($isLocked): ?><?= admin_pill('Locked out', 'gray') ?><?php endif; ?>
++    </div>
++    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; padding-top:20px; border-top:1px solid #e1e8e2; font-size:13.5px; color:#4b5d52;">
++      <div>Joined<br><b style="color:#1f3d2b;"><?= h(admin_relative_date($target['created_at'])) ?></b></div>
++      <div>Last login<br><b style="color:#1f3d2b;"><?= h(admin_relative_date($target['last_login_at'])) ?></b></div>
++      <div>Recipes created<br><b style="color:#1f3d2b;"><?= $recipeCount ?></b></div>
++      <div>Recipes favorited<br><b style="color:#1f3d2b;"><?= $favoriteCount ?></b></div>
++    </div>
++  </div>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:24px;">
++    <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:18px; margin:0 0 16px;">Account controls</h2>
++    <div style="display:flex; flex-wrap:wrap; gap:10px;">
++      <form method="post"><input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="action" value="toggle_admin">
++        <button type="submit" class="btn" <?= $id === (int)$admin['id'] ? 'disabled title="You cannot change your own admin access"' : '' ?>><?= $target['is_admin'] ? 'Remove admin access' : 'Make administrator' ?></button>
++      </form>
++      <form method="post"><input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="action" value="toggle_premium">
++        <button type="submit" class="btn"><?= $target['is_premium_member'] ? 'Remove premium' : 'Grant premium' ?></button>
++      </form>
++      <?php if ($isLocked): ?>
++        <form method="post"><input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>"><input type="hidden" name="action" value="unlock">
++          <button type="submit" class="btn">Unlock account</button>
++        </form>
++      <?php endif; ?>
++    </div>
++  </div>
++</main>
++</body>
++</html>
+diff --git a/nutritale/assets/js/admin-sidebar.js b/nutritale/assets/js/admin-sidebar.js
+new file mode 100644
+index 0000000..1d80050
+--- /dev/null
++++ b/nutritale/assets/js/admin-sidebar.js
+@@ -0,0 +1,28 @@
++(function () {
++    var KEY = 'nutritale-admin-sidebar-collapsed';
++    try {
++        if (localStorage.getItem(KEY) === '1') {
++            document.documentElement.setAttribute('data-admin-collapsed', '1');
++        }
++    } catch (e) {
++        // localStorage unavailable (private mode etc) - default to expanded.
++    }
++
++    document.addEventListener('DOMContentLoaded', function () {
++        var btn = document.getElementById('admin-sidebar-toggle');
++        if (!btn) return;
++        btn.addEventListener('click', function () {
++            var collapsed = document.documentElement.getAttribute('data-admin-collapsed') === '1';
++            if (collapsed) {
++                document.documentElement.removeAttribute('data-admin-collapsed');
++            } else {
++                document.documentElement.setAttribute('data-admin-collapsed', '1');
++            }
++            try {
++                localStorage.setItem(KEY, collapsed ? '0' : '1');
++            } catch (e) {
++                // ignore
++            }
++        });
++    });
++})();
+diff --git a/nutritale/includes/admin/analytics.php b/nutritale/includes/admin/analytics.php
+new file mode 100644
+index 0000000..b766084
+--- /dev/null
++++ b/nutritale/includes/admin/analytics.php
+@@ -0,0 +1,82 @@
++<?php
++$savesTotal = (int) db()->query('SELECT COUNT(*) FROM favorites')->fetchColumn();
++$savesThisWeek = (int) db()->query('SELECT COUNT(*) FROM favorites WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
++$pantryUsesTotal = (int) db()->query('SELECT COALESCE(SUM(pantry_free_uses_used), 0) FROM users')->fetchColumn();
++$pantryUsers = (int) db()->query('SELECT COUNT(*) FROM users WHERE pantry_free_uses_used > 0')->fetchColumn();
++$premiumTotal = (int) db()->query('SELECT COUNT(*) FROM users WHERE is_premium_member = 1')->fetchColumn();
++$totalUsers = (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
++$ratingsTotal = (int) db()->query('SELECT COUNT(*) FROM recipe_ratings')->fetchColumn();
++$ratingsThisWeek = (int) db()->query('SELECT COUNT(*) FROM recipe_ratings WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
++
++$trendIcon = icon('trend-up', 14);
++$analyticsMetrics = [
++    ['label' => 'Recipes saved', 'value' => number_format($savesTotal), 'trend' => "+$savesThisWeek this week"],
++    ['label' => 'Pantry matcher uses', 'value' => number_format($pantryUsesTotal), 'trend' => "$pantryUsers users tried it"],
++    ['label' => 'Premium members', 'value' => number_format($premiumTotal), 'trend' => $totalUsers ? round($premiumTotal / $totalUsers * 100, 1) . '% of users' : '0% of users'],
++    ['label' => 'Recipe ratings', 'value' => number_format($ratingsTotal), 'trend' => "+$ratingsThisWeek this week"],
++];
++
++// Engagement trend: real favorites + ratings per day, last 30 days.
++$engagementRows = db()->query(
++    "SELECT d.day, COALESCE(f.c, 0) + COALESCE(rt.c, 0) AS total FROM (
++        SELECT DATE(NOW() - INTERVAL a.n DAY) AS day
++        FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
++              UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13
++              UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20
++              UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27
++              UNION SELECT 28 UNION SELECT 29) a
++     ) d
++     LEFT JOIN (SELECT DATE(created_at) day, COUNT(*) c FROM favorites WHERE created_at >= NOW() - INTERVAL 30 DAY GROUP BY DATE(created_at)) f ON f.day = d.day
++     LEFT JOIN (SELECT DATE(created_at) day, COUNT(*) c FROM recipe_ratings WHERE created_at >= NOW() - INTERVAL 30 DAY GROUP BY DATE(created_at)) rt ON rt.day = d.day
++     ORDER BY d.day"
++)->fetchAll(PDO::FETCH_COLUMN, 1);
++$engagementPoints = array_map('intval', $engagementRows);
++
++// Top categories by saves (favorites joined through to the recipe's category).
++$topCategories = db()->query(
++    "SELECT r.category, COUNT(*) AS c FROM favorites fav
++     JOIN recipes r ON r.id = fav.recipe_id
++     WHERE r.category IS NOT NULL AND r.category != ''
++     GROUP BY r.category ORDER BY c DESC LIMIT 4"
++)->fetchAll();
++$topCategoriesTotal = array_sum(array_column($topCategories, 'c'));
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Analytics</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Analytics</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Understand what people discover, cook, save and return to.</p>
++
++  <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px;">
++    <?php foreach ($analyticsMetrics as $m): ?>
++      <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:20px;">
++        <span style="font-size:12.5px; color:#6f8377;"><?= h($m['label']) ?></span>
++        <b style="display:block; margin:8px 0 6px; font-family:'Playfair Display',Georgia,serif; font-size:32px; font-weight:700; color:#1f3d2b;"><?= h($m['value']) ?></b>
++        <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#2f6b45;"><?= $trendIcon ?> <?= h($m['trend']) ?></span>
++      </div>
++    <?php endforeach; ?>
++  </div>
++
++  <div style="display:grid; grid-template-columns:1.25fr minmax(0,0.75fr); gap:20px;">
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Engagement trend</h2>
++      <p style="margin:0 0 18px; font-size:13px; color:#6f8377;">Favorites + ratings, last 30 days</p>
++      <?= admin_line_chart($engagementPoints, 'Engagement over the last 30 days') ?>
++    </div>
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Top categories</h2>
++      <p style="margin:0 0 18px; font-size:13px; color:#6f8377;">By recipe saves</p>
++      <?php if (!$topCategories): ?>
++        <p style="margin:0; font-size:13px; color:#6f8377;">Not enough saved, categorized recipes yet.</p>
++      <?php else: ?>
++        <?php foreach ($topCategories as $t): $pct = $topCategoriesTotal ? round($t['c'] / $topCategoriesTotal * 100) : 0; ?>
++          <div style="margin-bottom:14px;">
++            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; font-size:13.5px; margin-bottom:6px;">
++              <span><?= h($t['category']) ?></span><b><?= $pct ?>%</b>
++            </div>
++            <div style="height:8px; border-radius:999px; background:#eef3ee; overflow:hidden;"><div style="height:100%; width:<?= $pct ?>%; border-radius:999px; background:#2f6b45;"></div></div>
++          </div>
++        <?php endforeach; ?>
++      <?php endif; ?>
++    </div>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/categories.php b/nutritale/includes/admin/categories.php
+new file mode 100644
+index 0000000..6b366ca
+--- /dev/null
++++ b/nutritale/includes/admin/categories.php
+@@ -0,0 +1,45 @@
++<?php
++$categories = db()->query(
++    "SELECT category, COUNT(*) AS recipe_count, MAX(COALESCE(updated_at, created_at)) AS last_updated
++     FROM recipes WHERE category IS NOT NULL AND category != '' GROUP BY category ORDER BY category"
++)->fetchAll();
++$uncategorizedCount = (int) db()->query("SELECT COUNT(*) FROM recipes WHERE category IS NULL OR category = ''")->fetchColumn();
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Categories</div>
++  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px;">
++    <div>
++      <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Categories</h1>
++      <p style="margin:8px 0 0; font-size:14.5px; color:#4b5d52;">Categories are set per recipe and appear here automatically once at least one recipe uses them.</p>
++    </div>
++    <a href="admin_recipe_edit.php" style="display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border:1px solid rgba(201,162,39,0.6); border-radius:999px; background:#1f3d2b; color:#fdf8e8; font-size:14px; font-weight:700;"><?= icon('plus', 16) ?> Add category</a>
++  </div>
++
++  <?php if (!$categories && !$uncategorizedCount): ?>
++    <p style="font-size:13.5px; color:#6f8377;">No recipes yet.</p>
++  <?php else: ?>
++    <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px;">
++      <?php foreach ($categories as $c): ?>
++        <a href="admin.php?page=recipes&category=<?= urlencode($c['category']) ?>" class="lift" style="display:flex; align-items:center; gap:16px; background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:20px;">
++          <span style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; flex:none; border-radius:16px; background:#f2f7f1; border:1px solid rgba(201,162,39,0.4); color:#1f3d2b;"><?= admin_category_icon($c['category']) ?></span>
++          <div style="flex:1; min-width:0;">
++            <h3 style="font-family:'Playfair Display',Georgia,serif; font-weight:600; font-size:17px; margin:0 0 5px; color:#1f3d2b;"><?= h($c['category']) ?></h3>
++            <p style="margin:0; font-size:13px; color:#6f8377;"><?= (int)$c['recipe_count'] ?> recipe<?= (int)$c['recipe_count'] === 1 ? '' : 's' ?> · updated <?= h(admin_relative_date($c['last_updated'])) ?></p>
++          </div>
++          <span style="display:inline-flex; color:#2f6b45;"><?= icon('chevron-right', 16) ?></span>
++        </a>
++      <?php endforeach; ?>
++
++      <?php if ($uncategorizedCount): ?>
++        <a href="admin.php?page=recipes&category=uncategorized" class="lift" style="display:flex; align-items:center; gap:16px; background:#fff; border:1px dashed #c7d2c9; border-radius:16px; padding:20px;">
++          <span style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; flex:none; border-radius:16px; background:#f5f7f5; border:1px solid #e1e8e2; color:#6f8377;"><?= icon('layers', 26) ?></span>
++          <div style="flex:1; min-width:0;">
++            <h3 style="font-family:'Playfair Display',Georgia,serif; font-weight:600; font-size:17px; margin:0 0 5px; color:#1f3d2b;">Uncategorized</h3>
++            <p style="margin:0; font-size:13px; color:#6f8377;"><?= $uncategorizedCount ?> recipe<?= $uncategorizedCount === 1 ? '' : 's' ?> need a category</p>
++          </div>
++          <span style="display:inline-flex; color:#2f6b45;"><?= icon('chevron-right', 16) ?></span>
++        </a>
++      <?php endif; ?>
++    </div>
++  <?php endif; ?>
++</section>
+diff --git a/nutritale/includes/admin/dashboard.php b/nutritale/includes/admin/dashboard.php
+new file mode 100644
+index 0000000..8fe6c34
+--- /dev/null
++++ b/nutritale/includes/admin/dashboard.php
+@@ -0,0 +1,80 @@
++<?php
++/** @var array $user Set by admin.php. */
++
++$totalUsers = (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
++$newUsersThisMonth = (int) db()->query("SELECT COUNT(*) FROM users WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
++$publishedRecipes = (int) db()->query("SELECT COUNT(*) FROM recipes WHERE status = 'published'")->fetchColumn();
++$categoryCount = (int) db()->query("SELECT COUNT(DISTINCT category) FROM recipes WHERE category IS NOT NULL AND category != ''")->fetchColumn();
++$planEntries = (int) db()->query('SELECT COUNT(*) FROM meal_plan_items')->fetchColumn();
++$planEntriesThisWeek = (int) db()->query('SELECT COUNT(*) FROM meal_plan_items WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
++$activeToday = (int) db()->query('SELECT COUNT(*) FROM users WHERE last_login_at >= CURDATE()')->fetchColumn();
++$activeThisWeek = (int) db()->query('SELECT COUNT(*) FROM users WHERE last_login_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
++
++$trendIcon = icon('trend-up', 14);
++$metrics = [
++    ['label' => 'Total users', 'value' => number_format($totalUsers), 'trend' => "+$newUsersThisMonth this month"],
++    ['label' => 'Published recipes', 'value' => number_format($publishedRecipes), 'trend' => "$categoryCount categories live"],
++    ['label' => 'Meal plan entries', 'value' => number_format($planEntries), 'trend' => "+$planEntriesThisWeek this week"],
++    ['label' => 'Active today', 'value' => number_format($activeToday), 'trend' => "$activeThisWeek active this week"],
++];
++
++// Platform activity: real signups + favorites + meal-plan entries, per day, last 30 days.
++$activityRows = db()->query(
++    "SELECT d.day, COALESCE(u.c, 0) + COALESCE(f.c, 0) + COALESCE(m.c, 0) AS total FROM (
++        SELECT DATE(NOW() - INTERVAL a.n DAY) AS day
++        FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
++              UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13
++              UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20
++              UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27
++              UNION SELECT 28 UNION SELECT 29) a
++     ) d
++     LEFT JOIN (SELECT DATE(created_at) day, COUNT(*) c FROM users WHERE created_at >= NOW() - INTERVAL 30 DAY GROUP BY DATE(created_at)) u ON u.day = d.day
++     LEFT JOIN (SELECT DATE(created_at) day, COUNT(*) c FROM favorites WHERE created_at >= NOW() - INTERVAL 30 DAY GROUP BY DATE(created_at)) f ON f.day = d.day
++     LEFT JOIN (SELECT DATE(created_at) day, COUNT(*) c FROM meal_plan_items WHERE created_at >= NOW() - INTERVAL 30 DAY GROUP BY DATE(created_at)) m ON m.day = d.day
++     ORDER BY d.day"
++)->fetchAll(PDO::FETCH_COLUMN, 1);
++$activityPoints = array_map('intval', $activityRows);
++
++$missingCategoryCount = (int) db()->query("SELECT COUNT(*) FROM recipes WHERE category IS NULL OR category = ''")->fetchColumn();
++$openReportsCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE status = 'open'")->fetchColumn();
++$csrf = h(csrf_token());
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Dashboard</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Good <?= (int)date('G') < 12 ? 'morning' : ((int)date('G') < 18 ? 'afternoon' : 'evening') ?>, <?= h(explode(' ', trim($user['name']))[0] ?: 'Admin') ?>.</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Here's what is happening across NutriTale today.</p>
++
++  <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px;">
++    <?php foreach ($metrics as $m): ?>
++      <div class="lift" style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:20px;">
++        <span style="font-size:12.5px; color:#6f8377;"><?= h($m['label']) ?></span>
++        <b style="display:block; margin:8px 0 6px; font-family:'Playfair Display',Georgia,serif; font-size:32px; font-weight:700; color:#1f3d2b;"><?= h($m['value']) ?></b>
++        <span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:#2f6b45;"><?= $trendIcon ?> <?= h($m['trend']) ?></span>
++      </div>
++    <?php endforeach; ?>
++  </div>
++
++  <div style="display:grid; grid-template-columns:1.25fr minmax(0,0.75fr); gap:20px;">
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Platform activity</h2>
++      <p style="margin:0 0 18px; font-size:13px; color:#6f8377;">New users, favorites and meal-plan additions, last 30 days.</p>
++      <?= admin_line_chart($activityPoints, 'Platform activity over the last 30 days') ?>
++    </div>
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Quick actions</h2>
++      <p style="margin:0 0 18px; font-size:13px; color:#6f8377;">Jump straight into the work.</p>
++      <div style="display:flex; flex-wrap:wrap; gap:10px;">
++        <a href="admin_recipe_edit.php" style="display:inline-flex; align-items:center; gap:8px; padding:12px 18px; border:1px solid rgba(201,162,39,0.6); border-radius:999px; background:#1f3d2b; color:#fdf8e8; font-size:13.5px; font-weight:700;"><?= icon('plus', 16) ?> Add recipe</a>
++        <a href="admin.php?page=categories" style="display:inline-flex; align-items:center; gap:8px; padding:12px 18px; border:1px solid rgba(201,162,39,0.5); border-radius:999px; background:#fff; color:#1f3d2b; font-size:13.5px; font-weight:700;"><?= icon('plus', 16) ?> Add category</a>
++      </div>
++      <div style="margin-top:22px; display:flex; flex-direction:column;">
++        <a href="admin.php?page=reports" style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:16px 2px; border-bottom:1px solid #e1e8e2; font-size:14px; color:#1f3d2b;">
++          <span>Open reports</span><b style="display:inline-flex; align-items:center; gap:8px;"><?= $openReportsCount ?> <?= icon('chevron-right', 16) ?></b>
++        </a>
++        <a href="admin.php?page=recipes&status=uncategorized" style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:16px 2px; font-size:14px; color:#1f3d2b;">
++          <span>Recipes missing a category</span><b style="display:inline-flex; align-items:center; gap:8px;"><?= $missingCategoryCount ?> <?= icon('chevron-right', 16) ?></b>
++        </a>
++      </div>
++    </div>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/mealplans.php b/nutritale/includes/admin/mealplans.php
+new file mode 100644
+index 0000000..289c7a9
+--- /dev/null
++++ b/nutritale/includes/admin/mealplans.php
+@@ -0,0 +1,75 @@
++<?php
++$plans = db()->query('SELECT * FROM curated_meal_plans ORDER BY created_at DESC')->fetchAll();
++$topPlans = db()->query('SELECT title, saves_count FROM curated_meal_plans ORDER BY saves_count DESC LIMIT 5')->fetchAll();
++$maxSaves = $topPlans ? max(array_column($topPlans, 'saves_count')) : 0;
++$csrf = h(csrf_token());
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Meal plans</div>
++  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px;">
++    <div>
++      <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Meal plans</h1>
++      <p style="margin:8px 0 0; font-size:14.5px; color:#4b5d52;">Manage curated meal planning content.</p>
++    </div>
++  </div>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px; margin-bottom:20px;">
++    <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:18px; margin:0 0 14px;">Create meal plan</h2>
++    <form method="post" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
++      <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
++      <input type="hidden" name="action" value="create_mealplan">
++      <label style="flex:1; min-width:180px;"><span style="display:block; margin-bottom:6px; font-size:12px; font-weight:700; color:#4b5d52;">Title</span>
++        <input type="text" name="title" required style="width:100%; padding:11px 13px; border:1px solid #e1e8e2; border-radius:10px; font-size:13.5px;"></label>
++      <label style="flex:2; min-width:220px;"><span style="display:block; margin-bottom:6px; font-size:12px; font-weight:700; color:#4b5d52;">Description</span>
++        <input type="text" name="description" style="width:100%; padding:11px 13px; border:1px solid #e1e8e2; border-radius:10px; font-size:13.5px;"></label>
++      <label><span style="display:block; margin-bottom:6px; font-size:12px; font-weight:700; color:#4b5d52;">Visibility</span>
++        <select name="status" style="padding:11px 13px; border:1px solid #e1e8e2; border-radius:10px; font-size:13.5px;">
++          <option value="draft">Draft</option>
++          <option value="published">Published</option>
++        </select></label>
++      <button type="submit" style="padding:12px 20px; border:1px solid rgba(201,162,39,0.6); border-radius:999px; background:#1f3d2b; color:#fdf8e8; font-size:13.5px; font-weight:700; cursor:pointer;"><?= icon('plus', 16) ?> Create</button>
++    </form>
++  </div>
++
++  <?php if (!$plans): ?>
++    <p style="font-size:13.5px; color:#6f8377; margin-bottom:20px;">No meal plans yet — create the first one above.</p>
++  <?php else: ?>
++    <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:20px;">
++      <?php foreach ($plans as $p): ?>
++        <div class="lift" style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++          <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 5px;"><?= h($p['title']) ?></h2>
++          <p style="margin:0 0 16px; font-size:13px; color:#6f8377;"><?= h($p['description'] ?: 'No description yet.') ?></p>
++          <b style="font-family:'Playfair Display',Georgia,serif; font-size:24px; color:#1f3d2b;"><?= number_format((int)$p['saves_count']) ?></b>
++          <span style="display:block; font-size:12.5px; color:#6f8377; margin-top:2px;">saves</span>
++          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid #e1e8e2; font-size:13.5px;">
++            <span>Visibility</span>
++            <form method="post" style="margin:0;">
++              <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
++              <input type="hidden" name="action" value="toggle_mealplan_status">
++              <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
++              <button type="submit" style="border:0; background:none; padding:0; cursor:pointer;"><?= admin_pill($p['status'] === 'published' ? 'Published' : 'Draft', $p['status'] === 'published' ? 'green' : 'gold') ?></button>
++            </form>
++          </div>
++        </div>
++      <?php endforeach; ?>
++    </div>
++
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Meal plan performance</h2>
++      <p style="margin:0 0 18px; font-size:13px; color:#6f8377;">Most saved plans.</p>
++      <?php if ($maxSaves === 0): ?>
++        <p style="margin:0; font-size:13px; color:#6f8377;">No saves tracked yet — plans don't have a public "save" action wired up.</p>
++      <?php else: ?>
++        <div style="display:flex; align-items:flex-end; gap:18px; height:200px;">
++          <?php foreach ($topPlans as $b): $pct = max(6, round($b['saves_count'] / $maxSaves * 100)); ?>
++            <div style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:10px; height:100%; justify-content:flex-end;">
++              <span style="font-size:12.5px; font-weight:700; color:#1f3d2b;"><?= number_format((int)$b['saves_count']) ?></span>
++              <div style="width:100%; height:<?= $pct ?>%; border-radius:10px 10px 0 0; background:linear-gradient(180deg,#2f6b45,#1f3d2b);"></div>
++              <span style="font-size:12px; color:#6f8377; text-align:center;"><?= h($b['title']) ?></span>
++            </div>
++          <?php endforeach; ?>
++        </div>
++      <?php endif; ?>
++    </div>
++  <?php endif; ?>
++</section>
+diff --git a/nutritale/includes/admin/profile.php b/nutritale/includes/admin/profile.php
+new file mode 100644
+index 0000000..408affe
+--- /dev/null
++++ b/nutritale/includes/admin/profile.php
+@@ -0,0 +1,48 @@
++<?php
++$permissions = ['Recipes & categories', 'Users & reports', 'Analytics', 'Platform settings'];
++$csrf = h(csrf_token());
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Profile</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Admin profile</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Manage your administrator account and access.</p>
++  <div style="display:grid; grid-template-columns:1.25fr minmax(0,0.75fr); gap:20px;">
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <div style="display:flex; align-items:center; gap:18px; padding-bottom:22px; border-bottom:1px solid #e1e8e2;">
++        <span style="display:inline-flex; align-items:center; justify-content:center; width:86px; height:86px; flex:none; border-radius:22px; background:#1f3d2b; color:#f3e2b0; border:1px solid rgba(201,162,39,0.5); font-family:'Playfair Display',Georgia,serif; font-size:30px; font-weight:700;"><?= h(admin_initials($user['name'])) ?></span>
++        <div>
++          <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:22px; margin:0 0 5px;"><?= h($user['name']) ?></h2>
++          <div style="font-size:13.5px; color:#4b5d52;">Platform owner · Administrator</div>
++          <span style="display:inline-block; margin-top:9px; padding:6px 12px; border-radius:999px; background:#f2f7f1; border:1px solid rgba(201,162,39,0.45); color:#1f3d2b; font-size:11.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">Full access</span>
++        </div>
++      </div>
++
++      <form method="post" style="margin-top:20px;">
++        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
++        <input type="hidden" name="action" value="save_admin_profile">
++        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;">
++          <label style="display:block;">
++            <span style="display:block; margin-bottom:7px; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Name</span>
++            <input type="text" name="name" value="<?= h($user['name']) ?>" required style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; font-size:14px; color:#1f3d2b;">
++          </label>
++          <label style="display:block;">
++            <span style="display:block; margin-bottom:7px; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Email</span>
++            <input type="email" name="email" value="<?= h($user['email']) ?>" required style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; font-size:14px; color:#1f3d2b;">
++          </label>
++        </div>
++        <button type="submit" style="margin-top:20px; display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border:1px solid rgba(201,162,39,0.6); border-radius:999px; background:#1f3d2b; color:#fdf8e8; font-size:14px; font-weight:700; cursor:pointer;">Save changes</button>
++      </form>
++      <a href="profile.php" style="display:inline-block; margin-top:16px; font-size:13px; color:#6f8377;">Change your password from your account settings →</a>
++    </div>
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 4px;">Administrator permissions</h2>
++      <p style="margin:0 0 14px; font-size:13px; color:#6f8377;">Your current access level.</p>
++      <?php foreach ($permissions as $p): ?>
++        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; border-bottom:1px solid #e1e8e2; font-size:13.5px;">
++          <span><?= h($p) ?></span>
++          <span style="padding:6px 12px; border-radius:999px; background:#f2f7f1; border:1px solid rgba(31,61,43,0.12); color:#2f6b45; font-size:11.5px; font-weight:700;">Full access</span>
++        </div>
++      <?php endforeach; ?>
++    </div>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/recipes.php b/nutritale/includes/admin/recipes.php
+new file mode 100644
+index 0000000..58cd682
+--- /dev/null
++++ b/nutritale/includes/admin/recipes.php
+@@ -0,0 +1,108 @@
++<?php
++/** @var string $searchQuery Set by admin.php. */
++
++$categoryFilter = trim($_GET['category'] ?? '');
++$statusFilter = trim($_GET['status'] ?? '');
++
++$where = [];
++$params = [];
++if ($searchQuery !== '') {
++    $where[] = 'r.title LIKE ?';
++    $params[] = '%' . $searchQuery . '%';
++}
++if ($categoryFilter === 'uncategorized') {
++    $where[] = "(r.category IS NULL OR r.category = '')";
++} elseif ($categoryFilter !== '') {
++    $where[] = 'r.category = ?';
++    $params[] = $categoryFilter;
++}
++if ($statusFilter === 'uncategorized') {
++    $where[] = "(r.category IS NULL OR r.category = '')";
++} elseif (in_array($statusFilter, ['published', 'hidden'], true)) {
++    $where[] = 'r.status = ?';
++    $params[] = $statusFilter;
++}
++$whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
++
++$stmt = db()->prepare(
++    "SELECT r.id, r.title, r.category, r.status, r.updated_at, r.created_at, r.is_generated,
++            COALESCE(u.name, 'NutriTale') AS author_name
++     FROM recipes r LEFT JOIN users u ON u.id = r.created_by
++     $whereSql
++     ORDER BY COALESCE(r.updated_at, r.created_at) DESC
++     LIMIT 500"
++);
++$stmt->execute($params);
++$recipes = $stmt->fetchAll();
++
++$totalRecipes = (int) db()->query('SELECT COUNT(*) FROM recipes')->fetchColumn();
++$totalCategories = (int) db()->query("SELECT COUNT(DISTINCT category) FROM recipes WHERE category IS NOT NULL AND category != ''")->fetchColumn();
++$categoryOptions = db()->query("SELECT DISTINCT category FROM recipes WHERE category IS NOT NULL AND category != '' ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
++
++$csrf = h(csrf_token());
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Recipes</div>
++  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px;">
++    <div>
++      <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Recipes</h1>
++      <p style="margin:8px 0 0; font-size:14.5px; color:#4b5d52;">Create, review, publish and organise all <?= $totalRecipes ?> NutriTale recipes.</p>
++    </div>
++    <a href="admin_recipe_edit.php" style="display:inline-flex; align-items:center; gap:8px; padding:13px 22px; border:1px solid rgba(201,162,39,0.6); border-radius:999px; background:#1f3d2b; color:#fdf8e8; font-size:14px; font-weight:700;"><?= icon('plus', 16) ?> Add recipe</a>
++  </div>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++    <form method="get" action="admin.php" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;">
++      <input type="hidden" name="page" value="recipes">
++      <div style="display:flex; flex-wrap:wrap; gap:10px;">
++        <input type="search" name="q" value="<?= h($searchQuery) ?>" placeholder="Search recipes…" aria-label="Search recipes" style="padding:11px 14px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; font-size:13.5px; color:#1f3d2b; min-width:200px;">
++        <select name="category" aria-label="Filter by category" onchange="this.form.submit()" style="padding:11px 14px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; font-size:13.5px; color:#1f3d2b;">
++          <option value="">All categories</option>
++          <option value="uncategorized" <?= $categoryFilter === 'uncategorized' ? 'selected' : '' ?>>Uncategorized</option>
++          <?php foreach ($categoryOptions as $c): ?>
++            <option value="<?= h($c) ?>" <?= $categoryFilter === $c ? 'selected' : '' ?>><?= h($c) ?></option>
++          <?php endforeach; ?>
++        </select>
++        <select name="status" aria-label="Filter by status" onchange="this.form.submit()" style="padding:11px 14px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; font-size:13.5px; color:#1f3d2b;">
++          <option value="">Any status</option>
++          <option value="published" <?= $statusFilter === 'published' ? 'selected' : '' ?>>Published</option>
++          <option value="hidden" <?= $statusFilter === 'hidden' ? 'selected' : '' ?>>Hidden</option>
++        </select>
++        <button type="submit" style="padding:11px 18px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; color:#1f3d2b; font-size:13.5px; font-weight:700; cursor:pointer;">Filter</button>
++      </div>
++      <a href="admin_export.php?type=recipes" style="display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border:1px solid rgba(201,162,39,0.5); border-radius:999px; background:#fff; color:#1f3d2b; font-size:13.5px; font-weight:700;"><?= icon('download', 16) ?> Export</a>
++    </form>
++
++    <?php if (!$recipes): ?>
++      <p style="margin:0; font-size:13.5px; color:#6f8377;">No recipes match these filters.</p>
++    <?php else: ?>
++      <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
++        <thead>
++          <tr>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Recipe</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Category</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Author</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Status</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Updated</th>
++            <th scope="col" style="text-align:right; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Action</th>
++          </tr>
++        </thead>
++        <tbody>
++          <?php foreach ($recipes as $r): ?>
++            <tr class="row">
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;"><b><?= h($r['title']) ?></b></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h($r['category'] ?: '—') ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h($r['author_name']) ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;"><?= admin_pill($r['status'] === 'published' ? 'Published' : 'Hidden', $r['status'] === 'published' ? 'green' : 'gray') ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h(admin_relative_date($r['updated_at'] ?? $r['created_at'])) ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; text-align:right;">
++                <a href="admin_recipe_edit.php?id=<?= urlencode($r['id']) ?>" style="display:inline-block; padding:8px 14px; border:1px solid #e1e8e2; border-radius:999px; background:#fff; color:#1f3d2b; font-size:12.5px; font-weight:700;">Edit</a>
++              </td>
++            </tr>
++          <?php endforeach; ?>
++        </tbody>
++      </table>
++      <p style="margin:18px 0 0; font-size:13px; color:#6f8377;">Showing <?= count($recipes) ?> of <?= $totalRecipes ?> recipes across <?= $totalCategories ?> categories.</p>
++    <?php endif; ?>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/reports.php b/nutritale/includes/admin/reports.php
+new file mode 100644
+index 0000000..9331320
+--- /dev/null
++++ b/nutritale/includes/admin/reports.php
+@@ -0,0 +1,80 @@
++<?php
++$openCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE status = 'open'")->fetchColumn();
++$resolvedTodayCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE status = 'resolved' AND DATE(resolved_at) = CURDATE()")->fetchColumn();
++$recipeReportCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE target_type = 'recipe'")->fetchColumn();
++$userReportCount = (int) db()->query("SELECT COUNT(*) FROM content_reports WHERE target_type = 'user'")->fetchColumn();
++
++$reportMetrics = [
++    ['label' => 'Open reports', 'value' => $openCount],
++    ['label' => 'Resolved today', 'value' => $resolvedTodayCount],
++    ['label' => 'Recipe reports', 'value' => $recipeReportCount],
++    ['label' => 'User reports', 'value' => $userReportCount],
++];
++
++$reports = db()->query(
++    "SELECT cr.*, r.title AS recipe_title, ru.name AS reported_user_name
++     FROM content_reports cr
++     LEFT JOIN recipes r ON cr.target_type = 'recipe' AND r.id = cr.target_id
++     LEFT JOIN users ru ON cr.target_type = 'user' AND ru.id = CAST(cr.target_id AS UNSIGNED)
++     ORDER BY cr.created_at DESC LIMIT 100"
++)->fetchAll();
++$csrf = h(csrf_token());
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Reports</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Reports &amp; moderation</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Review content and community reports before taking action.</p>
++
++  <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px;">
++    <?php foreach ($reportMetrics as $m): ?>
++      <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:20px;">
++        <span style="font-size:12.5px; color:#6f8377;"><?= h($m['label']) ?></span>
++        <b style="display:block; margin-top:8px; font-family:'Playfair Display',Georgia,serif; font-size:32px; font-weight:700; color:#1f3d2b;"><?= $m['value'] ?></b>
++      </div>
++    <?php endforeach; ?>
++  </div>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++    <?php if (!$reports): ?>
++      <p style="margin:0; font-size:13.5px; color:#6f8377;">No reports yet — this page will fill up once people can flag recipes or accounts.</p>
++    <?php else: ?>
++      <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
++        <thead>
++          <tr>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Report</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Type</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Reason</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Status</th>
++            <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Date</th>
++            <th scope="col" style="text-align:right; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Action</th>
++          </tr>
++        </thead>
++        <tbody>
++          <?php foreach ($reports as $r):
++            $label = $r['target_type'] === 'recipe' ? ($r['recipe_title'] ?? 'Deleted recipe') : ($r['reported_user_name'] ?? 'Deleted user');
++          ?>
++            <tr class="row">
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;"><b>#NT-<?= (int)$r['id'] ?></b> <span style="color:#6f8377;">— <?= h($label) ?></span></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h(ucfirst($r['target_type'])) ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h($r['reason']) ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;"><?= admin_pill($r['status'] === 'open' ? 'Open' : 'Resolved', $r['status'] === 'open' ? 'gold' : 'green') ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h(admin_relative_date($r['created_at'])) ?></td>
++              <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; text-align:right;">
++                <?php if ($r['status'] === 'open'): ?>
++                  <form method="post" style="margin:0;">
++                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
++                    <input type="hidden" name="action" value="resolve_report">
++                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
++                    <button type="submit" style="padding:8px 14px; border:1px solid #e1e8e2; border-radius:999px; background:#fff; color:#1f3d2b; font-size:12.5px; font-weight:700; cursor:pointer;">Resolve</button>
++                  </form>
++                <?php else: ?>
++                  <span style="font-size:12.5px; color:#6f8377;">Resolved</span>
++                <?php endif; ?>
++              </td>
++            </tr>
++          <?php endforeach; ?>
++        </tbody>
++      </table>
++    <?php endif; ?>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/settings.php b/nutritale/includes/admin/settings.php
+new file mode 100644
+index 0000000..b3012aa
+--- /dev/null
++++ b/nutritale/includes/admin/settings.php
+@@ -0,0 +1,46 @@
++<?php
++$platformToggles = [
++    ['key' => 'recipe_submissions', 'label' => 'Recipe submissions', 'hint' => 'Allow community members to submit recipes'],
++    ['key' => 'ai_recipe_matching', 'label' => 'AI recipe matching', 'hint' => 'Enable personalised recipe recommendations'],
++    ['key' => 'marketplace', 'label' => 'Public marketplace', 'hint' => 'Show marketplace features to users'],
++    ['key' => 'maintenance_mode', 'label' => 'Maintenance mode', 'hint' => 'Temporarily restrict platform access'],
++];
++$notifyToggles = [
++    ['key' => 'notify_new_reports', 'label' => 'New reports', 'hint' => 'Notify administrators of reports'],
++    ['key' => 'notify_new_submissions', 'label' => 'New recipe submissions', 'hint' => 'Notify when content needs review'],
++    ['key' => 'notify_weekly_analytics', 'label' => 'Weekly analytics', 'hint' => 'Receive a platform performance summary'],
++];
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Settings</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Settings</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Control the NutriTale platform and administrator preferences.</p>
++  <p style="margin:-14px 0 26px; font-size:12.5px; color:#6f8377;">These switches are saved for real, but nothing elsewhere in the app reads them yet — wiring each one to actually gate its feature is a follow-up.</p>
++
++  <div style="display:grid; grid-template-columns:1.25fr minmax(0,0.75fr); gap:20px;">
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 18px;">Platform settings</h2>
++      <?php foreach ($platformToggles as $t): ?>
++        <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; padding:16px 0; border-bottom:1px solid #e1e8e2;">
++          <div>
++            <b style="font-size:14px;"><?= h($t['label']) ?></b>
++            <small style="display:block; margin-top:4px; font-size:12.5px; color:#6f8377;"><?= h($t['hint']) ?></small>
++          </div>
++          <?= admin_toggle_switch($t['key'], admin_setting($t['key'])) ?>
++        </div>
++      <?php endforeach; ?>
++    </div>
++    <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0 0 18px;">Notifications</h2>
++      <?php foreach ($notifyToggles as $t): ?>
++        <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; padding:16px 0; border-bottom:1px solid #e1e8e2;">
++          <div>
++            <b style="font-size:14px;"><?= h($t['label']) ?></b>
++            <small style="display:block; margin-top:4px; font-size:12.5px; color:#6f8377;"><?= h($t['hint']) ?></small>
++          </div>
++          <?= admin_toggle_switch($t['key'], admin_setting($t['key'])) ?>
++        </div>
++      <?php endforeach; ?>
++    </div>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin/users.php b/nutritale/includes/admin/users.php
+new file mode 100644
+index 0000000..f16dbcb
+--- /dev/null
++++ b/nutritale/includes/admin/users.php
+@@ -0,0 +1,81 @@
++<?php
++$registered = (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
++$activeThisWeek = (int) db()->query('SELECT COUNT(*) FROM users WHERE last_login_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
++$premiumCount = (int) db()->query('SELECT COUNT(*) FROM users WHERE is_premium_member = 1')->fetchColumn();
++$newThisMonth = (int) db()->query("SELECT COUNT(*) FROM users WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
++
++$userMetrics = [
++    ['label' => 'Registered', 'value' => number_format($registered)],
++    ['label' => 'Active this week', 'value' => number_format($activeThisWeek)],
++    ['label' => 'Premium', 'value' => number_format($premiumCount)],
++    ['label' => 'New this month', 'value' => number_format($newThisMonth)],
++];
++
++$users = db()->query(
++    'SELECT id, name, email, is_admin, is_vendor, is_premium_member, last_login_at, created_at
++     FROM users ORDER BY created_at DESC LIMIT 50'
++)->fetchAll();
++?>
++<section style="padding:30px 34px 40px; max-width:1400px;">
++  <div style="font-size:12px; color:#6f8377; margin-bottom:8px;">Admin / Users</div>
++  <h1 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:38px; margin:0;">Users</h1>
++  <p style="margin:8px 0 26px; font-size:14.5px; color:#4b5d52;">Monitor accounts, roles and engagement.</p>
++
++  <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px;">
++    <?php foreach ($userMetrics as $m): ?>
++      <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:20px;">
++        <span style="font-size:12.5px; color:#6f8377;"><?= h($m['label']) ?></span>
++        <b style="display:block; margin-top:8px; font-family:'Playfair Display',Georgia,serif; font-size:32px; font-weight:700; color:#1f3d2b;"><?= h($m['value']) ?></b>
++      </div>
++    <?php endforeach; ?>
++  </div>
++
++  <div style="background:#fff; border:1px solid #e1e8e2; border-radius:16px; padding:22px;">
++    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px;">
++      <h2 style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:20px; margin:0;">Recent users</h2>
++      <div style="display:flex; align-items:center; gap:14px;">
++        <span style="font-size:12.5px; color:#6f8377;">Showing <?= count($users) ?> of <?= $registered ?></span>
++        <a href="admin_export.php?type=users" style="display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border:1px solid rgba(201,162,39,0.5); border-radius:999px; background:#fff; color:#1f3d2b; font-size:13.5px; font-weight:700;"><?= icon('download', 16) ?> Export users</a>
++      </div>
++    </div>
++    <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
++      <thead>
++        <tr>
++          <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">User</th>
++          <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Email</th>
++          <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Plan</th>
++          <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Status</th>
++          <th scope="col" style="text-align:left; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Joined</th>
++          <th scope="col" style="text-align:right; padding:12px 10px; border-bottom:1px solid #e1e8e2; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#6f8377;">Action</th>
++        </tr>
++      </thead>
++      <tbody>
++        <?php foreach ($users as $u):
++          $role = $u['is_admin'] ? 'Administrator' : ($u['is_vendor'] ? 'Vendor' : 'Member');
++          if (!$u['last_login_at']) { $status = ['Never logged in', 'gray']; }
++          elseif (strtotime($u['last_login_at']) >= strtotime('-30 days')) { $status = ['Active', 'green']; }
++          else { $status = ['Inactive', 'gray']; }
++        ?>
++          <tr class="row">
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;">
++              <span style="display:flex; align-items:center; gap:12px;">
++                <span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; flex:none; border-radius:50%; background:#f2f7f1; border:1px solid rgba(201,162,39,0.35); color:#1f3d2b; font-size:13px; font-weight:700;"><?= h(admin_initials($u['name'])) ?></span>
++                <span>
++                  <b style="display:block;"><?= h($u['name']) ?></b>
++                  <small style="display:block; margin-top:3px; font-size:12px; color:#6f8377;"><?= h($role) ?></small>
++                </span>
++              </span>
++            </td>
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h($u['email']) ?></td>
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= $u['is_premium_member'] ? 'Premium' : 'Free' ?></td>
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed;"><?= admin_pill($status[0], $status[1]) ?></td>
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; color:#4b5d52;"><?= h(admin_relative_date($u['created_at'])) ?></td>
++            <td style="padding:14px 10px; border-bottom:1px solid #edf0ed; text-align:right;">
++              <a href="admin_user_view.php?id=<?= (int)$u['id'] ?>" style="display:inline-block; padding:8px 14px; border:1px solid #e1e8e2; border-radius:999px; background:#fff; color:#1f3d2b; font-size:12.5px; font-weight:700;">View</a>
++            </td>
++          </tr>
++        <?php endforeach; ?>
++      </tbody>
++    </table>
++  </div>
++</section>
+diff --git a/nutritale/includes/admin_helpers.php b/nutritale/includes/admin_helpers.php
+new file mode 100644
+index 0000000..345ff3c
+--- /dev/null
++++ b/nutritale/includes/admin_helpers.php
+@@ -0,0 +1,151 @@
++<?php
++// Shared helpers for the admin suite (admin.php + includes/admin/*.php).
++require_once __DIR__ . '/functions.php';
++require_once __DIR__ . '/icons.php';
++
++// [page key, label, icon name] — order drives the sidebar.
++const ADMIN_NAV = [
++    ['dashboard', 'Dashboard', 'grid'],
++    ['recipes', 'Recipes', 'book'],
++    ['categories', 'Categories', 'layers'],
++    ['users', 'Users', 'users'],
++    ['reports', 'Reports', 'flag'],
++    ['mealplans', 'Meal plans', 'calendar'],
++    ['analytics', 'Analytics', 'chart'],
++    ['settings', 'Settings', 'settings'],
++    ['profile', 'Admin profile', 'user'],
++];
++
++const ADMIN_SETTINGS_DEFAULTS = [
++    'recipe_submissions' => '1',
++    'ai_recipe_matching' => '1',
++    'marketplace' => '1',
++    'maintenance_mode' => '0',
++    'notify_new_reports' => '1',
++    'notify_new_submissions' => '1',
++    'notify_weekly_analytics' => '1',
++];
++
++function admin_setting(string $key): bool
++{
++    static $rows = null;
++    if ($rows === null) {
++        $rows = db()->query('SELECT setting_key, setting_value FROM admin_settings')->fetchAll(PDO::FETCH_KEY_PAIR);
++    }
++    $value = $rows[$key] ?? (ADMIN_SETTINGS_DEFAULTS[$key] ?? '0');
++    return $value === '1';
++}
++
++function admin_set_setting(string $key, bool $on): void
++{
++    db()->prepare(
++        'INSERT INTO admin_settings (setting_key, setting_value) VALUES (?, ?)
++         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
++    )->execute([$key, $on ? '1' : '0']);
++}
++
++// Small rounded status pill, used across every admin table.
++function admin_pill(string $text, string $tone = 'gray'): string
++{
++    $tones = [
++        'green' => ['bg' => '#eef6ea', 'bd' => 'rgba(47,107,69,0.3)', 'fg' => '#2a6340'],
++        'gold' => ['bg' => '#fbf4e2', 'bd' => 'rgba(201,162,39,0.45)', 'fg' => '#7d6620'],
++        'gray' => ['bg' => '#eef1ee', 'bd' => 'rgba(31,61,43,0.14)', 'fg' => '#5b6b61'],
++    ];
++    $t = $tones[$tone] ?? $tones['gray'];
++    return '<span style="display:inline-block;padding:6px 12px;border-radius:999px;background:' . $t['bg']
++        . ';border:1px solid ' . $t['bd'] . ';color:' . $t['fg'] . ';font-size:11.5px;font-weight:700;white-space:nowrap;">'
++        . h($text) . '</span>';
++}
++
++// Real on/off switch — posts back to the current admin page.
++function admin_toggle_switch(string $name, bool $on): string
++{
++    $csrf = h(csrf_token());
++    $checked = $on ? 'true' : 'false';
++    $bg = $on ? '#1f3d2b' : '#e4e9e5';
++    $bd = $on ? 'rgba(201,162,39,0.55)' : 'rgba(31,61,43,0.16)';
++    $knobBg = $on ? '#f3e2b0' : '#fff';
++    $knobLeft = $on ? '25' : '3';
++    return '<form method="post" style="margin:0;">'
++        . '<input type="hidden" name="csrf_token" value="' . $csrf . '">'
++        . '<input type="hidden" name="action" value="toggle_setting">'
++        . '<input type="hidden" name="key" value="' . h($name) . '">'
++        . '<button type="submit" role="switch" aria-checked="' . $checked . '" aria-label="' . h($name) . '" style="position:relative;width:52px;height:30px;flex:none;padding:0;cursor:pointer;border-radius:999px;border:1px solid ' . $bd . ';background:' . $bg . ';">'
++        . '<span style="position:absolute;top:3px;left:' . $knobLeft . 'px;width:22px;height:22px;border-radius:50%;background:' . $knobBg . ';box-shadow:0 1px 3px rgba(20,40,28,0.3);"></span>'
++        . '</button></form>';
++}
++
++// SVG line + area chart, ported 1:1 from the mockup's React lineChart().
++function admin_line_chart(array $points, string $label): string
++{
++    if (!$points) {
++        return '<p style="margin:0;font-size:13px;color:#6f8377;">Not enough data yet.</p>';
++    }
++    $w = 620;
++    $h = 200;
++    $max = max($points);
++    $min = min($points);
++    $range = ($max - $min) ?: 1;
++    $n = count($points);
++    $x = fn($i) => $n > 1 ? ($i / ($n - 1)) * $w : $w / 2;
++    $y = fn($v) => $h - (($v - $min) / $range) * ($h - 28) - 14;
++
++    $line = '';
++    foreach ($points as $i => $v) {
++        $line .= ($i ? 'L' : 'M') . number_format($x($i), 1, '.', '') . ' ' . number_format($y($v), 1, '.', '') . ' ';
++    }
++    $line = trim($line);
++    $area = $line . ' L' . $w . ' ' . $h . ' L0 ' . $h . ' Z';
++    $lastX = number_format($x($n - 1), 1, '.', '');
++    $lastY = number_format($y($points[$n - 1]), 1, '.', '');
++
++    $gridLines = '';
++    foreach ([0.25, 0.5, 0.75] as $g) {
++        $gy = $h * $g;
++        $gridLines .= '<line x1="0" x2="' . $w . '" y1="' . $gy . '" y2="' . $gy . '" stroke="#e8eee9" stroke-width="1"></line>';
++    }
++
++    return '<svg viewBox="0 0 ' . $w . ' ' . $h . '" width="100%" height="200" role="img" aria-label="' . h($label)
++        . '" preserveAspectRatio="none" style="display:block;overflow:visible;">'
++        . '<defs><linearGradient id="ntFill" x1="0" y1="0" x2="0" y2="1">'
++        . '<stop offset="0%" stop-color="#2f6b45" stop-opacity="0.28"></stop>'
++        . '<stop offset="100%" stop-color="#2f6b45" stop-opacity="0"></stop>'
++        . '</linearGradient></defs>'
++        . $gridLines
++        . '<path d="' . h($area) . '" fill="url(#ntFill)"></path>'
++        . '<path d="' . h($line) . '" fill="none" stroke="#2f6b45" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>'
++        . '<circle cx="' . $lastX . '" cy="' . $lastY . '" r="5" fill="#c9a227" stroke="#fff" stroke-width="2"></circle>'
++        . '</svg>';
++}
++
++// A small rotating set of category glyphs so category cards aren't all identical.
++function admin_category_icon(string $category): string
++{
++    $set = ['cup', 'pasta', 'droplet', 'bowl', 'plate', 'leaf-bowl'];
++    $index = abs(crc32($category)) % count($set);
++    return icon($set[$index], 26);
++}
++
++function admin_initials(string $name): string
++{
++    $parts = preg_split('/\s+/', trim($name));
++    $parts = array_filter($parts);
++    if (!$parts) return '?';
++    $first = mb_substr(reset($parts), 0, 1);
++    $last = count($parts) > 1 ? mb_substr(end($parts), 0, 1) : '';
++    return mb_strtoupper($first . $last);
++}
++
++// "Today" / "Yesterday" / "N days ago" / a formatted date further back.
++function admin_relative_date(?string $datetime): string
++{
++    if (!$datetime) return 'Never';
++    $then = new DateTime($datetime);
++    $today = new DateTime('today');
++    $diff = (int)$today->diff($then)->format('%r%a');
++    if ($diff === 0) return 'Today';
++    if ($diff === -1) return 'Yesterday';
++    if ($diff < 0 && $diff > -7) return abs($diff) . ' days ago';
++    return $then->format('M j, Y');
++}
+diff --git a/nutritale/includes/icons.php b/nutritale/includes/icons.php
+index 8930282..e523a51 100644
+--- a/nutritale/includes/icons.php
++++ b/nutritale/includes/icons.php
+@@ -31,6 +31,20 @@ function icon(string $name, int $size = 20): string
+         'sun' => '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>',
+         'moon' => '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>',
+         'share' => '<circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>',
++        // Admin suite icon set.
++        'grid' => '<rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect>',
++        'book' => '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5Z"></path><path d="M12 6v8"></path>',
++        'layers' => '<polygon points="12 3 21 8 12 13 3 8 12 3"></polygon><polyline points="3 13 12 18 21 13"></polyline>',
++        'flag' => '<path d="M5 21V4h9l-1 3h6v9h-7l-1-3H5"></path>',
++        'chart' => '<line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3" height="7"></rect><rect x="11" y="7" width="3" height="11"></rect><rect x="16" y="13" width="3" height="5"></rect>',
++        'bell' => '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path>',
++        'trend-up' => '<polyline points="3 17 9 11 13 15 21 7"></polyline><polyline points="15 7 21 7 21 13"></polyline>',
++        'cup' => '<path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path>',
++        'pasta' => '<path d="M4 11h16a8 8 0 0 1-8 8 8 8 0 0 1-8-8Z"></path><path d="M7 8c0-2 1.5-3 2.5-3S12 6 12 8M12 8c0-2 1.5-3 2.5-3S17 6 17 8"></path>',
++        'droplet' => '<path d="M12 3s6 6.5 6 10.5a6 6 0 0 1-12 0C6 9.5 12 3 12 3Z"></path>',
++        'bowl' => '<path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9Z"></path><path d="M12 11V4"></path><path d="M9 6.5 12 4l3 2.5"></path>',
++        'plate' => '<circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle>',
++        'leaf-bowl' => '<path d="M3 12h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9Z"></path><path d="M10 9c0-3 3-5 6-5 0 4-2 6-6 5Z"></path>',
+     ];
+ 
+     $body = $paths[$name] ?? '<circle cx="12" cy="12" r="9"></circle>';
+diff --git a/nutritale/install.php b/nutritale/install.php
+index 2acf971..2a46d12 100644
+--- a/nutritale/install.php
++++ b/nutritale/install.php
+@@ -24,6 +24,23 @@ try {
+     }
+     $log[] = 'Tables created (or already existed).';
+ 
++    // Columns added after the initial release aren't covered by CREATE TABLE
++    // IF NOT EXISTS on an existing database, so add them here if missing.
++    $addColumnIfMissing = function (string $table, string $column, string $definition) use ($pdo, &$log) {
++        $stmt = $pdo->prepare(
++            'SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?'
++        );
++        $stmt->execute([$table, $column]);
++        if ((int)$stmt->fetchColumn() === 0) {
++            $pdo->exec("ALTER TABLE `$table` ADD COLUMN $definition");
++            $log[] = "Added column $table.$column.";
++        }
++    };
++    $addColumnIfMissing('users', 'last_login_at', 'last_login_at DATETIME NULL');
++    $addColumnIfMissing('recipes', 'category', 'category VARCHAR(60) NULL');
++    $addColumnIfMissing('recipes', 'status', "status VARCHAR(20) NOT NULL DEFAULT 'published'");
++    $addColumnIfMissing('recipes', 'updated_at', 'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
++
+     $count = (int)$pdo->query('SELECT COUNT(*) FROM recipes')->fetchColumn();
+     if ($count === 0) {
+         require_once __DIR__ . '/data/seed_recipes.php';
+diff --git a/nutritale/login.php b/nutritale/login.php
+index 80da10a..d2b2f91 100644
+--- a/nutritale/login.php
++++ b/nutritale/login.php
+@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+             }
+             $errors[] = 'Incorrect email or password.';
+         } else {
+-            db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$user['id']]);
++            db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
+             $_SESSION['user_id'] = (int)$user['id'];
+             redirect($user['is_admin'] ? 'admin.php' : 'index.php');
+         }
+diff --git a/nutritale/sql/schema.sql b/nutritale/sql/schema.sql
+index dd42a3e..fb9bc11 100644
+--- a/nutritale/sql/schema.sql
++++ b/nutritale/sql/schema.sql
+@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
+     is_vendor TINYINT(1) NOT NULL DEFAULT 0,
+     is_premium_member TINYINT(1) NOT NULL DEFAULT 0,
+     pantry_free_uses_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
++    last_login_at DATETIME NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ 
+@@ -23,6 +24,8 @@ CREATE TABLE IF NOT EXISTS recipes (
+     image_url VARCHAR(500),
+     meal_type VARCHAR(30) NOT NULL,
+     cuisine VARCHAR(60),
++    category VARCHAR(60) NULL,
++    status VARCHAR(20) NOT NULL DEFAULT 'published',
+     difficulty VARCHAR(20) NOT NULL,
+     cook_time_minutes SMALLINT UNSIGNED NOT NULL,
+     servings SMALLINT UNSIGNED NOT NULL,
+@@ -36,9 +39,12 @@ CREATE TABLE IF NOT EXISTS recipes (
+     price DECIMAL(8,2) NULL,
+     created_by INT UNSIGNED NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
++    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+     INDEX idx_meal_type (meal_type),
+-    INDEX idx_cuisine (cuisine)
++    INDEX idx_cuisine (cuisine),
++    INDEX idx_category (category),
++    INDEX idx_status (status)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ 
+ CREATE TABLE IF NOT EXISTS recipe_diet_tags (
+@@ -224,3 +230,39 @@ CREATE TABLE IF NOT EXISTS ingredient_orders (
+     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+     INDEX idx_seller (seller_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
++
++-- Admin suite: moderation, curated meal plans, platform settings.
++
++CREATE TABLE IF NOT EXISTS content_reports (
++    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
++    reporter_id INT UNSIGNED NULL,
++    target_type VARCHAR(20) NOT NULL,
++    target_id VARCHAR(40) NOT NULL,
++    reason VARCHAR(200) NOT NULL,
++    details TEXT NULL,
++    status VARCHAR(20) NOT NULL DEFAULT 'open',
++    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
++    resolved_at DATETIME NULL,
++    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL,
++    INDEX idx_status (status),
++    INDEX idx_target (target_type, target_id)
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
++
++CREATE TABLE IF NOT EXISTS curated_meal_plans (
++    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
++    title VARCHAR(150) NOT NULL,
++    description TEXT NULL,
++    status VARCHAR(20) NOT NULL DEFAULT 'draft',
++    saves_count INT UNSIGNED NOT NULL DEFAULT 0,
++    created_by INT UNSIGNED NULL,
++    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
++    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
++    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
++    INDEX idx_status (status)
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
++
++CREATE TABLE IF NOT EXISTS admin_settings (
++    setting_key VARCHAR(60) PRIMARY KEY,
++    setting_value VARCHAR(20) NOT NULL DEFAULT '0',
++    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- 
+2.43.0
+

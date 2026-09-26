@@ -1,0 +1,1869 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+
+:root {
+    color-scheme: light;
+    --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --green: #2fae66;
+    --green-dark: #1f7d49;
+    --green-light: #eafaf0;
+    --ink: #1c2521;
+    --muted: #6b7a72;
+    --border: #e2e8e4;
+    --bg: #f6f9f7;
+    --white: #ffffff;
+    /* #d64545 against --error-bg computes to 3.78:1 - a clear WCAG AA
+       failure (not the borderline dark-mode case), only found while
+       re-checking that one after the accessibility pass: the original
+       pass verified --error against the plain page background (6.05:1,
+       fine) but never against --error-bg specifically. Lightening the
+       background can't fix this alone - even pure white only reaches
+       4.38:1 - so the text itself needed to darken. #b93333 reaches
+       5.06:1 against --error-bg, comfortable margin, and only ever
+       improves contrast everywhere else --error is used as a plain
+       foreground color (pantry-chip hover, allergen warnings, remove
+       buttons) since none of those put it on a background darker than
+       this page's own light surfaces. */
+    --error: #b93333;
+    --error-bg: #fdeaea;
+    --success: #1f7d49;
+    --success-bg: #eafaf0;
+    --radius: 16px;
+    --radius-lg: 24px;
+    /* "Soft Kitchen Light" — the landing page's decorative field. Kept as
+       tokens (not hardcoded in the landing rules below) so the dark-mode
+       blocks below can swap in "Deep Herb" instead, matching the app's
+       existing light/dark toggle rather than being a separate style. */
+    --landing-bg: #f4f8f5;
+    --landing-blob-1: rgba(47, 174, 102, 0.34);
+    --landing-blob-2: rgba(158, 214, 120, 0.32);
+    --landing-blob-3: rgba(31, 125, 73, 0.2);
+    --landing-glass-bg: rgba(255, 255, 255, 0.78);
+    --landing-glass-border: rgba(255, 255, 255, 0.9);
+    --landing-glass-shadow: 0 26px 50px -30px rgba(20, 50, 32, 0.45);
+    --landing-photo-ring: rgba(255, 255, 255, 0.7);
+    --emphasis-bg: #1c2521;
+    --emphasis-fg: #ffffff;
+    /* The "NutriTale" wordmark's own two-tone treatment (from the 2026-09
+       brand illustration: a deep forest green "Nutri" and a metallic gold
+       "Tale"), kept apart from --green/--green-dark - those still drive
+       every button, tag, and accent across the app and weren't part of
+       this ask. Lightened for dark mode below: the light-mode green reads
+       as near-black on the dark theme's near-black background otherwise. */
+    --brand-nutri: #1e5631;
+    --brand-tale: #b8962e;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --green: #34c579;
+    --green-dark: #6ee7a5;
+    --green-light: rgba(52, 197, 121, 0.16);
+    --ink: #e7ede9;
+    --muted: #93a39a;
+    --border: #2b3530;
+    --bg: #111613;
+    --white: #1a211d;
+    --error: #ef6a6a;
+    /* 0.14 alpha computed to 4.49:1 against --error text on a --white card
+       surface - just under WCAG AA's 4.5:1. 0.08 leaves the same tint
+       clearly visible (still a distinct warm tone against the card, not a
+       flat "AV changed nothing" fade) while landing at 4.9:1 on a card and
+       5.5:1 on the plain page background - comfortable margin above
+       threshold in both, not a second borderline value. Counterintuitively,
+       a *lower* alpha raises contrast here: the red tint (239,106,106) is
+       itself lighter than this dark surface, so more of it pulls the
+       blended background toward the light --error text's own luminance,
+       not away from it. */
+    --error-bg: rgba(239, 106, 106, 0.08);
+    --success: #6ee7a5;
+    --success-bg: rgba(110, 231, 165, 0.14);
+    /* "Deep Herb" — the landing page's dark counterpart to Soft Kitchen
+       Light above, not a separate style: same layout, this app's existing
+       dark-theme green as the glow instead of the light mist-green. */
+    --landing-bg: #0d1411;
+    --landing-blob-1: rgba(52, 197, 121, 0.34);
+    --landing-blob-2: rgba(28, 120, 92, 0.4);
+    --landing-blob-3: rgba(140, 200, 110, 0.18);
+    --landing-glass-bg: linear-gradient(180deg, rgba(231, 237, 233, 0.07), rgba(231, 237, 233, 0.02));
+    --landing-glass-border: rgba(231, 237, 233, 0.12);
+    --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
+    --landing-photo-ring: rgba(231, 237, 233, 0.2);
+    --emphasis-bg: var(--green);
+    --emphasis-fg: #08210f;
+    --brand-nutri: #5fbe84;
+    --brand-tale: #d4b34a;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --green: #34c579;
+        --green-dark: #6ee7a5;
+        --green-light: rgba(52, 197, 121, 0.16);
+        --ink: #e7ede9;
+        --muted: #93a39a;
+        --border: #2b3530;
+        --bg: #111613;
+        --white: #1a211d;
+        --error: #ef6a6a;
+        --error-bg: rgba(239, 106, 106, 0.08); /* see the note on this value in :root[data-theme="dark"] above */
+        --success: #6ee7a5;
+        --success-bg: rgba(110, 231, 165, 0.14);
+        --landing-bg: #0d1411;
+        --landing-blob-1: rgba(52, 197, 121, 0.34);
+        --landing-blob-2: rgba(28, 120, 92, 0.4);
+        --landing-blob-3: rgba(140, 200, 110, 0.18);
+        --landing-glass-bg: linear-gradient(180deg, rgba(231, 237, 233, 0.07), rgba(231, 237, 233, 0.02));
+        --landing-glass-border: rgba(231, 237, 233, 0.12);
+        --landing-glass-shadow: 0 30px 60px -30px rgba(6, 16, 11, 0.7);
+        --landing-photo-ring: rgba(231, 237, 233, 0.2);
+        --emphasis-bg: var(--green);
+        --emphasis-fg: #08210f;
+        --brand-nutri: #5fbe84;
+        --brand-tale: #d4b34a;
+    }
+}
+
+* { box-sizing: border-box; }
+
+html {
+    background: var(--bg);
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--ink);
+    cursor: pointer;
+}
+.theme-toggle-btn:hover { border-color: var(--green); color: var(--green-dark); }
+.theme-icon-moon { display: none; }
+:root[data-theme="dark"] .theme-icon-sun { display: none; }
+:root[data-theme="dark"] .theme-icon-moon { display: inline-flex; }
+.auth-shell .theme-toggle-btn,
+.auth-split-shell .theme-toggle-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 5;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.center-text { text-align: center; }
+.muted { color: var(--muted); }
+.mb-16 { margin-bottom: 16px; }
+.mt-16 { margin-top: 16px; }
+
+/* Auth shell */
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+}
+.auth-card h1 {
+    font-size: 22px;
+    margin: 0 0 20px;
+}
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Full-bleed photo banner used as a page header on a few app screens.
+   Always dark-scrim + white text regardless of site theme, since it
+   sits on a photo rather than the themed background. */
+.page-hero-banner {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-height: 168px;
+    display: flex;
+    align-items: flex-end;
+    padding: 22px;
+    margin-bottom: 24px;
+    background-size: cover;
+    background-position: center;
+    isolation: isolate;
+}
+.page-hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 14, 12, 0.15) 0%, rgba(10, 14, 12, 0.82) 100%);
+    z-index: -1;
+}
+.page-hero-banner h1 {
+    color: #fff;
+    margin: 0 0 4px;
+}
+.page-hero-banner p {
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-size: 13.5px;
+    max-width: 480px;
+}
+
+.alert {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+.alert-error { background: var(--error-bg); color: var(--error); }
+.alert-success { background: var(--success-bg); color: var(--success); }
+
+.disclaimer {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--muted);
+}
+
+.field {
+    display: block;
+    margin-bottom: 14px;
+}
+.field span {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--muted);
+}
+.field input,
+.field select,
+.field textarea,
+.filter-bar input,
+.filter-bar select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--white);
+    color: var(--ink);
+}
+.field textarea { resize: vertical; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.filter-bar input:focus,
+.filter-bar select:focus {
+    outline: none;
+    border-color: var(--green);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.btn-primary {
+    /* --green (#2fae66) against white text is only 2.85:1 in light mode -
+       fails WCAG AA's 4.5:1 for normal text (this is 14px bold, too small
+       to qualify for the 3:1 large-text exception). --green-dark
+       (#1f7d49) reaches 5.14:1 and, in dark mode, is even higher-contrast
+       than the light-mode failure case ever was - so this is a strict
+       improvement in both themes, not a light-mode-only patch. */
+    background: var(--green-dark);
+    color: var(--white);
+    box-shadow: 0 14px 26px -14px rgba(31, 125, 73, 0.7);
+}
+/* A second, deliberately different accent for the one or two calls to
+   action that should read as special rather than routine (Go Premium,
+   Try it with three ingredients) - everyday Save/Add buttons stay green,
+   this stands apart from them on purpose. Ink-dark pill in light mode
+   (matching Soft Kitchen Light), same green as everything else in dark
+   mode (Deep Herb never introduced a second accent) - see --emphasis-*. */
+.btn-emphasis { background: var(--emphasis-bg); color: var(--emphasis-fg); border: 1.5px solid var(--brand-tale); }
+.btn-emphasis:hover { transform: translateY(-2px); }
+.btn-primary:hover { filter: brightness(0.9); transform: translateY(-2px); box-shadow: 0 18px 30px -14px rgba(31, 125, 73, 0.8); }
+.btn-text { background: none; color: var(--green-dark); padding: 12px 14px; }
+.btn-text:hover { text-decoration: underline; }
+.btn-block { display: flex; width: 100%; margin-top: 6px; }
+.btn-small { padding: 7px 14px; font-size: 13px; }
+/* The lift + glow reads as "prominent CTA" - right for a full-size
+   primary button, too heavy for the small ones dense in-app forms use
+   (Save, Add, Get AI ideas). Small primary buttons keep the pill shape
+   and color, lose the emphasis motion. */
+.btn-small.btn-primary { box-shadow: none; }
+.btn-small.btn-primary:hover { transform: none; box-shadow: none; }
+
+/* Hover-grow / press-shrink on every working button - the CSS equivalent
+   of Motion's whileHover={{ scale }} / whileTap={{ scale }} (this app has
+   no React/bundler, so Motion itself isn't usable here). Disabled and
+   aria-disabled buttons are skipped. The 1.2 / 0.8 from the Motion demo
+   is sized for a 100px box; on real buttons (some full-width) it looks
+   broken, so the defaults are gentler - change the two variables to
+   retune every button at once. */
+:root { --btn-hover-scale: 1.05; --btn-tap-scale: 0.95; }
+.btn:not(:disabled):not([aria-disabled="true"]):hover,
+.auth-social-btn:not([aria-disabled="true"]):hover {
+    transform: translateY(var(--btn-lift, 0px)) scale(var(--btn-hover-scale));
+}
+.btn:not(:disabled):not([aria-disabled="true"]):active,
+.auth-social-btn:not([aria-disabled="true"]):active {
+    transform: scale(var(--btn-tap-scale));
+}
+.btn-primary:not(.btn-small):hover, .btn-emphasis:hover { --btn-lift: -2px; }
+@media (prefers-reduced-motion: reduce) {
+    .btn:hover, .btn:active, .auth-social-btn:hover, .auth-social-btn:active { transform: none; }
+}
+
+/* App nav */
+.app-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.app-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 19px;
+}
+/* The "NutriTale" wordmark's own treatment, distinct from ordinary
+   heading text - see brand_wordmark_html() in includes/icons.php for why
+   this is real HTML/CSS rather than baked into the logo image. Heavier
+   than the 600 weight headings use, so it reads as a brand mark rather
+   than a section title that happens to say "NutriTale". */
+.brand-wordmark { font-weight: 800; }
+.brand-nutri { color: var(--brand-nutri); }
+.brand-tale { color: var(--brand-tale); }
+.app-nav-brand-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.app-nav-tagline {
+    font-family: var(--font-body);
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.app-nav-links {
+    display: flex;
+    gap: 20px;
+}
+.app-nav-links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.app-nav-links a:hover { color: var(--green-dark); }
+.app-nav-links a.is-active { color: var(--green-dark); }
+.app-nav-links a svg:last-child { flex: none; opacity: 0.5; }
+/* The sidebar mockup's one icon-badge treatment: only the active row's
+   icon gets lifted into a solid circle - every other row keeps a bare
+   icon, so this isn't a universal per-item style. */
+.app-nav-link-main { display: flex; align-items: center; gap: 10px; }
+.nav-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--green-dark);
+    color: #fff;
+    flex: none;
+}
+/* A line - leaf - line divider instead of a plain rule, matching the
+   sidebar mockup's leaf motif. */
+.app-nav-divider { display: flex; align-items: center; gap: 8px; margin: 10px 4px; color: var(--muted); }
+.app-nav-divider::before, .app-nav-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.app-nav-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+}
+/* Groups the profile link and the theme-toggle+logout pair into one row
+   inside .app-nav-user, so the sidebar can stack "Go Premium" above them
+   without the four items competing as equal flex siblings. Plain flex,
+   not media-gated, so it also holds together in the mobile drawer. */
+.app-nav-user-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.app-nav-user-actions { display: flex; align-items: center; gap: 10px; }
+.app-nav-leaf-accent { display: inline-flex; color: var(--green-dark); opacity: 0.7; }
+.app-nav-identity-link { display: flex; align-items: center; gap: 10px; }
+
+/* Initials avatar - see user_avatar() in includes/functions_core.php for why
+   it's --green-dark/--white (the one colored-circle pairing this app
+   already has audited contrast numbers for, in both themes) rather than
+   a new color. Width/height/font-size come from the helper's own inline
+   style so callers can size it per context without a class per size. */
+.user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: 50%;
+    background: var(--green-dark);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 4px 10px -4px rgba(20, 50, 32, 0.5);
+}
+
+.app-main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px;
+}
+
+/* Filters */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+.search-field {
+    flex: 1 1 240px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+}
+.search-field input { border: none; padding: 10px 0; }
+.search-field input:focus { outline: none; }
+.search-field:focus-within { border-color: var(--green); }
+.filter-bar select { width: auto; }
+
+/* Recipe grid */
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
+.recipe-card {
+    position: relative;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: block;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.recipe-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+.recipe-card-image {
+    height: 150px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--green-light);
+    position: relative;
+}
+.recipe-card-fav {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+}
+/* The card is a <div>, not one big <a> (an <a> can't contain the credit's
+   own links). The title link's ::after stretches over the whole card so
+   it's still one big click target; the favorite button and photo credit
+   sit above it (z-index 2). */
+.recipe-card-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.recipe-card-link:focus-visible { outline: none; }
+.recipe-card-link:focus-visible::after { outline: 2px solid var(--green-dark); outline-offset: -2px; border-radius: var(--radius); }
+/* Unsplash attribution - on the card it's a small pill over the photo's
+   bottom-left corner; white on a dark translucent background so it stays
+   readable on any photo, in both themes. */
+.recipe-card-credit {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 2;
+    max-width: calc(100% - 16px);
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    font-size: 10.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.recipe-card-credit a, .recipe-photo-credit a { text-decoration: underline; text-underline-offset: 2px; }
+.recipe-photo-credit { display: block; padding: 6px 28px 0; font-size: 12px; color: var(--muted); }
+.recipe-photo-credit a:hover, .recipe-card-credit a:hover { text-decoration-thickness: 2px; }
+.recipe-card-body { padding: 14px 16px 16px; }
+
+.pantry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.pantry-chip:hover { border-color: var(--error); color: var(--error); }
+.pantry-match-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: var(--white);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.pantry-match-badge.is-full { background: var(--green); color: #06210f; }
+.recipe-card-body h3 { margin: 0 0 6px; font-size: 15px; }
+.recipe-card-desc {
+    font-size: 13px;
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.recipe-card-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+.recipe-card-meta span { display: flex; align-items: center; gap: 4px; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    text-transform: capitalize;
+}
+
+.star-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 2px 0 8px;
+}
+.star-rating .star-filled { color: #f5a524; }
+.star-rating .star-empty { color: var(--border); }
+.star-rating .star-count {
+    margin-left: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.servings-scaler {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.servings-scaler button {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink);
+}
+.servings-scaler button:hover { border-color: var(--green); color: var(--green-dark); }
+#servings-value { min-width: 14px; text-align: center; font-weight: 600; }
+
+.rate-input { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 4px; }
+.rate-star { cursor: pointer; color: var(--border); }
+.rate-star input { position: absolute; opacity: 0; pointer-events: none; }
+.rate-star:has(input:checked),
+.rate-star:has(input:checked) ~ .rate-star,
+.rate-star:hover,
+.rate-star:hover ~ .rate-star {
+    color: #f5a524;
+}
+
+.reviews-section { margin-top: 24px; }
+.reviews-section h2 { font-size: 17px; }
+.review-item {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+}
+.review-item-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+.review-item p { margin: 0; font-size: 14px; }
+
+/* Nutrition goal progress */
+.goal-progress { margin-bottom: 10px; }
+.goal-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+}
+.goal-progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.goal-progress-fill { height: 100%; background: var(--green); }
+.goal-progress-fill.is-over { background: #e0455f; }
+
+.share-wrap { position: relative; display: inline-block; }
+.share-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 6px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px -20px rgba(20, 40, 28, 0.35);
+}
+.share-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+.share-menu-item:hover, .share-menu-item:focus-visible { background: var(--bg); outline: none; }
+
+.share-toast {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+}
+/* [hidden] ties with .share-toast on specificity, so without this the
+   toast — set to display:none only via the hidden attribute — stays
+   visible on page load instead of appearing just after a share click. */
+.share-toast[hidden] { display: none; }
+
+.premium-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, #f5a524, #e0455f);
+    color: #fff;
+}
+.paywall {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--green-dark);
+}
+.paywall svg { color: var(--green); }
+
+/* Recipe-library tier gate (recipe.php's $isTierLocked branch) - a small,
+   real teaser (first 2 ingredients, first step - never the full lists)
+   rendered normally, blurred, with the upgrade card centered on top.
+   Different treatment from .paywall on purpose: that one replaces the
+   ingredients/instructions area entirely (a one-off purchase, nothing to
+   preview), this one shows a soft, enticing glimpse of real content since
+   the whole recipe unlocks with an ongoing membership, not a per-recipe buy. */
+.recipe-tier-locked { position: relative; min-height: 220px; }
+.recipe-tier-teaser {
+    filter: blur(4px);
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+}
+.recipe-tier-lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px -20px rgba(20, 40, 28, 0.35);
+    color: var(--green-dark);
+}
+.recipe-tier-lock-overlay svg { color: var(--green); }
+.recipe-tier-lock-overlay p { max-width: 360px; }
+
+.allergen-warning {
+    color: var(--error);
+    font-size: 11.5px;
+    margin: 6px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--muted);
+    cursor: pointer;
+}
+.fav-btn.is-active { color: #e0455f; }
+.fav-btn.is-active svg { fill: currentColor; }
+.fav-btn:hover { color: #e0455f; }
+
+/* Recipe detail */
+.recipe-detail {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.recipe-detail-image {
+    height: 280px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--green-light);
+}
+.recipe-detail-body { padding: 24px 28px 32px; }
+.recipe-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.recipe-detail-header h1 { margin: 0 0 6px; font-size: 26px; }
+
+.recipe-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+.recipe-stats div { display: flex; align-items: center; gap: 6px; }
+
+.macro-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.macro-pill {
+    background: var(--green-light);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 80px;
+}
+.macro-pill strong { display: block; font-size: 16px; color: var(--green-dark); }
+.macro-pill span { font-size: 12px; color: var(--muted); }
+
+.recipe-columns {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 32px;
+    margin-top: 12px;
+}
+.recipe-columns h2 { font-size: 17px; margin: 0 0 12px; }
+.ingredient-list, .step-list {
+    margin: 0;
+    padding-left: 20px;
+}
+.ingredient-list li { margin-bottom: 8px; font-size: 14px; }
+.step-list li { margin-bottom: 14px; font-size: 14px; line-height: 1.5; }
+
+/* Planner */
+.planner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.planner-header h1 { margin: 0; font-size: 22px; }
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+.planner-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    gap: 12px;
+    overflow-x: auto;
+}
+.planner-day {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    min-width: 150px;
+}
+.planner-day-head {
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+}
+.planner-day-cal {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    margin-left: auto;
+}
+.planner-slot { margin-bottom: 12px; }
+.planner-slot-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+.planner-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    background: var(--green-light);
+    border-radius: 6px;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    font-size: 12.5px;
+}
+.planner-chip a { color: var(--green-dark); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.planner-remove button {
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+}
+.planner-remove button:hover { color: var(--error); }
+.planner-add select {
+    width: 100%;
+    font-size: 12px;
+    padding: 5px 6px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--muted);
+}
+
+.combobox { position: relative; }
+.combobox-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 5px 6px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--ink);
+}
+.combobox-input:focus { outline: none; border-color: var(--green); border-style: solid; }
+.combobox-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 4px;
+}
+.combobox-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 7px 8px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--ink);
+    cursor: pointer;
+}
+.combobox-option:hover { background: var(--green-light); color: var(--green-dark); }
+.combobox-empty { padding: 7px 8px; font-size: 12px; color: var(--muted); }
+
+/* Shopping list */
+.shopping-list { display: flex; flex-direction: column; gap: 18px; }
+.shopping-category h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin: 0 0 8px;
+}
+.shopping-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.shopping-item.is-checked { color: var(--muted); text-decoration: line-through; }
+.shopping-item form { display: contents; }
+.shopping-item input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--green); }
+
+/* Preferences / profile */
+.pref-group { margin-bottom: 20px; }
+.pref-group h3 { font-size: 14px; margin: 0 0 10px; }
+.pref-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.pref-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--white);
+}
+.pref-chip input { accent-color: var(--green); }
+.pref-chip.is-active,
+.pref-chip:has(input:checked) { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+
+/* My recipes form */
+.dynamic-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.dynamic-row { display: flex; gap: 8px; align-items: center; }
+.dynamic-row input, .dynamic-row textarea { flex: 1; }
+.dynamic-row button {
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px;
+}
+.dynamic-row button:hover { color: var(--error); }
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.admin-table th, .admin-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.admin-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+
+.admin-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+.admin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+}
+.admin-tab:hover { background: var(--card-alt-bg, rgba(31, 125, 73, 0.08)); color: var(--green-dark); }
+.admin-tab.is-active { background: var(--green-dark); color: #fff; }
+
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+}
+.admin-stat-card { padding: 18px; }
+.admin-stat-card .admin-stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.admin-stat-card .admin-stat-value { font-size: 28px; font-weight: 800; margin: 6px 0 0; }
+.admin-stat-card .admin-stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.admin-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+.admin-category-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    padding: 16px;
+}
+.admin-category-card:hover { border-color: var(--green-dark); }
+.admin-category-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 14px;
+    background: var(--green-dark);
+    color: #fff;
+}
+.admin-category-card h3 { margin: 0; font-size: 14px; }
+.admin-category-card p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+
+.pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.pill-open { background: rgba(230, 126, 34, 0.15); color: #c2660b; }
+.pill-resolved { background: rgba(31, 125, 73, 0.15); color: var(--green-dark); }
+.pill-dismissed { background: var(--border); color: var(--muted); }
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-text small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 120px;
+    padding-top: 8px;
+}
+.mini-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 6px;
+}
+.mini-bar {
+    width: 100%;
+    max-width: 22px;
+    background: var(--green-dark);
+    border-radius: 4px 4px 0 0;
+    min-height: 3px;
+}
+.mini-bar-label { font-size: 10px; color: var(--muted); }
+
+.recipe-owner-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* Today widget */
+.today-widget-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.today-widget-head span { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+
+/* Nav mobile toggle */
+.app-nav-toggle-input { display: none; }
+.app-nav-toggle {
+    display: none;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 6px;
+}
+.app-nav-close, .app-nav-backdrop { display: none; }
+.app-nav-collapsible {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    justify-content: space-between;
+}
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+}
+.pagination a, .pagination span {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+}
+.pagination a:hover { border-color: var(--green); color: var(--green-dark); }
+.pagination .is-current { background: var(--green); color: var(--white); border-color: var(--green); }
+
+@media print {
+    .app-nav, .filter-bar, .btn, .fav-btn, .recipe-owner-actions,
+    .planner-add, .planner-remove, .servings-scaler button, .rate-input,
+    .today-widget, .pagination, .print-hide {
+        display: none !important;
+    }
+    body { background: #fff; }
+    .app-main { padding: 0; max-width: 100%; }
+    .card, .recipe-detail { border: none; box-shadow: none; }
+    a[href]::after { content: none; }
+}
+
+@media (max-width: 700px) {
+    .recipe-columns { grid-template-columns: 1fr; }
+    .app-main { padding: 18px; }
+}
+
+/* The mobile drawer below and the persistent sidebar further down
+   (@media min-width:901px) must together cover every width with no gap
+   between them - they didn't: this used to cut off at 700px, leaving
+   701-900px (iPad Mini included) with neither the drawer nor the sidebar,
+   just .app-nav's plain unwrapped flex row. With every logged-in page's
+   nav carrying six-plus links, admin's extra entry, "Go Premium," and the
+   user/logout row, that plain row is far too wide for 701-900px and
+   overflowed the whole page horizontally - confirmed live at 768px
+   (scrollWidth 1202 in a 768px viewport) on both index.php and admin.php
+   before this fix. 900px/901px is now a clean split, matching the
+   sidebar's own threshold exactly, so there's no width left unhandled. */
+@media (max-width: 900px) {
+    .app-nav { padding: 12px 16px; flex-wrap: wrap; }
+
+    .app-nav-toggle { display: flex; }
+    .app-nav-close { display: flex; align-self: flex-end; cursor: pointer; padding: 6px; color: var(--muted); }
+    .app-nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 40;
+    }
+    .app-nav-toggle-input:checked ~ .app-nav-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .app-nav-collapsible {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(280px, 80vw);
+        background: var(--white);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 20px;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+        transform: translateX(-100%);
+        /* visibility in the same transition list, not a separate rule:
+           closing keeps the panel (and its links) genuinely tabbable
+           until the slide-out finishes, then removes it from the tab
+           order; opening removes hidden immediately so it's tabbable as
+           soon as it starts sliding in. Without this, the drawer's own
+           links stayed in the page's tab order even while sitting fully
+           off-screen behind transform alone - confirmed live: Tab moved
+           straight from the toggle button into invisible drawer links. */
+        transition: transform 0.25s ease, visibility 0.25s ease;
+        visibility: hidden;
+        z-index: 50;
+        overflow-y: auto;
+    }
+    .app-nav-toggle-input:checked ~ .app-nav-collapsible { transform: translateX(0); visibility: visible; }
+    .app-nav-links { flex-direction: column; gap: 4px; }
+    .app-nav-links a { padding: 10px 12px; border-radius: 8px; }
+    .app-nav-links a:hover, .app-nav-links a.is-active { background: var(--green-light); }
+    .app-nav-links a.is-active { font-weight: 700; }
+    .app-nav-user { flex-direction: column; align-items: stretch; gap: 12px; }
+    /* landing.php reuses .app-nav/.app-nav-user for its own plain top bar
+       (see the :not(.landing-nav) note at min-width:901px below) - it has
+       none of the drawer/toggle markup the column-stack above is actually
+       for, so without this override the theme toggle, "Log in", and "Get
+       started" stacked into three separate full-width rows at exactly
+       this same breakpoint, real crampedness confirmed live rather than
+       assumed. Restores a plain right-aligned row that wraps as a group
+       (not one child per line) if it ever runs out of room. */
+    .landing-nav .app-nav-user {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 16px;
+    }
+}
+/* The drawer's open/close slide is a real CSS transition, not decorative -
+   same treatment as the landing hero photo's animation above: honoured
+   unconditionally, not just "a bit less" of it. */
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+    .app-nav-collapsible { transition: none; }
+    .app-nav-backdrop { transition: none; }
+}
+
+/* Persistent left sidebar on wide screens — the mobile drawer above
+   handles narrow viewports; this is a separate, always-visible layout. */
+@media (min-width: 901px) {
+    /* :not(.landing-nav) - the public landing page reuses .app-nav for its
+       simple top bar and must stay a top bar, not become the logged-in
+       app's fixed sidebar. */
+    .app-nav:not(.landing-nav) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 240px;
+        flex-direction: column;
+        /* The base .app-nav rule sets flex-wrap: wrap for the top-bar
+           layouts (landing's row, and this same selector before it
+           becomes a column here) - never overridden back to nowrap for
+           the column direction, so on a short viewport (content taller
+           than the window) the column itself wrapped into a second one
+           further right instead of just scrolling, even though
+           overflow-y: auto below already exists specifically to handle
+           that case. Found live: at a 543px-tall window, the nav links
+           and the user block (this step's new avatar included) rendered
+           entirely outside the visible 240px sidebar, pushed right by
+           roughly their own width. */
+        flex-wrap: nowrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 24px 18px;
+        border-right: 1px solid var(--border);
+        border-bottom: none;
+        overflow-y: auto;
+        z-index: 30;
+    }
+    .app-nav-toggle, .app-nav-close, .app-nav-backdrop { display: none !important; }
+    .app-nav-collapsible {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        flex: 1;
+        gap: 24px;
+        margin-top: 28px;
+    }
+    /* Pill nav items (999px), matching the sidebar mockup: a plain filled
+       pill for the active page instead of the old rectangle-plus-left-bar
+       accent - no inset box-shadow needed once the whole pill fills. */
+    .app-nav-links { flex-direction: column; gap: 4px; }
+    .app-nav-links a { padding: 11px 16px; border-radius: 999px; font-size: 14px; }
+    .app-nav-links a:hover { background: var(--green-light); }
+    .app-nav-links a.is-active { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
+    .app-nav-divider { margin: 10px 16px; }
+    .app-nav:not(.landing-nav) .app-nav-user {
+        margin-top: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+    }
+    /* The one nav-adjacent link meant to stand out rather than blend in -
+       see .btn-emphasis above for why it isn't just another green button.
+       space-between so its trailing chevron sits at the far edge, same as
+       every .app-nav-links row. */
+    .app-nav-user .btn-emphasis { justify-content: space-between; padding: 12px 16px; }
+    .app-nav-user .btn-emphasis svg:last-child { opacity: 0.7; }
+    .app-main { margin: 0 0 0 240px; max-width: 1200px; padding: 32px 40px; }
+}
+
+/* Landing page — "Soft Kitchen Light" in light mode, "Deep Herb" in dark
+   (see the --landing-* tokens near the top of this file): mist/glow
+   gradient field behind the hero and Top List, frosted "glass" cards,
+   circular photo crops, pill buttons with a lift-and-glow hover. Scoped to
+   .landing-body so none of it leaks into the logged-in app, which keeps
+   its existing flat, solid-card look until that gets its own pass. */
+.landing-body { background: var(--landing-bg); }
+
+/* .landing-nav overrides the base .app-nav rule's card look (solid
+   --white background, hard 1px --border line) - correct for the
+   logged-in app's own nav, but on this page it read as a hard rectangle
+   boxed off from the hero right below it rather than the top of the
+   same page. Background now matches .landing-body exactly, and the
+   divider is --landing-glass-border - the same low-opacity edge already
+   used for every other soft surface on this page (the glass cards, the
+   trust bar, the footer) - instead of the solid --border every other
+   page's nav uses. No box-shadow was ever set here (the boxy look was
+   the background+border combination alone, not a shadow), so none was
+   added. Not gated to a breakpoint - same treatment at every width; the
+   spacing/flex fixes already applied to .landing-nav .app-nav-user
+   elsewhere are untouched. */
+.landing-nav {
+    background: var(--landing-bg);
+    border-bottom: 1px solid var(--landing-glass-border);
+}
+
+.landing-main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px;
+}
+
+/* Wraps the hero + Top List in a shared decorative field so the blobs
+   read as one continuous backdrop behind both sections, the way the
+   redesign shows it, rather than restarting per-section. */
+.landing-glow-field { position: relative; overflow: hidden; }
+.landing-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(28px);
+    pointer-events: none;
+    z-index: 0;
+}
+.landing-blob-1 { top: -160px; left: -140px; width: 560px; height: 480px; background: radial-gradient(circle at 45% 45%, var(--landing-blob-1), transparent 70%); }
+.landing-blob-2 { top: 420px; right: -180px; width: 600px; height: 560px; background: radial-gradient(circle at 50% 50%, var(--landing-blob-2), transparent 72%); }
+.landing-blob-3 { bottom: -200px; left: 30%; width: 640px; height: 500px; background: radial-gradient(circle at 50% 50%, var(--landing-blob-3), transparent 72%); }
+/* Targets only the real content (both are <section>s), never the blob
+   divs above - a "> *" here would tie for specificity with .landing-blob's
+   own position:absolute and, coming later in the file, win: the blobs
+   would fall back to position:relative and get laid out in normal flow as
+   three ~500px-tall boxes stacked above the hero. (Found by screenshotting
+   the actual rendered page - it left a very large, very literal empty
+   gap.) */
+.landing-glow-field > section { position: relative; z-index: 1; }
+
+.landing-hero {
+    text-align: center;
+    padding: 56px 12px 40px;
+}
+.landing-hero h1 {
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
+}
+.landing-hero-sub {
+    max-width: 560px;
+    margin: 0 auto 28px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+.landing-cta {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.landing-hero-grid { display: flex; flex-direction: column; gap: 32px; }
+
+/* The circular hero photo: a soft outer disc, the photo itself inset with
+   a translucent ring, floating badge chips breaking its edge. */
+.landing-hero-photo-wrap {
+    order: -1;
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+}
+.landing-hero-photo-disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--landing-photo-ring);
+    box-shadow: 0 40px 80px -40px rgba(20, 50, 32, 0.5);
+}
+.landing-hero-photo {
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    box-shadow: inset 0 0 0 8px var(--landing-photo-ring);
+    /* A slow, subtle float+tilt - alive, not distracting. Paused by
+       default; hero-photo-motion.js only starts it once the element is
+       actually on screen (and stops it again once it scrolls off), so it
+       never runs invisibly. prefers-reduced-motion below wins over all of
+       that unconditionally - no animation is ever applied at all, not
+       just paused. */
+    animation: landing-hero-photo-float 7s ease-in-out infinite;
+    animation-play-state: paused;
+}
+.landing-hero-photo.is-in-view {
+    animation-play-state: running;
+}
+@keyframes landing-hero-photo-float {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-5px) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-hero-photo { animation: none; }
+}
+.landing-float-badge {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 16px 30px -16px rgba(20, 50, 32, 0.4);
+}
+.landing-float-badge svg { color: var(--green-dark); }
+.landing-float-badge-cal { left: -12px; bottom: 30px; }
+.landing-float-badge-match { right: -8px; top: 20px; }
+
+@media (min-width: 820px) {
+    .landing-hero { text-align: left; padding: 68px 12px 84px; }
+    .landing-hero-grid { flex-direction: row; align-items: center; gap: 48px; }
+    .landing-hero-copy { flex: 1.1; }
+    .landing-hero-photo-wrap { order: 0; flex: 0 0 380px; max-width: 380px; }
+    .landing-hero-sub { margin-left: 0; }
+    .landing-cta { justify-content: flex-start; }
+}
+
+/* Frosted "glass" surface used for Top List cards, the feature grid, and
+   the three promo bands — translucent so the glow field shows through it,
+   which only reads correctly over .landing-glow-field or .landing-body,
+   never over the plain app-shell background. */
+.landing-glass-card {
+    background: var(--landing-glass-bg);
+    border: 1px solid var(--landing-glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--landing-glass-shadow);
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px 0 64px;
+    position: relative;
+    z-index: 1;
+}
+.feature-card { padding: 24px 20px; }
+.feature-card svg { color: var(--green); }
+.feature-card h3 { margin: 14px 0 8px; font-size: 16px; }
+.feature-card p { margin: 0; font-size: 13.5px; line-height: 1.55; }
+
+.landing-final-cta {
+    text-align: center;
+    padding: 40px 0 72px;
+    position: relative;
+    z-index: 1;
+}
+.landing-final-cta h2 { font-size: 26px; margin: 0 0 20px; text-wrap: balance; }
+
+.landing-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--landing-glass-border);
+    font-size: 13px;
+    position: relative;
+    z-index: 1;
+}
+.landing-footer a { color: var(--green-dark); font-weight: 600; }
+:root[data-theme="dark"] .landing-footer a { color: var(--green); }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .landing-footer a { color: var(--green); }
+}
+.landing-footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; }
+
+/* Shared centered heading for the trust bar / benefits / reviews / FAQ
+   sections below - one dominant size per section, per the landing-page
+   rebuild's own hierarchy rule. */
+.landing-section-heading { text-align: center; margin: 56px 0 28px; position: relative; z-index: 1; }
+.landing-section-heading h2 { font-size: 32px; margin: 0; }
+
+/* Trust bar: real, true-today claims (no fabricated customer/partner
+   logos exist yet) at the same visual weight a logo row would carry. */
+/* Equal-width grid columns (auto-fit) rather than a centered flex row:
+   flex + justify-content:center gave every gap the same 28px, but the
+   items themselves read as an uneven cluster once wrapping kicked in
+   (2-and-2 or 3-and-1 splits, each row centered independently rather
+   than lining up). A grid cell per item - each the same width, each
+   centering its own icon+label pair - keeps the row reading as one
+   deliberate unit at any width, wrapping to fewer equal columns instead
+   of a ragged reflow. Wrapped in the same glass-card treatment already
+   used for the feature cards/FAQ below it, so it reads as a designed
+   panel rather than bare text floating over the blob background. */
+.landing-trustbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    align-items: center;
+    gap: 20px 12px;
+    padding: 22px 28px;
+    margin: 0 0 56px;
+    position: relative;
+    z-index: 1;
+    background: var(--landing-glass-bg);
+    border: 1px solid var(--landing-glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--landing-glass-shadow);
+}
+.landing-trust-item { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.landing-trust-item svg { color: var(--green-dark); flex: none; }
+
+/* Slim CTA repeat between the benefits and reviews/FAQ sections - same
+   button label and style as the hero and final CTA, never a different ask. */
+.landing-cta-strip {
+    text-align: center;
+    padding: 36px 20px;
+    margin: 8px 0 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+.landing-cta-strip p { margin: 0; font-size: 17px; font-weight: 600; }
+
+/* Reviews: real component (avatar/photo, quote, name), but the section
+   itself only ever renders when $testimonials in landing.php is non-empty -
+   see the comment there. No placeholder/fabricated quotes ship by default. */
+.landing-reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    margin-bottom: 56px;
+    position: relative;
+    z-index: 1;
+}
+.review-card { padding: 26px 22px; text-align: center; }
+.review-avatar {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background-color: var(--green-light);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green-dark);
+}
+.review-quote { font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
+.review-name { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* FAQ: native <details>/<summary> - real expand/collapse and correct
+   keyboard/screen-reader semantics with no JS needed. */
+.landing-faq {
+    max-width: 720px;
+    margin: 0 auto 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+}
+.faq-item {
+    background: var(--landing-glass-bg);
+    border: 1px solid var(--landing-glass-border);
+    border-radius: var(--radius);
+    padding: 4px 20px;
+}
+.faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 0;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    list-style: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary svg { flex: none; color: var(--muted); transition: transform 0.2s ease; }
+.faq-item[open] summary svg { transform: rotate(90deg); }
+.faq-item p { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: var(--muted); }
+
+@media (max-width: 700px) {
+    .landing-hero { padding: 48px 8px 40px; }
+    .landing-hero h1 { font-size: 30px; }
+    .landing-section-heading h2 { font-size: 26px; }
+}
+
+/* Split-panel login/register, from the login mockup - only these two
+   pages use it. forgot_password.php, reset_password.php and
+   onboarding.php keep the older centered .auth-card shell; the mockup
+   didn't cover them and there's no reason to touch a working page to
+   match a design that was never drawn for it. */
+.auth-split-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--landing-bg);
+}
+.auth-split {
+    width: 100%;
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 30px 60px -30px rgba(20, 40, 28, 0.35);
+}
+@media (min-width: 900px) {
+    .auth-split { grid-template-columns: 1fr 0.95fr; min-height: 700px; }
+}
+
+.auth-brand-panel {
+    display: none;
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 48px 40px;
+    background: linear-gradient(180deg, var(--landing-bg), var(--bg));
+    text-align: center;
+}
+@media (min-width: 900px) {
+    .auth-brand-panel { display: flex; }
+}
+.auth-brand-photo {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 30px 54px -28px rgba(20, 50, 32, 0.5);
+}
+.auth-brand-photo img { display: block; width: 100%; height: auto; }
+.auth-brand-quote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--green-dark);
+    max-width: 380px;
+    margin: 0;
+}
+.auth-brand-features { display: flex; align-items: stretch; }
+.auth-brand-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--green-dark);
+    text-align: center;
+    border-right: 1px solid var(--border);
+}
+.auth-brand-feature:last-child { border-right: none; }
+.auth-brand-feature svg { color: var(--green); }
+.auth-brand-signature {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--muted);
+    margin: 0;
+}
+
+.auth-form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+}
+.auth-form-card { width: 100%; max-width: 420px; }
+/* The card itself is already centered within .auth-form-panel (flex
+   align-items/justify-content: center) - what wasn't centered was the
+   heading/subtitle text inside it, left over from before the logo above
+   and the tab pills below were both centered, leaving just these two
+   lines sitting off to the left between them. */
+.auth-form-card h1 { font-size: 30px; margin: 0 0 6px; text-align: center; }
+.auth-form-subtitle { margin: 0 0 22px; color: var(--muted); font-size: 14.5px; text-align: center; }
+
+.auth-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 22px;
+}
+.auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 999px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--muted);
+}
+.auth-tab.is-active { background: var(--emphasis-bg); color: var(--emphasis-fg); }
+
+.auth-field-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    margin-bottom: 14px;
+}
+.auth-field-icon svg { color: var(--muted); flex: none; }
+.auth-field-icon input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    padding: 0;
+    font-size: 15px;
+    background: none;
+    color: var(--ink);
+}
+.auth-field-icon input:focus { outline: none; }
+.auth-field-icon:focus-within { border-color: var(--green); }
+.auth-field-icon button { border: none; background: none; color: var(--muted); cursor: pointer; display: flex; padding: 0; flex: none; }
+
+.auth-row-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; font-size: 13.5px; margin: 2px 0 18px; }
+.auth-checkbox { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.auth-checkbox input { accent-color: var(--green); width: 16px; height: 16px; }
+
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; font-size: 13px; color: var(--muted); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Three providers (Google/Facebook/Apple) side by side needs more width
+   per button than two did - "Facebook" plus its icon doesn't fit a third
+   of this card's ~270px mobile width without wrapping or crowding, so
+   below 480px (the same breakpoint already used for auth-brand-features)
+   these stack into a single column instead, matching how the app's other
+   cramped-on-phone controls collapse rather than shrink. */
+.auth-social-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.auth-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--ink);
+    font-size: 14.5px;
+    font-weight: 600;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.auth-social-btn:hover { border-color: var(--muted); transform: translateY(-1px); }
+/* A disabled button here means the provider has no credentials
+   configured (config.php) - shown greyed out with an explanatory title
+   attribute rather than left off entirely, so it's clear the option
+   exists but isn't set up, not that it was deliberately removed. */
+.auth-social-btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+.auth-switch-link { text-align: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+.auth-switch-link a { font-weight: 700; color: var(--green-dark); }
+
+@media (max-width: 480px) {
+    .auth-brand-features { flex-wrap: wrap; justify-content: center; row-gap: 14px; }
+    .auth-brand-feature { border-right: none; }
+    .auth-social-grid { grid-template-columns: 1fr; }
+}

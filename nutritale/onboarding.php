@@ -1,0 +1,106 @@
+<?php
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/functions_core.php';
+require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/allergens.php';
+
+$user = require_login();
+
+$dietOptions = ['vegetarian', 'vegan', 'gluten-free', 'high-protein', 'keto'];
+// Single source of truth - includes/allergens.php also maps each of
+// these to the keywords that detect it in AI-written text.
+$allergenOptions = ALLERGEN_OPTIONS;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'save') {
+        $diets = array_intersect($_POST['diet_types'] ?? [], $dietOptions);
+        $allergens = array_intersect($_POST['allergens'] ?? [], $allergenOptions);
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        $pdo->prepare('DELETE FROM user_diet_preferences WHERE user_id = ?')->execute([$user['id']]);
+        $pdo->prepare('DELETE FROM user_allergens WHERE user_id = ?')->execute([$user['id']]);
+        $insDiet = $pdo->prepare('INSERT INTO user_diet_preferences (user_id, diet_type) VALUES (?, ?)');
+        foreach ($diets as $d) $insDiet->execute([$user['id'], $d]);
+        $insAllergen = $pdo->prepare('INSERT INTO user_allergens (user_id, allergen) VALUES (?, ?)');
+        foreach ($allergens as $a) $insAllergen->execute([$user['id'], $a]);
+        $pdo->prepare('UPDATE users SET onboarded_at = NOW() WHERE id = ?')->execute([$user['id']]);
+        $pdo->commit();
+    } else {
+        db()->prepare('UPDATE users SET onboarded_at = NOW() WHERE id = ?')->execute([$user['id']]);
+    }
+
+    redirect('index.php');
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<?= ga4_script() ?>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome · <?= APP_NAME ?></title>
+<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2fae66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NutriTale">
+<script src="assets/js/theme-init.js"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=9">
+<script src="assets/js/theme-toggle.js" defer></script>
+</head>
+<body>
+<div class="auth-shell">
+<?= render_theme_toggle() ?>
+    <div class="auth-card" style="max-width:480px;">
+        <div class="center-text mb-16"><?= nutritale_logo_svg(56) ?></div>
+        <h1 class="center-text">Welcome, <?= h($user['name']) ?>!</h1>
+        <p class="muted center-text" style="margin-top:-8px;">Tell us your preferences so we can tailor your recipe feed. You can change these anytime in your profile.</p>
+        <div class="card">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="action" value="save">
+
+                <div class="pref-group">
+                    <h3>Diet preference</h3>
+                    <div class="pref-options">
+                        <?php foreach ($dietOptions as $d): ?>
+                            <label class="pref-chip">
+                                <input type="checkbox" name="diet_types[]" value="<?= h($d) ?>">
+                                <?= h(ucfirst($d)) ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <?= disclaimer('medical') ?>
+                </div>
+
+                <div class="pref-group">
+                    <h3>Allergens to avoid</h3>
+                    <div class="pref-options">
+                        <?php foreach ($allergenOptions as $a): ?>
+                            <label class="pref-chip">
+                                <input type="checkbox" name="allergens[]" value="<?= h($a) ?>">
+                                <?= h(ucfirst($a)) ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <?= disclaimer('allergens') ?>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Save and continue</button>
+            </form>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="action" value="skip">
+                <button type="submit" class="btn btn-text btn-block">Skip for now</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

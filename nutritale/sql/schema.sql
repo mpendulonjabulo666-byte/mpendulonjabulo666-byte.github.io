@@ -1,0 +1,238 @@
+-- NutriTale schema
+--
+-- This file only ever CREATEs. It's re-run by setup.php on every
+-- deploy, so a statement here must be safe to execute against a database
+-- that already has the table (hence IF NOT EXISTS everywhere). That's
+-- fine for a brand new table, but an ALTER on an existing one has no such
+-- safe-to-repeat form - those go in sql/migrations.php instead, tracked
+-- one-time in schema_migrations below. See CONTINUE.md step 4.
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version VARCHAR(190) PRIMARY KEY,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    onboarded_at TIMESTAMP NULL,
+    failed_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
+    email_notifications TINYINT(1) NOT NULL DEFAULT 1,
+    is_vendor TINYINT(1) NOT NULL DEFAULT 0,
+    is_premium_member TINYINT(1) NOT NULL DEFAULT 0,
+    pantry_free_uses_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipes (
+    id VARCHAR(40) PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(500),
+    meal_type VARCHAR(30) NOT NULL,
+    cuisine VARCHAR(60),
+    difficulty VARCHAR(20) NOT NULL,
+    cook_time_minutes SMALLINT UNSIGNED NOT NULL,
+    servings SMALLINT UNSIGNED NOT NULL,
+    calories SMALLINT UNSIGNED,
+    protein_g SMALLINT UNSIGNED,
+    carbs_g SMALLINT UNSIGNED,
+    fat_g SMALLINT UNSIGNED,
+    fiber_g SMALLINT UNSIGNED,
+    is_generated TINYINT(1) NOT NULL DEFAULT 0,
+    is_premium TINYINT(1) NOT NULL DEFAULT 0,
+    price DECIMAL(8,2) NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_meal_type (meal_type),
+    INDEX idx_cuisine (cuisine)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_diet_tags (
+    recipe_id VARCHAR(40) NOT NULL,
+    diet_type VARCHAR(40) NOT NULL,
+    PRIMARY KEY (recipe_id, diet_type),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_allergens (
+    recipe_id VARCHAR(40) NOT NULL,
+    allergen VARCHAR(40) NOT NULL,
+    PRIMARY KEY (recipe_id, allergen),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    recipe_id VARCHAR(40) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    quantity DECIMAL(8,2) NOT NULL DEFAULT 0,
+    unit VARCHAR(30) NOT NULL DEFAULT '',
+    display_quantity VARCHAR(50) NOT NULL,
+    category VARCHAR(50) NOT NULL DEFAULT 'other',
+    order_index SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    INDEX idx_recipe_order (recipe_id, order_index)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_instructions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    recipe_id VARCHAR(40) NOT NULL,
+    step_number SMALLINT UNSIGNED NOT NULL,
+    step_text TEXT NOT NULL,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    INDEX idx_recipe_step (recipe_id, step_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id INT UNSIGNED NOT NULL,
+    recipe_id VARCHAR(40) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, recipe_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS meal_plan_items (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    plan_date DATE NOT NULL,
+    meal_type VARCHAR(30) NOT NULL,
+    recipe_id VARCHAR(40) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    INDEX idx_user_date (user_id, plan_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS shopping_list_checks (
+    user_id INT UNSIGNED NOT NULL,
+    item_key VARCHAR(200) NOT NULL,
+    checked TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, item_key),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_diet_preferences (
+    user_id INT UNSIGNED NOT NULL,
+    diet_type VARCHAR(40) NOT NULL,
+    PRIMARY KEY (user_id, diet_type),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_allergens (
+    user_id INT UNSIGNED NOT NULL,
+    allergen VARCHAR(40) NOT NULL,
+    PRIMARY KEY (user_id, allergen),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_ratings (
+    recipe_id VARCHAR(40) NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
+    rating TINYINT UNSIGNED NOT NULL,
+    review TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (recipe_id, user_id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_goals (
+    user_id INT UNSIGNED PRIMARY KEY,
+    daily_calories SMALLINT UNSIGNED,
+    daily_protein_g SMALLINT UNSIGNED,
+    daily_carbs_g SMALLINT UNSIGNED,
+    daily_fat_g SMALLINT UNSIGNED,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    token CHAR(64) PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_pantry_items (
+    user_id INT UNSIGNED NOT NULL,
+    ingredient_name VARCHAR(150) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, ingredient_name),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS recipe_purchases (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    buyer_id INT UNSIGNED NOT NULL,
+    recipe_id VARCHAR(40) NOT NULL,
+    vendor_id INT UNSIGNED NOT NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    platform_fee DECIMAL(8,2) NULL,
+    vendor_amount DECIMAL(8,2) NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    pf_payment_id VARCHAR(60) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (vendor_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_buyer_recipe (buyer_id, recipe_id),
+    INDEX idx_vendor (vendor_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS premium_subscriptions (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    pf_token VARCHAR(60) NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user (user_id),
+    INDEX idx_token (pf_token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ingredient_listings (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    seller_id INT UNSIGNED NOT NULL,
+    ingredient_name VARCHAR(150) NOT NULL,
+    quantity VARCHAR(50) NOT NULL,
+    price DECIMAL(8,2) NOT NULL,
+    description TEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ingredient_orders (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    m_payment_id CHAR(36) NOT NULL UNIQUE,
+    listing_id INT UNSIGNED NOT NULL,
+    buyer_id INT UNSIGNED NOT NULL,
+    seller_id INT UNSIGNED NOT NULL,
+    amount DECIMAL(8,2) NOT NULL,
+    platform_fee DECIMAL(8,2) NOT NULL,
+    seller_amount DECIMAL(8,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    pf_payment_id VARCHAR(60) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (listing_id) REFERENCES ingredient_listings(id) ON DELETE CASCADE,
+    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_seller (seller_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

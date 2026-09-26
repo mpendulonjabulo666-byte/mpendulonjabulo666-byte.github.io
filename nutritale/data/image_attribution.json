@@ -1,0 +1,344 @@
+{
+    "amagwinya-fat-cakes": {
+        "source": "wikimedia",
+        "file": "File:3 fat cooks (Vetkoek) with meat.jpeg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/3_fat_cooks_%28Vetkoek%29_with_meat.jpeg/1280px-3_fat_cooks_%28Vetkoek%29_with_meat.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:3_fat_cooks_(Vetkoek)_with_meat.jpeg",
+        "photographer_name": "User:victorgrigas",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "vetkoek"
+    },
+    "avocado-feta-toast": {
+        "source": "wikimedia",
+        "file": "File:Avocado toast with sesame seeds.jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Avocado_toast_with_sesame_seeds.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Avocado_toast_with_sesame_seeds.jpg",
+        "photographer_name": "Jami430",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "avocado toast"
+    },
+    "banana-oat-pancakes": {
+        "title": "Banana Oat Pancakes",
+        "image_url": "https://images.unsplash.com/photo-1664350471028-34a1d2651366?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8NHx8QmFuYW5hJTIwT2F0JTIwUGFuY2FrZXMlMjBBbWVyaWNhbiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM4NzgzMnww&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/8jNWR7pB4B0/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8NHx8QmFuYW5hJTIwT2F0JTIwUGFuY2FrZXMlMjBBbWVyaWNhbiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM4NzgzMnww",
+        "photographer_name": "Nima Naseri",
+        "photographer_url": "https://unsplash.com/@nimanaseri?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-person-cutting-a-cake-8jNWR7pB4B0?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "a person cutting a cake",
+        "match_score": "2/3",
+        "search_query": "Banana Oat Pancakes American food",
+        "source": "unsplash"
+    },
+    "biltong-and-droewors-snack-board": {
+        "source": "wikimedia",
+        "file": "File:BiltongUKDried.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/BiltongUKDried.jpg/1280px-BiltongUKDried.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:BiltongUKDried.jpg",
+        "photographer_name": "Jamsta at English Wikipedia",
+        "license": "CC BY-SA 3.0",
+        "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "query": "biltong"
+    },
+    "biltong-spiced-popcorn": {
+        "source": "wikimedia",
+        "file": "File:Bowl of Popcorn (Unsplash).jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bowl_of_Popcorn_%28Unsplash%29.jpg/1280px-Bowl_of_Popcorn_%28Unsplash%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Bowl_of_Popcorn_(Unsplash).jpg",
+        "photographer_name": "Alex Munsell alexmunsell",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "popcorn bowl"
+    },
+    "bobotie-with-yellow-rice": {
+        "source": "wikimedia",
+        "file": "File:Bobotie, South African dish.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Bobotie%2C_South_African_dish.jpg/1280px-Bobotie%2C_South_African_dish.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Bobotie,_South_African_dish.jpg",
+        "photographer_name": "Olga Ernst",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "bobotie"
+    },
+    "boerewors-breakfast-rolls": {
+        "source": "wikimedia",
+        "file": "File:Boerewors rolls with homemade tomato relish. Yum..jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Boerewors_rolls_with_homemade_tomato_relish._Yum..jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Boerewors_rolls_with_homemade_tomato_relish._Yum..jpg",
+        "photographer_name": "Raoul Snyman from Cape Town, South Africa",
+        "license": "CC BY-SA 2.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+        "query": "boerewors roll"
+    },
+    "bunny-chow-with-lamb-curry": {
+        "source": "wikimedia",
+        "file": "File:Bunny Chow with Lamb & Potato - African Chow 2023-07-27.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Bunny_Chow_with_Lamb_%26_Potato_-_African_Chow_2023-07-27.jpg/1280px-Bunny_Chow_with_Lamb_%26_Potato_-_African_Chow_2023-07-27.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Bunny_Chow_with_Lamb_%26_Potato_-_African_Chow_2023-07-27.jpg",
+        "photographer_name": "Andy Li",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "bunny chow"
+    },
+    "chakalaka-and-bean-stew": {
+        "source": "wikimedia",
+        "file": "File:Chakalaka.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Chakalaka.jpg/1280px-Chakalaka.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Chakalaka.jpg",
+        "photographer_name": "philipp from cape town, south africa",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "query": "chakalaka"
+    },
+    "chakalaka-side-dish": {
+        "source": "wikimedia",
+        "file": "File:Chakalaka meal.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Chakalaka_meal.jpg/1280px-Chakalaka_meal.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Chakalaka_meal.jpg",
+        "photographer_name": "Original flame",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "chakalaka"
+    },
+    "classic-shakshuka": {
+        "title": "Classic Shakshuka",
+        "image_url": "https://images.unsplash.com/photo-1582492710145-d723e0a219f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Q2xhc3NpYyUyMFNoYWtzaHVrYSUyME1pZGRsZSUyMEVhc3Rlcm4lMjBmb29kfGVufDF8MHx8fDE3OTAzOTIyNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/K9oKpOebg84/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Q2xhc3NpYyUyMFNoYWtzaHVrYSUyME1pZGRsZSUyMEVhc3Rlcm4lMjBmb29kfGVufDF8MHx8fDE3OTAzOTIyNTJ8MA",
+        "photographer_name": "amirali mirhashemian",
+        "photographer_url": "https://unsplash.com/@amir_v_ali?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/stainless-steel-bowl-with-food-K9oKpOebg84?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "stainless steel bowl with food",
+        "match_score": "0/2",
+        "search_query": "Classic Shakshuka Middle Eastern food",
+        "source": "unsplash"
+    },
+    "denningvleis-cape-malay-lamb-curry": {
+        "source": "wikimedia",
+        "file": "File:Mutton Curry (44786).jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Mutton_Curry_%2844786%29.jpg/1280px-Mutton_Curry_%2844786%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Mutton_Curry_(44786).jpg",
+        "photographer_name": "Gaurav Dhwaj Khadka",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "lamb curry"
+    },
+    "falafel-pita-with-tahini": {
+        "title": "Falafel Pita with Tahini",
+        "image_url": "https://images.unsplash.com/photo-1632700081098-37dc1285cbfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8RmFsYWZlbCUyMFBpdGElMjB3aXRoJTIwVGFoaW5pJTIwTWlkZGxlJTIwRWFzdGVybiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM5Mjc1OXww&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/bO7yPn-lSiE/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8RmFsYWZlbCUyMFBpdGElMjB3aXRoJTIwVGFoaW5pJTIwTWlkZGxlJTIwRWFzdGVybiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM5Mjc1OXww",
+        "photographer_name": "Levi Meir Clancy",
+        "photographer_url": "https://unsplash.com/@levimeirclancy?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-person-holding-a-pita-filled-with-food-bO7yPn-lSiE?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "a person holding a pita filled with food",
+        "match_score": "2/3",
+        "search_query": "Falafel Pita with Tahini Middle Eastern food",
+        "source": "unsplash"
+    },
+    "greek-salad-with-grilled-halloumi": {
+        "title": "Greek Salad with Grilled Halloumi",
+        "image_url": "https://images.unsplash.com/photo-1778449532114-430396ada55b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8R3JlZWslMjBTYWxhZCUyMHdpdGglMjBHcmlsbGVkJTIwSGFsbG91bWklMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyODUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/25SHQMgsWEQ/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8R3JlZWslMjBTYWxhZCUyMHdpdGglMjBHcmlsbGVkJTIwSGFsbG91bWklMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyODUwfDA",
+        "photographer_name": "Shoeib Abolhassani",
+        "photographer_url": "https://unsplash.com/@shoeibabhn?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-greek-salad-with-feta-cheese-olives-and-cucumbers-25SHQMgsWEQ?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "A greek salad with feta cheese, olives, and cucumbers",
+        "match_score": "2/4",
+        "search_query": "Greek Salad with Grilled Halloumi Mediterranean food",
+        "source": "unsplash"
+    },
+    "hummus-with-roasted-veg-sticks": {
+        "title": "Hummus with Roasted Veg Sticks",
+        "image_url": "https://images.unsplash.com/photo-1771574206132-74f127909c02?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8SHVtbXVzJTIwd2l0aCUyMFJvYXN0ZWQlMjBWZWclMjBTdGlja3MlMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyOTQzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/NAx5mJt4Ibc/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8SHVtbXVzJTIwd2l0aCUyMFJvYXN0ZWQlMjBWZWclMjBTdGlja3MlMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyOTQzfDA",
+        "photographer_name": "Adhitya Sibikumar",
+        "photographer_url": "https://unsplash.com/@adhitya_2505?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/hummus-with-roasted-eggplant-and-pita-bread-NAx5mJt4Ibc?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "Hummus with roasted eggplant and pita bread",
+        "match_score": "2/4",
+        "search_query": "Hummus with Roasted Veg Sticks Mediterranean food",
+        "source": "unsplash"
+    },
+    "koeksisters": {
+        "source": "wikimedia",
+        "file": "File:Koeksisters.jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Koeksisters.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Koeksisters.jpg",
+        "photographer_name": "Arnold Goodway",
+        "license": "CC BY-SA 2.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+        "query": "koeksister"
+    },
+    "lemon-herb-baked-hake": {
+        "title": "Lemon Herb Baked Hake",
+        "image_url": "https://images.unsplash.com/photo-1665401015549-712c0dc5ef85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8TGVtb24lMjBIZXJiJTIwQmFrZWQlMjBIYWtlJTIwU291dGglMjBBZnJpY2FuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkzMTIxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/KRbF_wsztBE/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8TGVtb24lMjBIZXJiJTIwQmFrZWQlMjBIYWtlJTIwU291dGglMjBBZnJpY2FuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkzMTIxfDA",
+        "photographer_name": "Keesha's Kitchen",
+        "photographer_url": "https://unsplash.com/@keeshasskitchen?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-plate-of-fish-and-lemons-KRbF_wsztBE?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "a plate of fish and lemons",
+        "match_score": "1/4",
+        "search_query": "Lemon Herb Baked Hake South African food",
+        "source": "unsplash"
+    },
+    "malva-pudding": {
+        "source": "wikimedia",
+        "file": "File:Malva pudding 2.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/Malva_pudding_2.jpg/1280px-Malva_pudding_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Malva_pudding_2.jpg",
+        "photographer_name": "Valereee",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "malva pudding"
+    },
+    "mango-mageu-smoothie-bowl": {
+        "source": "wikimedia",
+        "file": "File:Mango Pineapple Smoothie Bowl.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Mango_Pineapple_Smoothie_Bowl.jpg/1280px-Mango_Pineapple_Smoothie_Bowl.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Mango_Pineapple_Smoothie_Bowl.jpg",
+        "photographer_name": "Eloquent Insan",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "mango smoothie bowl"
+    },
+    "melktert-milk-tart": {
+        "source": "wikimedia",
+        "file": "File:Melktert.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Melktert.jpg/1280px-Melktert.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Melktert.jpg",
+        "photographer_name": "DimiTalen",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "melktert"
+    },
+    "mieliepap-with-sugar-beans-and-chakalaka": {
+        "source": "wikimedia",
+        "file": "File:Ugali and cabbage.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Ugali_and_cabbage.jpg/1280px-Ugali_and_cabbage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Ugali_and_cabbage.jpg",
+        "photographer_name": "Mark Skipper",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "query": "mieliepap"
+    },
+    "no-bake-oat-and-honey-bites": {
+        "source": "wikimedia",
+        "file": "File:Uncle Tobys Oat Balls.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Uncle_Tobys_Oat_Balls.jpg/1280px-Uncle_Tobys_Oat_Balls.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Uncle_Tobys_Oat_Balls.jpg",
+        "photographer_name": "Mx. Granger",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "oat balls"
+    },
+    "potjiekos-beef-and-vegetable-stew": {
+        "source": "wikimedia",
+        "file": "File:Poyke.JPG",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Poyke.JPG/1280px-Poyke.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Poyke.JPG",
+        "photographer_name": "This file is a work by Noa Cafri (User:Noaa or he:משתמש:נעה).\nMore of my work can be found in Category:Files by User:Noaa.\n\nIf you use my work outside Wikimedia I would appreciate being notified and referred to site where used here.",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "potjiekos"
+    },
+    "rooibos-overnight-oats": {
+        "source": "wikimedia",
+        "file": "File:Protein overnight oats.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/Protein_overnight_oats.jpg/1280px-Protein_overnight_oats.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Protein_overnight_oats.jpg",
+        "photographer_name": "Nervy8924",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "overnight oats"
+    },
+    "rooibos-poached-pears": {
+        "source": "wikimedia",
+        "file": "File:Tea Poached Pears In Chocolate Sauce (140490793).jpeg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Tea_Poached_Pears_In_Chocolate_Sauce_%28140490793%29.jpeg/1280px-Tea_Poached_Pears_In_Chocolate_Sauce_%28140490793%29.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Tea_Poached_Pears_In_Chocolate_Sauce_(140490793).jpeg",
+        "photographer_name": "J Doll",
+        "license": "CC BY 3.0",
+        "license_url": "https://creativecommons.org/licenses/by/3.0",
+        "query": "poached pears"
+    },
+    "roosterkoek": {
+        "source": "wikimedia",
+        "file": "File:Root44 12.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Root44_12.jpg/1280px-Root44_12.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Root44_12.jpg",
+        "photographer_name": "HelenOnline",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "roosterkoek"
+    },
+    "sosaties-on-the-braai": {
+        "source": "wikimedia",
+        "file": "File:Sosaties.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Sosaties.jpg/1280px-Sosaties.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Sosaties.jpg",
+        "photographer_name": "Anrie",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "sosatie"
+    },
+    "spiced-peanuts-and-raisins-mix": {
+        "source": "wikimedia",
+        "file": "File:Peanuts and raisins.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Peanuts_and_raisins.jpg/1280px-Peanuts_and_raisins.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Peanuts_and_raisins.jpg",
+        "photographer_name": "Meganbeckett27",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "peanuts raisins"
+    },
+    "sweetcorn-fritters": {
+        "source": "wikimedia",
+        "file": "File:Pelas Jagung in Bojonegoro.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Pelas_Jagung_in_Bojonegoro.jpg/960px-Pelas_Jagung_in_Bojonegoro.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Pelas_Jagung_in_Bojonegoro.jpg",
+        "photographer_name": "M.akbar.raf",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "corn fritters"
+    },
+    "tomato-bredie": {
+        "source": "wikimedia",
+        "file": "File:Chicken with tomato bredie (12567481243).jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d6/Chicken_with_tomato_bredie_%2812567481243%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Chicken_with_tomato_bredie_(12567481243).jpg",
+        "photographer_name": "Tibor Kelemen",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "query": "bredie"
+    },
+    "umngqusho-samp-and-beans": {
+        "source": "wikimedia",
+        "file": "File:Umngqusho.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7c/Umngqusho.jpg/1280px-Umngqusho.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Umngqusho.jpg",
+        "photographer_name": "Jon Mountjoy",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "query": "umngqusho"
+    },
+    "vegetable-and-chickpea-tagine": {
+        "source": "wikimedia",
+        "file": "File:Vegetable Tagine.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Vegetable_Tagine.jpg/1280px-Vegetable_Tagine.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Vegetable_Tagine.jpg",
+        "photographer_name": "Turajski",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "vegetable tagine"
+    },
+    "vetkoek-with-curried-mince": {
+        "source": "wikimedia",
+        "file": "File:Vetkoek.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Vetkoek.jpg/1280px-Vetkoek.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Vetkoek.jpg",
+        "photographer_name": "Stasia007",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "vetkoek mince"
+    }
+}

@@ -1,0 +1,42 @@
+<?php
+function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConflicts = []): void
+{
+    $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
+    ?>
+    <div class="recipe-card" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
+        <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
+            <form method="post" action="favorite_toggle.php" class="recipe-card-fav" onclick="event.stopPropagation()">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                <button type="submit" class="fav-btn <?= $isFavorite ? 'is-active' : '' ?>" aria-label="Toggle favorite">
+                    <?= icon('heart', 18) ?>
+                </button>
+            </form>
+            <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
+        </div>
+        <div class="recipe-card-body">
+            <h3><a class="recipe-card-link" href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></h3>
+            <?php if (!empty($recipe['is_premium'])): ?>
+                <span class="tag premium-tag mb-16"><?= icon('wand', 11) ?> R<?= number_format((float)$recipe['price'], 2) ?></span>
+            <?php endif; ?>
+            <?= render_stars((float)($recipe['avg_rating'] ?? 0), (int)($recipe['rating_count'] ?? 0), 12) ?>
+            <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
+            <div class="recipe-card-meta">
+                <span><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</span>
+                <span><?= icon('flame', 14) ?> <?= $recipe['calories'] !== null ? (int)$recipe['calories'] . ' cal' : '— cal' ?></span>
+            </div>
+            <?php if ($dietTags): ?>
+                <div class="tag-row">
+                    <?php foreach ($dietTags as $tag): ?>
+                        <span class="tag"><?= h($tag) ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <?php if ($allergenConflicts): ?>
+                <p class="allergen-warning"><?= icon('flame', 12) ?> Contains <?= h(implode(', ', $allergenConflicts)) ?></p>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+}

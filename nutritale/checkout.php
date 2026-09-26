@@ -1,0 +1,100 @@
+<?php
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/functions_core.php';
+require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/payfast.php';
+
+$user = require_login();
+
+$recipeId = $_GET['recipe_id'] ?? '';
+$stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND is_premium = 1');
+$stmt->execute([$recipeId]);
+$recipe = $stmt->fetch();
+
+if (!$recipe) {
+    http_response_code(404);
+    die('This recipe is not available for purchase.');
+}
+if ((int)$recipe['created_by'] === (int)$user['id']) {
+    redirect('recipe.php?id=' . urlencode($recipeId));
+}
+// Vendor selling requires an active Premium subscription (profile.php) -
+// if it lapsed since this recipe was listed, block new purchases rather
+// than taking someone's money for a listing its own seller can no longer
+// legally offer. Checked in real time against the vendor's own account,
+// not the buyer's - see user_is_currently_premium()'s own header comment
+// for why a lazily-refreshed flag isn't good enough here.
+if ($recipe['created_by'] !== null && !user_is_currently_premium((int)$recipe['created_by'])) {
+    http_response_code(404);
+    die('This recipe is not currently available for purchase.');
+}
+
+$existingStmt = db()->prepare("SELECT 1 FROM recipe_purchases WHERE buyer_id = ? AND recipe_id = ? AND status = 'paid'");
+$existingStmt->execute([$user['id'], $recipeId]);
+if ($existingStmt->fetch()) {
+    redirect('recipe.php?id=' . urlencode($recipeId));
+}
+
+$mPaymentId = payfast_new_payment_id();
+
+$ins = db()->prepare(
+    'INSERT INTO recipe_purchases (m_payment_id, buyer_id, recipe_id, vendor_id, amount, status) VALUES (?, ?, ?, ?, ?, ?)'
+);
+$ins->execute([$mPaymentId, $user['id'], $recipeId, $recipe['created_by'], $recipe['price'], 'pending']);
+
+$baseUrl = app_base_url();
+$pfData = [
+    'merchant_id' => PAYFAST_MERCHANT_ID,
+    'merchant_key' => PAYFAST_MERCHANT_KEY,
+    'return_url' => $baseUrl . 'checkout_return.php?m=' . urlencode($mPaymentId),
+    'cancel_url' => $baseUrl . 'checkout_cancel.php?m=' . urlencode($mPaymentId),
+    'notify_url' => $baseUrl . 'payfast_notify.php',
+    'name_first' => $user['name'],
+    'email_address' => $user['email'],
+    'm_payment_id' => $mPaymentId,
+    'amount' => number_format((float)$recipe['price'], 2, '.', ''),
+    'item_name' => mb_substr($recipe['title'], 0, 100),
+    'item_description' => 'Premium recipe on ' . APP_NAME,
+];
+$pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<?= ga4_script() ?>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout · <?= APP_NAME ?></title>
+<link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2fae66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NutriTale">
+<script src="assets/js/theme-init.js"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=9">
+</head>
+<body>
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="center-text mb-16"><?= nutritale_logo_svg(56) ?></div>
+        <h1 class="center-text">Redirecting to secure payment</h1>
+        <div class="card center-text">
+            <p class="muted">Taking you to PayFast to pay <strong>R<?= number_format((float)$recipe['price'], 2) ?></strong> for <strong><?= h($recipe['title']) ?></strong>.</p>
+            <?php if (PAYFAST_SANDBOX): ?>
+                <p class="muted" style="font-size:12px;">Sandbox mode — no real money moves. Use PayFast's test card details on the next screen.</p>
+            <?php endif; ?>
+            <form method="post" action="<?= h(payfast_process_url()) ?>" id="pf-form">
+                <?php foreach ($pfData as $key => $value): ?>
+                    <input type="hidden" name="<?= h($key) ?>" value="<?= h($value) ?>">
+                <?php endforeach; ?>
+                <button type="submit" class="btn btn-primary btn-block">Continue to PayFast</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>document.getElementById('pf-form').submit();</script>
+</body>
+</html>
