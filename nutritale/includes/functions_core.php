@@ -25,6 +25,19 @@ function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class 
         return '';
     }
     $name = (string)($e['photographer_name'] ?? '');
+    if (($e['source'] ?? '') === 'wikimedia') {
+        // Commons photos are CC0 / public domain / CC BY / CC BY-SA - credit
+        // = author (linked to the file page) + licence (linked to its text).
+        $page = (string)($e['photo_page_url'] ?? '');
+        if (!str_starts_with($page, 'https://commons.wikimedia.org/')) {
+            return '';
+        }
+        $license = h((string)($e['license'] ?? ''));
+        $licUrl = (string)($e['license_url'] ?? '');
+        $licHtml = str_starts_with($licUrl, 'http') ? '<a href="' . h($licUrl) . '" target="_blank" rel="noopener license">' . $license . '</a>' : $license;
+        return '<span class="' . h($class) . '">Photo: <a href="' . h($page) . '" target="_blank" rel="noopener">' . h($name ?: 'Wikimedia Commons')
+            . '</a>, ' . $licHtml . ', via Wikimedia Commons</span>';
+    }
     $profile = (string)($e['photographer_url'] ?? '');
     if ($name === '' || !str_starts_with($profile, 'https://unsplash.com/')) {
         return '';

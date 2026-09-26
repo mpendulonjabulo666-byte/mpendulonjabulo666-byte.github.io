@@ -47,6 +47,7 @@ if (UNSPLASH_ACCESS_KEY === '') {
 }
 
 $all = in_array('--all', $argv ?? [], true);
+$one = in_array('--one', $argv ?? [], true); // process ONE pending recipe, no internal sleeping; prints CALLS=n (caller paces)
 $recipes = db()->query(
     "SELECT id, title, cuisine FROM recipes WHERE (image_url IS NULL OR image_url = '')"
     . ($all ? '' : ' AND is_published = 1') . ' ORDER BY title'
@@ -62,6 +63,8 @@ $attrFile = __DIR__ . '/../data/image_attribution.json';
 if (!is_dir($reviewDir)) {
     mkdir($reviewDir, 0755, true);
 }
+$missFile = $reviewDir . '/misses.json'; // recipes Unsplash had nothing for - not retried on every run
+$misses = is_file($missFile) ? (json_decode((string)file_get_contents($missFile), true) ?: []) : [];
 $attribution = is_file($attrFile) ? (json_decode((string)file_get_contents($attrFile), true) ?: []) : [];
 
 function unsplash_get(string $url): array
@@ -135,6 +138,10 @@ foreach ($recipes as $i => $r) {
         continue;
     }
 
+    if (isset($misses[$id])) {
+        continue;
+    }
+
     $cuisine = in_array($r['cuisine'], [null, '', 'International'], true) ? '' : $r['cuisine'];
     // "Amagwinya (Fat Cakes)": search the name with the brackets removed
     // first; if Unsplash has nothing, retry once with just the bracketed
@@ -156,13 +163,17 @@ foreach ($recipes as $i => $r) {
             break;
         }
         echo "none. ";
-        if (count($queries) > 1 && $calls < count($queries)) {
+        if (!$one && count($queries) > 1 && $calls < count($queries)) {
             sleep(RECIPE_PACE_SECONDS);
         }
     }
     if ($status !== 200 || empty($data['results'])) {
         echo $status !== 200 ? "API error (HTTP $status) - skipped.\n" : "no results - skipped.\n";
         $skipped[] = "$id ($status)";
+        if ($status === 200) {
+            $misses[$id] = ['title' => $r['title'], 'queries' => $queries];
+            file_put_contents($missFile, json_encode($misses, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
     } else {
         $words = title_words($r['title']);
         $best = 0;
@@ -208,6 +219,11 @@ foreach ($recipes as $i => $r) {
         }
     }
 
+    if ($one) {
+        echo "CALLS=" . ($remaining !== null && $remaining < 3 ? 15 : $calls) . "
+";
+        exit(0);
+    }
     if ($i < $last) {
         // Two low-quota safety nets on top of the fixed pace.
         sleep($remaining !== null && $remaining < 3 ? 1200 : RECIPE_PACE_SECONDS);

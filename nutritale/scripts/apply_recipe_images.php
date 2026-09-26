@@ -52,7 +52,7 @@ foreach ($ids as $id) {
             echo "Skipped $id: download ping failed (HTTP $status) - not applying a photo we couldn't register.\n";
             continue;
         }
-        sleep(75);
+        sleep(2); // quota is 50/hour; only a handful of pings per run
     }
     $update->execute([$entry['image_url'], $id]);
     $applied++;
