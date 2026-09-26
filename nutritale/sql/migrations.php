@@ -384,4 +384,50 @@ return [
             INDEX idx_ip_email_time (ip_address, email, attempted_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // Recipe photos (27 Wikimedia Commons + 6 Unsplash, all freely licensed and
+    // hand-reviewed) - see data/image_attribution.json for the matching credits.
+    // Only fills recipes that still have no image, so it never overwrites a
+    // photo set by hand on the server.
+    '2026_09_26_recipe_photos' => function (PDO $pdo): void {
+        $photos = [
+            'amagwinya-fat-cakes' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/3_fat_cooks_%28Vetkoek%29_with_meat.jpeg/1280px-3_fat_cooks_%28Vetkoek%29_with_meat.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'avocado-feta-toast' => 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Avocado_toast_with_sesame_seeds.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+            'banana-oat-pancakes' => 'https://images.unsplash.com/photo-1664350471028-34a1d2651366?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8NHx8QmFuYW5hJTIwT2F0JTIwUGFuY2FrZXMlMjBBbWVyaWNhbiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM4NzgzMnww&ixlib=rb-4.1.0&q=80&w=1080',
+            'biltong-and-droewors-snack-board' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/BiltongUKDried.jpg/1280px-BiltongUKDried.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'biltong-spiced-popcorn' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bowl_of_Popcorn_%28Unsplash%29.jpg/1280px-Bowl_of_Popcorn_%28Unsplash%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'bobotie-with-yellow-rice' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Bobotie%2C_South_African_dish.jpg/1280px-Bobotie%2C_South_African_dish.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'boerewors-breakfast-rolls' => 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Boerewors_rolls_with_homemade_tomato_relish._Yum..jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+            'bunny-chow-with-lamb-curry' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Bunny_Chow_with_Lamb_%26_Potato_-_African_Chow_2023-07-27.jpg/1280px-Bunny_Chow_with_Lamb_%26_Potato_-_African_Chow_2023-07-27.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'chakalaka-and-bean-stew' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Chakalaka.jpg/1280px-Chakalaka.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'chakalaka-side-dish' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Chakalaka_meal.jpg/1280px-Chakalaka_meal.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'classic-shakshuka' => 'https://images.unsplash.com/photo-1582492710145-d723e0a219f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Q2xhc3NpYyUyMFNoYWtzaHVrYSUyME1pZGRsZSUyMEVhc3Rlcm4lMjBmb29kfGVufDF8MHx8fDE3OTAzOTIyNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            'denningvleis-cape-malay-lamb-curry' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Mutton_Curry_%2844786%29.jpg/1280px-Mutton_Curry_%2844786%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'falafel-pita-with-tahini' => 'https://images.unsplash.com/photo-1632700081098-37dc1285cbfe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8RmFsYWZlbCUyMFBpdGElMjB3aXRoJTIwVGFoaW5pJTIwTWlkZGxlJTIwRWFzdGVybiUyMGZvb2R8ZW58MXwwfHx8MTc5MDM5Mjc1OXww&ixlib=rb-4.1.0&q=80&w=1080',
+            'greek-salad-with-grilled-halloumi' => 'https://images.unsplash.com/photo-1778449532114-430396ada55b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8R3JlZWslMjBTYWxhZCUyMHdpdGglMjBHcmlsbGVkJTIwSGFsbG91bWklMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyODUwfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'hummus-with-roasted-veg-sticks' => 'https://images.unsplash.com/photo-1771574206132-74f127909c02?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8SHVtbXVzJTIwd2l0aCUyMFJvYXN0ZWQlMjBWZWclMjBTdGlja3MlMjBNZWRpdGVycmFuZWFuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkyOTQzfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'koeksisters' => 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Koeksisters.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+            'lemon-herb-baked-hake' => 'https://images.unsplash.com/photo-1665401015549-712c0dc5ef85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8TGVtb24lMjBIZXJiJTIwQmFrZWQlMjBIYWtlJTIwU291dGglMjBBZnJpY2FuJTIwZm9vZHxlbnwxfDB8fHwxNzkwMzkzMTIxfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'malva-pudding' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/Malva_pudding_2.jpg/1280px-Malva_pudding_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'mango-mageu-smoothie-bowl' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Mango_Pineapple_Smoothie_Bowl.jpg/1280px-Mango_Pineapple_Smoothie_Bowl.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'melktert-milk-tart' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Melktert.jpg/1280px-Melktert.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'mieliepap-with-sugar-beans-and-chakalaka' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Ugali_and_cabbage.jpg/1280px-Ugali_and_cabbage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'no-bake-oat-and-honey-bites' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Uncle_Tobys_Oat_Balls.jpg/1280px-Uncle_Tobys_Oat_Balls.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'potjiekos-beef-and-vegetable-stew' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Poyke.JPG/1280px-Poyke.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'rooibos-overnight-oats' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/Protein_overnight_oats.jpg/1280px-Protein_overnight_oats.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'rooibos-poached-pears' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Tea_Poached_Pears_In_Chocolate_Sauce_%28140490793%29.jpeg/1280px-Tea_Poached_Pears_In_Chocolate_Sauce_%28140490793%29.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'roosterkoek' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Root44_12.jpg/1280px-Root44_12.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'sosaties-on-the-braai' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Sosaties.jpg/1280px-Sosaties.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'spiced-peanuts-and-raisins-mix' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Peanuts_and_raisins.jpg/1280px-Peanuts_and_raisins.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'sweetcorn-fritters' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Pelas_Jagung_in_Bojonegoro.jpg/960px-Pelas_Jagung_in_Bojonegoro.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'tomato-bredie' => 'https://upload.wikimedia.org/wikipedia/commons/d/d6/Chicken_with_tomato_bredie_%2812567481243%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+            'umngqusho-samp-and-beans' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7c/Umngqusho.jpg/1280px-Umngqusho.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'vegetable-and-chickpea-tagine' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Vegetable_Tagine.jpg/1280px-Vegetable_Tagine.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'vetkoek-with-curried-mince' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Vetkoek.jpg/1280px-Vetkoek.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+        ];
+        $stmt = $pdo->prepare("UPDATE recipes SET image_url = ? WHERE id = ? AND (image_url IS NULL OR image_url = '')");
+        foreach ($photos as $id => $url) {
+            $stmt->execute([$url, $id]);
+        }
+    },
 ];
