@@ -1,4 +1,11 @@
 <?php
+// Optional untracked file for local-only secrets (never committed - see
+// .gitignore). It just calls putenv() for whichever keys you want to set,
+// so every getenv()-first setting below picks them up automatically.
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require __DIR__ . '/config.local.php';
+}
+
 // Fill these in with your own database's connection details before
 // running setup.php. If you're on shared hosting, your host's control
 // panel (e.g. cPanel > MySQL Databases) will give you these values.
@@ -40,7 +47,7 @@ define('PREMIUM_MONTHLY_PRICE', 99.00);
 // commit a real key to git. GEMINI_MAX_OUTPUT_TOKENS caps how long each
 // response is allowed to be; every call also counts against the daily
 // caps below, so usage (and cost) stays bounded per user.
-define('GEMINI_API_KEY', '');
+define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 

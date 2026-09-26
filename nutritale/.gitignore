@@ -1,0 +1,7 @@
+# Local-only secrets - never commit real API keys
+config/config.local.php
+
+# Large design/handoff dumps - not app source, keep these out of git
+*.zip
+data/image_attribution.json
+scripts/image_review/
