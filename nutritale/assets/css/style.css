@@ -331,6 +331,27 @@ a { color: inherit; text-decoration: none; }
 .btn-small.btn-primary { box-shadow: none; }
 .btn-small.btn-primary:hover { transform: none; box-shadow: none; }
 
+/* Hover-grow / press-shrink on every working button - the CSS equivalent
+   of Motion's whileHover={{ scale }} / whileTap={{ scale }} (this app has
+   no React/bundler, so Motion itself isn't usable here). Disabled and
+   aria-disabled buttons are skipped. The 1.2 / 0.8 from the Motion demo
+   is sized for a 100px box; on real buttons (some full-width) it looks
+   broken, so the defaults are gentler - change the two variables to
+   retune every button at once. */
+:root { --btn-hover-scale: 1.05; --btn-tap-scale: 0.95; }
+.btn:not(:disabled):not([aria-disabled="true"]):hover,
+.auth-social-btn:not([aria-disabled="true"]):hover {
+    transform: translateY(var(--btn-lift, 0px)) scale(var(--btn-hover-scale));
+}
+.btn:not(:disabled):not([aria-disabled="true"]):active,
+.auth-social-btn:not([aria-disabled="true"]):active {
+    transform: scale(var(--btn-tap-scale));
+}
+.btn-primary:not(.btn-small):hover, .btn-emphasis:hover { --btn-lift: -2px; }
+@media (prefers-reduced-motion: reduce) {
+    .btn:hover, .btn:active, .auth-social-btn:hover, .auth-social-btn:active { transform: none; }
+}
+
 /* App nav */
 .app-nav {
     display: flex;
