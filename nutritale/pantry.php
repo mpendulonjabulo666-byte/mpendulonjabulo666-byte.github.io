@@ -292,15 +292,16 @@ if ($pantry) {
         <?php else: ?>
             <div class="recipe-grid">
                 <?php foreach ($matches as $m): $recipe = $m['recipe']; ?>
-                    <a class="recipe-card" href="recipe.php?id=<?= urlencode($recipe['id']) ?>">
+                    <div class="recipe-card">
                         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
+                            <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
                             <span class="pantry-match-badge <?= $m['pct'] >= 1 ? 'is-full' : '' ?>"><?= $m['have'] ?>/<?= $m['total'] ?> ingredients</span>
                             <?php if ($m['diet_match']): ?>
                                 <span class="tag" style="position:absolute;top:8px;right:8px;">Matches your diet</span>
                             <?php endif; ?>
                         </div>
                         <div class="recipe-card-body">
-                            <h3><?= h($recipe['title']) ?></h3>
+                            <h3><a class="recipe-card-link" href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></h3>
                             <p class="muted recipe-card-desc"><?= h($recipe['description']) ?></p>
                             <div class="recipe-card-meta">
                                 <span><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</span>
@@ -312,7 +313,7 @@ if ($pantry) {
                                 <p style="font-size:11.5px;margin:6px 0 0;color:var(--green-dark);font-weight:600;">You have everything!</p>
                             <?php endif; ?>
                         </div>
-                    </a>
+                    </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

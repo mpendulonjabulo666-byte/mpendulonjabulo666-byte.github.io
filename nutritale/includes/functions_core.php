@@ -6,6 +6,33 @@ function h(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+// "Photo by {name} on Unsplash" credit line, required by Unsplash's API
+// terms wherever one of their photos is shown. Data comes from
+// data/image_attribution.json (written by
+// scripts/fetch_recipe_images.php); a credit is only ever shown when the
+// recipe's current image_url is still the exact Unsplash URL that was credited, so
+// swapping a recipe's photo later can't leave a stale credit behind.
+// Returns '' for any recipe with no Unsplash-sourced photo.
+function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class = 'recipe-photo-credit'): string
+{
+    static $data = null;
+    if ($data === null) {
+        $file = __DIR__ . '/../data/image_attribution.json';
+        $data = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
+    }
+    $e = $data[$recipeId] ?? null;
+    if (!$e || $imageUrl === null || $imageUrl !== ($e['image_url'] ?? null)) {
+        return '';
+    }
+    $name = (string)($e['photographer_name'] ?? '');
+    $profile = (string)($e['photographer_url'] ?? '');
+    if ($name === '' || !str_starts_with($profile, 'https://unsplash.com/')) {
+        return '';
+    }
+    return '<span class="' . h($class) . '">Photo by <a href="' . h($profile) . '" target="_blank" rel="noopener">' . h($name)
+        . '</a> on <a href="https://unsplash.com/?utm_source=nutritale&amp;utm_medium=referral" target="_blank" rel="noopener">Unsplash</a></span>';
+}
+
 // No photo upload exists anywhere in this app yet (deliberately out of
 // scope where this was first added - the nav drawer) - every user gets a
 // circular initials avatar instead: first letter of the first and last

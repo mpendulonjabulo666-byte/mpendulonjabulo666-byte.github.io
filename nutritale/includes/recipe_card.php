@@ -3,7 +3,7 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
 {
     $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
     ?>
-    <a class="recipe-card" href="recipe.php?id=<?= urlencode($recipe['id']) ?>" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
+    <div class="recipe-card" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
         <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
             <form method="post" action="favorite_toggle.php" class="recipe-card-fav" onclick="event.stopPropagation()">
                 <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
@@ -13,9 +13,10 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
                     <?= icon('heart', 18) ?>
                 </button>
             </form>
+            <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
         </div>
         <div class="recipe-card-body">
-            <h3><?= h($recipe['title']) ?></h3>
+            <h3><a class="recipe-card-link" href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></h3>
             <?php if (!empty($recipe['is_premium'])): ?>
                 <span class="tag premium-tag mb-16"><?= icon('wand', 11) ?> R<?= number_format((float)$recipe['price'], 2) ?></span>
             <?php endif; ?>
@@ -36,6 +37,6 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
                 <p class="allergen-warning"><?= icon('flame', 12) ?> Contains <?= h(implode(', ', $allergenConflicts)) ?></p>
             <?php endif; ?>
         </div>
-    </a>
+    </div>
     <?php
 }

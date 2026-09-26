@@ -184,6 +184,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
 
     <div class="recipe-detail">
         <div class="recipe-detail-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
+        <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-photo-credit') ?>
 
         <div class="recipe-detail-body">
             <div class="recipe-detail-header">
