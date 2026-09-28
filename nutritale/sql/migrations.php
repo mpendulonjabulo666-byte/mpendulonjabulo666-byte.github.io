@@ -459,4 +459,26 @@ return [
             fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // Data-accuracy audit (scripts/audit_recipe_data.php): six published
+    // recipes list an allergen in their own ingredients without the tag, so
+    // allergic users were shown them as safe - butter (dairy) in four, oat
+    // flour (gluten) in the pancakes, soy sauce (contains wheat -> gluten)
+    // in the stir-fry. Tags only ever added here, never removed.
+    '2026_09_29_missing_allergen_tags' => function (PDO $pdo): void {
+        $missing = [
+            'baked-salmon-asparagus' => ['dairy'],
+            'banana-oat-pancakes' => ['dairy', 'gluten'],
+            'chickpea-veggie-stirfry' => ['gluten'],
+            'mieliepap-with-sugar-beans-and-chakalaka' => ['dairy'],
+            'pap-wors-and-chakalaka-plate' => ['dairy'],
+            'roosterkoek' => ['dairy'],
+        ];
+        $stmt = $pdo->prepare('INSERT IGNORE INTO recipe_allergens (recipe_id, allergen) SELECT id, ? FROM recipes WHERE id = ?');
+        foreach ($missing as $id => $allergens) {
+            foreach ($allergens as $allergen) {
+                $stmt->execute([$allergen, $id]);
+            }
+        }
+    },
 ];
