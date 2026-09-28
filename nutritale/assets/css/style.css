@@ -1575,6 +1575,62 @@ a { color: inherit; text-decoration: none; }
 .landing-section-heading { text-align: center; margin: 56px 0 28px; position: relative; z-index: 1; }
 .landing-section-heading h2 { font-size: 32px; margin: 0; }
 
+/* Landing recipe ring (assets/js/recipe-ring.js positions every card each
+   frame). The stage spans the full content width and clips, so side cards
+   on narrow screens are cut off instead of causing horizontal scroll. */
+.recipe-ring-section { position: relative; z-index: 1; }
+.recipe-ring-sub { margin: 8px 0 0; font-size: 15px; }
+.recipe-ring-stage {
+    position: relative;
+    height: clamp(300px, 58vw, 500px);
+    margin: -8px -28px 0;
+    overflow: hidden;
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: var(--radius);
+}
+.recipe-ring-stage.is-dragging { cursor: grabbing; }
+.recipe-ring-stage:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }
+.recipe-ring-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--ring-card-w, 150px);
+    aspect-ratio: 4 / 5;
+    margin: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--green-light);
+    box-shadow: 0 22px 40px -20px rgba(0, 0, 0, 0.5);
+    will-change: transform, opacity, filter;
+}
+.recipe-ring-card img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.recipe-ring-card figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 26px 11px 10px;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.74));
+}
+/* No JS: a plain horizontally scrollable row instead of an overlapped pile. */
+.recipe-ring-stage:not(.is-live) { display: flex; gap: 12px; height: auto; overflow-x: auto; padding: 8px 28px 16px; cursor: auto; }
+.recipe-ring-stage:not(.is-live) .recipe-ring-card { position: relative; left: auto; top: auto; flex: 0 0 150px; }
+.recipe-ring-caption { text-align: center; margin: 10px 0 0; min-height: 2.9em; }
+.recipe-ring-caption-title { display: block; font-size: 16px; }
+.recipe-ring-caption-credit, .recipe-ring-credits { font-size: 12.5px; color: var(--muted); }
+.recipe-ring-credit a { text-decoration: underline; text-underline-offset: 2px; }
+.recipe-ring-credits { max-width: 720px; margin: 8px auto 0; text-align: center; }
+.recipe-ring-credits summary { cursor: pointer; display: inline-block; padding: 4px 8px; }
+.recipe-ring-credits ol { text-align: left; columns: 2 280px; column-gap: 28px; margin: 10px 0 0; padding-left: 22px; }
+.recipe-ring-credits li { break-inside: avoid; margin-bottom: 4px; }
+
 /* Trust bar: real, true-today claims (no fabricated customer/partner
    logos exist yet) at the same visual weight a logo row would carry. */
 /* Equal-width grid columns (auto-fit) rather than a centered flex row:

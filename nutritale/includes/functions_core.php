@@ -13,14 +13,19 @@ function h(?string $value): string
 // recipe's current image_url is still the exact Unsplash URL that was credited, so
 // swapping a recipe's photo later can't leave a stale credit behind.
 // Returns '' for any recipe with no Unsplash-sourced photo.
-function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class = 'recipe-photo-credit'): string
+function photo_attribution_data(): array
 {
     static $data = null;
     if ($data === null) {
         $file = __DIR__ . '/../data/image_attribution.json';
         $data = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
     }
-    $e = $data[$recipeId] ?? null;
+    return $data;
+}
+
+function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class = 'recipe-photo-credit'): string
+{
+    $e = photo_attribution_data()[$recipeId] ?? null;
     if (!$e || $imageUrl === null || $imageUrl !== ($e['image_url'] ?? null)) {
         return '';
     }

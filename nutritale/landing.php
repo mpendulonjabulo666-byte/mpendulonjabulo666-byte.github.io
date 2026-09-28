@@ -12,6 +12,25 @@ if (current_user()) {
 $recipeCountStmt = db()->query('SELECT COUNT(*) FROM recipes WHERE is_published = 1');
 $recipeCount = (int)$recipeCountStmt->fetchColumn();
 
+// Recipe ring: up to 22 published recipes whose photo has licence data, so
+// every photo shown can carry its credit. Random each visit for variety.
+// Images are requested at card size (~500px) rather than the 1080px the
+// recipe pages use - 22 full-size photos would be several MB.
+$attribution = photo_attribution_data();
+$ringRecipes = array_values(array_filter(
+    db()->query("SELECT id, title, image_url FROM recipes WHERE is_published = 1 AND image_url <> ''")->fetchAll(),
+    fn($r) => ($attribution[$r['id']]['image_url'] ?? null) === $r['image_url']
+));
+shuffle($ringRecipes);
+$ringRecipes = array_slice($ringRecipes, 0, 22);
+function ring_thumb(string $url): string
+{
+    if (str_contains($url, 'images.unsplash.com')) {
+        return preg_replace('/([?&])w=\d+/', '${1}w=480', $url);
+    }
+    return preg_replace('#/thumb/(.+)/\d+px-#', '/thumb/$1/500px-', $url);
+}
+
 // The one CTA label/style repeated down the page (hero, after benefits,
 // final CTA) - kept as one constant specifically so it can never drift
 // into three slightly different asks ("Get started free" / "Try it free" /
@@ -46,6 +65,7 @@ $testimonials = [];
 <link rel="stylesheet" href="assets/css/style.css?v=9">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
+<script src="assets/js/recipe-ring.js" defer></script>
 </head>
 <body class="landing-body">
 <header class="app-nav landing-nav">
@@ -120,6 +140,39 @@ $testimonials = [];
                 again after, when we scan the result and throw out anything that slipped through.</p>
         </div>
     </section>
+
+    <?php if (count($ringRecipes) >= 6): ?>
+    <!-- 3b. RECIPE RING — real recipe photos on a tipped, spinning wheel
+         (assets/js/recipe-ring.js). Without JS it falls back to a plain
+         scrollable row. -->
+    <section class="recipe-ring-section" aria-labelledby="recipe-ring-heading">
+        <div class="landing-section-heading">
+            <h2 id="recipe-ring-heading">A taste of what's inside</h2>
+            <p class="muted recipe-ring-sub">From braai-day classics to weeknight bowls. Drag to spin.</p>
+        </div>
+        <div class="recipe-ring-stage" tabindex="0" role="group" aria-roledescription="carousel"
+             aria-label="Featured recipes. Drag, or use the left and right arrow keys, to spin.">
+            <?php foreach ($ringRecipes as $i => $r): ?>
+                <figure class="recipe-ring-card">
+                    <img src="<?= h(ring_thumb($r['image_url'])) ?>" alt="<?= h($r['title']) ?>" loading="lazy" decoding="async" draggable="false">
+                    <figcaption><?= h($r['title']) ?></figcaption>
+                </figure>
+            <?php endforeach; ?>
+        </div>
+        <p class="recipe-ring-caption">
+            <strong class="recipe-ring-caption-title"><?= h($ringRecipes[0]['title']) ?></strong>
+            <span class="recipe-ring-caption-credit"><?= recipe_photo_credit($ringRecipes[0]['id'], $ringRecipes[0]['image_url'], 'recipe-ring-credit') ?></span>
+        </p>
+        <details class="recipe-ring-credits">
+            <summary>Photo credits</summary>
+            <ol>
+                <?php foreach ($ringRecipes as $r): ?>
+                    <li><?= h($r['title']) ?> — <?= recipe_photo_credit($r['id'], $r['image_url'], 'recipe-ring-credit') ?></li>
+                <?php endforeach; ?>
+            </ol>
+        </details>
+    </section>
+    <?php endif; ?>
 
     <!-- CTA repeat #2: after benefits -->
     <section class="landing-cta-strip">
