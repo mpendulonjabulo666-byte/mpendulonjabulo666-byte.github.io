@@ -448,4 +448,15 @@ return [
             $stmt->execute([$url, $id]);
         }
     },
+
+    // Short-lived cache for Premium's external APIs (TheMealDB recipes,
+    // Open Food Facts barcode lookups) - includes/external_recipes.php.
+    // Keyed by a hash of the request URL, so API keys are never stored.
+    '2026_09_29_external_api_cache' => "
+        CREATE TABLE external_api_cache (
+            cache_key CHAR(40) NOT NULL PRIMARY KEY,
+            body MEDIUMTEXT NOT NULL,
+            fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
 ];

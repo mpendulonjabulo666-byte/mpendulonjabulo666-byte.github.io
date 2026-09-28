@@ -153,7 +153,9 @@ $isPurchaseLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empt
 // recipes and platform seed-catalog recipes are disjoint - but kept
 // explicit rather than assumed). Admins bypass both, same as everywhere
 // else in this app.
-$isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($user['is_premium_member']) && empty($user['is_admin']);
+// Also covers free accounts opening a free-tier recipe outside their
+// FREE_RECIPE_LIMIT set by URL - see recipe_plan_locked().
+$isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 ?>
 <!DOCTYPE html>
 <html lang="en">
