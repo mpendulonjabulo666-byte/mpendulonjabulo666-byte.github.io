@@ -40,8 +40,13 @@ function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class 
         $license = h((string)($e['license'] ?? ''));
         $licUrl = (string)($e['license_url'] ?? '');
         $licHtml = str_starts_with($licUrl, 'http') ? '<a href="' . h($licUrl) . '" target="_blank" rel="noopener license">' . $license . '</a>' : $license;
-        return '<span class="' . h($class) . '">Photo: <a href="' . h($page) . '" target="_blank" rel="noopener">' . h($name ?: 'Wikimedia Commons')
-            . '</a>, ' . $licHtml . ', via Wikimedia Commons</span>';
+        $author = '<a href="' . h($page) . '" target="_blank" rel="noopener">' . h($name ?: 'Wikimedia Commons') . '</a>';
+        // Cards are narrow: author + licence (what CC requires) without the
+        // "via Wikimedia Commons" tail, which got cut off mid-word there.
+        if ($class === 'recipe-card-credit') {
+            return '<span class="' . h($class) . '">Photo: ' . $author . ' · ' . $licHtml . '</span>';
+        }
+        return '<span class="' . h($class) . '">Photo: ' . $author . ', ' . $licHtml . ', via Wikimedia Commons</span>';
     }
     $profile = (string)($e['photographer_url'] ?? '');
     if ($name === '' || !str_starts_with($profile, 'https://unsplash.com/')) {

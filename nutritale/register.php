@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" name="confirm_password" placeholder="Confirm your password" aria-label="Confirm password" required minlength="8">
                     </label>
 
-                    <button type="submit" class="btn btn-emphasis btn-block mt-16" style="justify-content:center;gap:10px;">Sign Up <?= icon('arrow-right', 18) ?></button>
+                    <button type="submit" class="ring-pill ring-pill-block ring-pill-strong mt-16"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Create account</span></button>
                 </form>
 
                 <div class="auth-divider">or continue with</div>

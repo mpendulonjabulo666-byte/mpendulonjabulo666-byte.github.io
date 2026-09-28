@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <a href="forgot_password.php" style="font-weight:700;color:var(--green-dark);">Forgot password?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-emphasis btn-block" style="justify-content:center;gap:10px;">Log In <?= icon('arrow-right', 18) ?></button>
+                    <button type="submit" class="ring-pill ring-pill-block ring-pill-strong"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Log in</span></button>
                 </form>
 
                 <div class="auth-divider">or continue with</div>

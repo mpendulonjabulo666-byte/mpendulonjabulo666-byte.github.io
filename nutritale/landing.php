@@ -62,7 +62,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
 <script src="assets/js/recipe-ring.js" defer></script>
@@ -72,8 +72,8 @@ $testimonials = [];
     <a class="app-nav-brand" href="landing.php"><?= nutritale_logo_svg(28) ?> <?= brand_wordmark_html() ?></a>
     <div class="app-nav-user">
         <?= render_theme_toggle() ?>
-        <a href="login.php" class="btn btn-text btn-small">Log in</a>
-        <a href="register.php" class="btn btn-primary btn-small">Get started</a>
+        <a href="login.php" class="ring-pill"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Log in</span></a>
+        <a href="register.php" class="ring-pill ring-pill-strong"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Create account</span></a>
     </div>
 </header>
 
