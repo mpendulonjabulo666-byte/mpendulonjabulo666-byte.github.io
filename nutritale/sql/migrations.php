@@ -430,4 +430,22 @@ return [
             $stmt->execute([$url, $id]);
         }
     },
+
+    // Second photo batch: the last 7 published recipes (broader searches on
+    // the same two licensed sources). Same fill-only-if-empty rule.
+    '2026_09_29_recipe_photos_batch2' => function (PDO $pdo): void {
+        $photos = [
+            'cape-malay-chicken-curry-wrap' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Handmade_Chicken_Shawarma_Wrap_-_Lavash.jpg/1280px-Handmade_Chicken_Shawarma_Wrap_-_Lavash.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'chicken-sweetcorn-samp-salad' => 'https://images.unsplash.com/photo-1708184528305-33ce7daced65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Y2hpY2tlbiUyMGNvcm4lMjBzYWxhZHxlbnwxfDB8fHwxNzkwNjM0MDk5fDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'durban-style-bean-curry' => 'https://images.unsplash.com/photo-1788601988466-9f361c34c6cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8YmVhbiUyMGN1cnJ5fGVufDF8MHx8fDE3OTA2MzQxNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            'pap-wors-and-chakalaka-plate' => 'https://upload.wikimedia.org/wikipedia/commons/2/20/Restaurant_Food_Platter.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+            'peppermint-crisp-tart' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Peppermint-Crisp-Close-Up.jpg/1280px-Peppermint-Crisp-Close-Up.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail',
+            'smoked-snoek-pate-sandwich' => 'https://images.unsplash.com/photo-1730495116887-889d1c49336c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8ZmlzaCUyMHBhdGUlMjB0b2FzdHxlbnwxfDB8fHwxNzkwNjM0Mjc5fDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'waterblommetjiebredie' => 'https://upload.wikimedia.org/wikipedia/commons/d/db/Aponogeton_distachyos_-_Waterblommetjies_from_tin.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled',
+        ];
+        $stmt = $pdo->prepare("UPDATE recipes SET image_url = ? WHERE id = ? AND (image_url IS NULL OR image_url = '')");
+        foreach ($photos as $id => $url) {
+            $stmt->execute([$url, $id]);
+        }
+    },
 ];
