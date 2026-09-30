@@ -13,14 +13,19 @@ function h(?string $value): string
 // recipe's current image_url is still the exact Unsplash URL that was credited, so
 // swapping a recipe's photo later can't leave a stale credit behind.
 // Returns '' for any recipe with no Unsplash-sourced photo.
-function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class = 'recipe-photo-credit'): string
+function photo_attribution_data(): array
 {
     static $data = null;
     if ($data === null) {
         $file = __DIR__ . '/../data/image_attribution.json';
         $data = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
     }
-    $e = $data[$recipeId] ?? null;
+    return $data;
+}
+
+function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class = 'recipe-photo-credit'): string
+{
+    $e = photo_attribution_data()[$recipeId] ?? null;
     if (!$e || $imageUrl === null || $imageUrl !== ($e['image_url'] ?? null)) {
         return '';
     }
@@ -35,8 +40,13 @@ function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class 
         $license = h((string)($e['license'] ?? ''));
         $licUrl = (string)($e['license_url'] ?? '');
         $licHtml = str_starts_with($licUrl, 'http') ? '<a href="' . h($licUrl) . '" target="_blank" rel="noopener license">' . $license . '</a>' : $license;
-        return '<span class="' . h($class) . '">Photo: <a href="' . h($page) . '" target="_blank" rel="noopener">' . h($name ?: 'Wikimedia Commons')
-            . '</a>, ' . $licHtml . ', via Wikimedia Commons</span>';
+        $author = '<a href="' . h($page) . '" target="_blank" rel="noopener">' . h($name ?: 'Wikimedia Commons') . '</a>';
+        // Cards are narrow: author + licence (what CC requires) without the
+        // "via Wikimedia Commons" tail, which got cut off mid-word there.
+        if ($class === 'recipe-card-credit') {
+            return '<span class="' . h($class) . '">Photo: ' . $author . ' · ' . $licHtml . '</span>';
+        }
+        return '<span class="' . h($class) . '">Photo: ' . $author . ', ' . $licHtml . ', via Wikimedia Commons</span>';
     }
     $profile = (string)($e['photographer_url'] ?? '');
     if ($name === '' || !str_starts_with($profile, 'https://unsplash.com/')) {
@@ -171,6 +181,53 @@ function require_login(): array
     // can always still sign in to turn maintenance mode back off.
     enforce_maintenance_mode();
     return $user;
+}
+
+function user_has_full_library(array $user): bool
+{
+    return !empty($user['is_premium_member']) || !empty($user['is_admin']);
+}
+
+// The FREE_RECIPE_LIMIT recipes a free account can open: published,
+// free-tier, platform catalog (a vendor's pay-per-recipe listing has its
+// own purchase gate instead). Oldest first, so the set is stable and new
+// recipes land in Premium rather than reshuffling what free users see.
+function free_recipe_ids(): array
+{
+    static $ids = null;
+    if ($ids === null) {
+        $ids = db()->query(
+            "SELECT id FROM recipes WHERE is_published = 1 AND tier = 'free' AND is_premium = 0
+             ORDER BY created_at, id LIMIT " . (int)FREE_RECIPE_LIMIT
+        )->fetchAll(PDO::FETCH_COLUMN);
+    }
+    return $ids;
+}
+
+// True when $user may not see this recipe's full content because of their
+// plan. Pay-per-recipe vendor listings are never plan-locked (they have
+// their own purchase gate), and nobody is locked out of their own recipe.
+function recipe_plan_locked(array $user, array $recipe): bool
+{
+    if (user_has_full_library($user) || !empty($recipe['is_premium'])
+        || (isset($recipe['created_by']) && (int)$recipe['created_by'] === (int)$user['id'])) {
+        return false;
+    }
+    return !in_array($recipe['id'], free_recipe_ids(), true);
+}
+
+// SQL fragment + params restricting a recipes query (aliased $alias) to
+// what $user may browse. Empty fragment for Premium/admin.
+function recipe_plan_filter(array $user, string $alias = 'r'): array
+{
+    if (user_has_full_library($user)) {
+        return ['', []];
+    }
+    $ids = free_recipe_ids();
+    if (!$ids) {
+        return ['0 = 1', []];
+    }
+    return ["($alias.id IN (" . implode(',', array_fill(0, count($ids), '?')) . ") OR $alias.is_premium = 1)", $ids];
 }
 
 function require_admin(): array

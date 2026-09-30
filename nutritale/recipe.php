@@ -153,7 +153,9 @@ $isPurchaseLocked = $recipe['is_premium'] && !$isOwner && !$hasPurchased && empt
 // recipes and platform seed-catalog recipes are disjoint - but kept
 // explicit rather than assumed). Admins bypass both, same as everywhere
 // else in this app.
-$isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($user['is_premium_member']) && empty($user['is_admin']);
+// Also covers free accounts opening a free-tier recipe outside their
+// FREE_RECIPE_LIMIT set by URL - see recipe_plan_locked().
+$isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -253,7 +255,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                 <div>Difficulty: <?= h(ucfirst($recipe['difficulty'])) ?></div>
             </div>
 
-            <div class="macro-row">
+            <div class="macro-row" id="nutrition">
                 <div class="macro-pill"><strong><?= $recipe['protein_g'] !== null ? (int)$recipe['protein_g'] . 'g' : '—' ?></strong><span>Protein</span></div>
                 <div class="macro-pill"><strong><?= $recipe['carbs_g'] !== null ? (int)$recipe['carbs_g'] . 'g' : '—' ?></strong><span>Carbs</span></div>
                 <div class="macro-pill"><strong><?= $recipe['fat_g'] !== null ? (int)$recipe['fat_g'] . 'g' : '—' ?></strong><span>Fat</span></div>
@@ -308,6 +310,41 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                 </details>
             <?php endif; ?>
 
+            <?php if (!$isPurchaseLocked): ?>
+                <?php
+                // Folder-card rail: jumps to the three sections. Face = SVG rect
+                // with an SVG mask notching a folder tab out of its top edge.
+                $folders = [
+                    ['href' => '#ingredients', 'icon' => 'list', 'label' => count($ingredients) . ' ingredients', 'title' => 'Ingredients', 'a' => '#2fae66', 'b' => '#1a6b3e'],
+                    ['href' => '#method', 'icon' => 'clock', 'label' => count($steps) . ' steps · ' . (int)$recipe['cook_time_minutes'] . ' min', 'title' => 'Method', 'a' => '#f0b24a', 'b' => '#c9741f'],
+                    ['href' => '#nutrition', 'icon' => 'flame', 'label' => ($recipe['calories'] !== null ? (int)$recipe['calories'] . ' kcal' : 'Nutrition'), 'title' => 'Nutrition', 'a' => '#e8667f', 'b' => '#a83a53'],
+                ];
+                ?>
+                <nav class="folder-rail" aria-label="Jump to a section">
+                    <?php foreach ($folders as $n => $f): ?>
+                        <a class="folder-card" href="<?= $f['href'] ?>" aria-label="<?= h($f['title'] . ': ' . $f['label']) ?>">
+                            <span class="folder-sheen" aria-hidden="true"></span>
+                            <span class="folder-object" aria-hidden="true" style="--obj-a:<?= $f['b'] ?>;"><?= icon($f['icon'], 26) ?></span>
+                            <svg class="folder-face" viewBox="0 0 240 150" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                                <defs>
+                                    <linearGradient id="folder-grad-<?= $n ?>" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0" stop-color="<?= $f['a'] ?>"/>
+                                        <stop offset="1" stop-color="<?= $f['b'] ?>"/>
+                                    </linearGradient>
+                                    <mask id="folder-mask-<?= $n ?>" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="150">
+                                        <rect width="240" height="150" fill="#fff"/>
+                                        <path fill="#000" d="M0 0 H37 C30 0 31 16 26 16 H14 C6 16 0 22 0 30 Z M117 0 C124 0 123 16 128 16 H226 C234 16 240 22 240 30 V0 Z"/>
+                                    </mask>
+                                </defs>
+                                <rect width="240" height="150" rx="16" fill="url(#folder-grad-<?= $n ?>)" mask="url(#folder-mask-<?= $n ?>)"/>
+                                <text x="20" y="54" class="folder-face-title"><?= h($f['title']) ?></text>
+                            </svg>
+                            <span class="folder-label" aria-hidden="true"><?= h($f['label']) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+
             <?php if ($isPurchaseLocked): ?>
                 <div class="paywall card">
                     <?= icon('wand', 28) ?>
@@ -325,7 +362,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                 <div class="recipe-columns recipe-tier-locked">
                     <div class="recipe-tier-teaser" aria-hidden="true">
                         <div>
-                            <h2>Ingredients</h2>
+                            <h2 id="ingredients">Ingredients</h2>
                             <ul class="ingredient-list">
                                 <?php foreach (array_slice($ingredients, 0, 2) as $ing): ?>
                                     <li><?= h($ing['display_quantity']) ?> <?= h($ing['name']) ?></li>
@@ -334,7 +371,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                             </ul>
                         </div>
                         <div>
-                            <h2>Instructions</h2>
+                            <h2 id="method">Instructions</h2>
                             <ol class="step-list">
                                 <?php if ($steps): ?><li><?= h($steps[0]['step_text']) ?></li><?php endif; ?>
                                 <?php if (count($steps) > 1): ?><li>&hellip;</li><?php endif; ?>
@@ -354,7 +391,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                 <?php endif; ?>
                 <div class="recipe-columns">
                     <div>
-                        <h2>Ingredients</h2>
+                        <h2 id="ingredients">Ingredients</h2>
                         <ul class="ingredient-list" id="ingredient-list">
                             <?php foreach ($ingredients as $ing): ?>
                                 <li
@@ -367,7 +404,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
                         </ul>
                     </div>
                     <div>
-                        <h2>Instructions</h2>
+                        <h2 id="method">Instructions</h2>
                         <ol class="step-list">
                             <?php foreach ($steps as $step): ?>
                                 <li><?= h($step['step_text']) ?></li>

@@ -25,9 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $date = $_POST['plan_date'] ?? '';
             $mealType = $_POST['meal_type'] ?? '';
             if ($recipeId !== '' && in_array($mealType, MEAL_TYPES, true) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-                $exists = db()->prepare('SELECT 1 FROM recipes WHERE id = ?');
+                $exists = db()->prepare('SELECT id, is_premium, created_by FROM recipes WHERE id = ?');
                 $exists->execute([$recipeId]);
-                if ($exists->fetch()) {
+                $planRecipe = $exists->fetch();
+                if ($planRecipe && !recipe_plan_locked($user, $planRecipe)) {
                     $ins = db()->prepare('INSERT INTO meal_plan_items (user_id, plan_date, meal_type, recipe_id) VALUES (?, ?, ?, ?)');
                     $ins->execute([$user['id'], $date, $mealType, $recipeId]);
                 }
@@ -68,7 +69,10 @@ foreach ($stmt->fetchAll() as $row) {
     $dayTotals[$row['plan_date']] = ($dayTotals[$row['plan_date']] ?? 0) + (int)$row['calories'];
 }
 
-$recipes = db()->query('SELECT id, title FROM recipes WHERE is_published = 1 ORDER BY title')->fetchAll();
+[$planSql, $planParams] = recipe_plan_filter($user);
+$recipeListStmt = db()->prepare('SELECT r.id, r.title FROM recipes r WHERE r.is_published = 1' . ($planSql !== '' ? ' AND ' . $planSql : '') . ' ORDER BY r.title');
+$recipeListStmt->execute($planParams);
+$recipes = $recipeListStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -86,7 +90,7 @@ $recipes = db()->query('SELECT id, title FROM recipes WHERE is_published = 1 ORD
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

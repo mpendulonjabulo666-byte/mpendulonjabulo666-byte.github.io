@@ -236,7 +236,7 @@
         "file": "File:Poyke.JPG",
         "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Poyke.JPG/1280px-Poyke.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
         "photo_page_url": "https://commons.wikimedia.org/wiki/File:Poyke.JPG",
-        "photographer_name": "This file is a work by Noa Cafri (User:Noaa or he:משתמש:נעה).\nMore of my work can be found in Category:Files by User:Noaa.\n\nIf you use my work outside Wikimedia I would appreciate being notified and referred to site where used here.",
+        "photographer_name": "Noa Cafri",
         "license": "CC BY-SA 3.0",
         "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
         "query": "potjiekos"
@@ -340,5 +340,82 @@
         "license": "CC BY-SA 4.0",
         "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
         "query": "vetkoek mince"
+    },
+    "cape-malay-chicken-curry-wrap": {
+        "source": "wikimedia",
+        "file": "File:Handmade Chicken Shawarma Wrap - Lavash.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Handmade_Chicken_Shawarma_Wrap_-_Lavash.jpg/1280px-Handmade_Chicken_Shawarma_Wrap_-_Lavash.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Handmade_Chicken_Shawarma_Wrap_-_Lavash.jpg",
+        "photographer_name": "Andy Li",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "chicken wrap",
+        "title": "cape-malay-chicken-curry-wrap"
+    },
+    "chicken-sweetcorn-samp-salad": {
+        "source": "unsplash",
+        "title": "chicken-sweetcorn-samp-salad",
+        "image_url": "https://images.unsplash.com/photo-1708184528305-33ce7daced65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Y2hpY2tlbiUyMGNvcm4lMjBzYWxhZHxlbnwxfDB8fHwxNzkwNjM0MDk5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/prmIcua92EA/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8MXx8Y2hpY2tlbiUyMGNvcm4lMjBzYWxhZHxlbnwxfDB8fHwxNzkwNjM0MDk5fDA",
+        "photographer_name": "Md Shohan Ridoy",
+        "photographer_url": "https://unsplash.com/@cherrylake?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-plate-of-salad-on-a-wooden-table-prmIcua92EA?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "a plate of salad on a wooden table",
+        "search_query": "chicken corn salad"
+    },
+    "durban-style-bean-curry": {
+        "source": "unsplash",
+        "title": "durban-style-bean-curry",
+        "image_url": "https://images.unsplash.com/photo-1788601988466-9f361c34c6cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8YmVhbiUyMGN1cnJ5fGVufDF8MHx8fDE3OTA2MzQxNzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/YNMLJcE9sdk/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8YmVhbiUyMGN1cnJ5fGVufDF8MHx8fDE3OTA2MzQxNzB8MA",
+        "photographer_name": "Zoshua Colah",
+        "photographer_url": "https://unsplash.com/@zoshuacolah?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/dal-makhani-with-rice-and-flatbread-YNMLJcE9sdk?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "A bowl of dal makhani with rice, onion salad, and flatbread on a table",
+        "search_query": "bean curry"
+    },
+    "pap-wors-and-chakalaka-plate": {
+        "source": "wikimedia",
+        "file": "File:Restaurant Food Platter.jpg",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/20/Restaurant_Food_Platter.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Restaurant_Food_Platter.jpg",
+        "photographer_name": "Anitah Pezz",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "query": "ugali sausage",
+        "title": "pap-wors-and-chakalaka-plate"
+    },
+    "peppermint-crisp-tart": {
+        "source": "wikimedia",
+        "file": "File:Peppermint-Crisp-Close-Up.jpg",
+        "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Peppermint-Crisp-Close-Up.jpg/1280px-Peppermint-Crisp-Close-Up.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Peppermint-Crisp-Close-Up.jpg",
+        "photographer_name": "Evan-Amos",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "query": "peppermint crisp",
+        "title": "peppermint-crisp-tart"
+    },
+    "smoked-snoek-pate-sandwich": {
+        "source": "unsplash",
+        "title": "smoked-snoek-pate-sandwich",
+        "image_url": "https://images.unsplash.com/photo-1730495116887-889d1c49336c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8ZmlzaCUyMHBhdGUlMjB0b2FzdHxlbnwxfDB8fHwxNzkwNjM0Mjc5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+        "download_location": "https://api.unsplash.com/photos/-oAyF9wY0pc/download?ixid=M3wxMDgzMDc2fDB8MXxzZWFyY2h8Mnx8ZmlzaCUyMHBhdGUlMjB0b2FzdHxlbnwxfDB8fHwxNzkwNjM0Mjc5fDA",
+        "photographer_name": "Gennady Zakharin",
+        "photographer_url": "https://unsplash.com/@gennady107?utm_source=nutritale&utm_medium=referral",
+        "photo_page_url": "https://unsplash.com/photos/a-white-plate-topped-with-a-cut-in-half-sandwich--oAyF9wY0pc?utm_source=nutritale&utm_medium=referral",
+        "alt_description": "A white plate topped with a cut in half sandwich",
+        "search_query": "fish pate toast"
+    },
+    "waterblommetjiebredie": {
+        "source": "wikimedia",
+        "file": "File:Aponogeton distachyos - Waterblommetjies from tin.JPG",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/db/Aponogeton_distachyos_-_Waterblommetjies_from_tin.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+        "photo_page_url": "https://commons.wikimedia.org/wiki/File:Aponogeton_distachyos_-_Waterblommetjies_from_tin.JPG",
+        "photographer_name": "Genet",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+        "query": "waterblommetjiebredie",
+        "title": "waterblommetjiebredie"
     }
 }

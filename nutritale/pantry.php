@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
 require_once __DIR__ . '/includes/ingredient_matching.php';
+require_once __DIR__ . '/includes/external_recipes.php';
 
 $user = require_login();
 
@@ -94,7 +95,7 @@ if ($pantry) {
     $pantryCanonical = array_values(array_unique($pantryCanonical));
 
     $recipeStmt = db()->query(
-        'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories,
+        'SELECT r.id, r.title, r.description, r.image_url, r.cook_time_minutes, r.calories, r.is_premium, r.created_by,
          GROUP_CONCAT(DISTINCT dt.diet_type SEPARATOR ",") AS diet_tags,
          GROUP_CONCAT(DISTINCT al.allergen SEPARATOR ",") AS allergens
          FROM recipes r
@@ -145,6 +146,18 @@ if ($pantry) {
     }
     usort($matches, fn($a, $b) => $b['diet_match'] <=> $a['diet_match'] ?: $b['pct'] <=> $a['pct'] ?: $b['have'] <=> $a['have']);
 }
+
+// Free: the top FREE_PANTRY_MATCH_LIMIT matches among the recipes their plan
+// can open. Premium: every match, plus up to EXTERNAL_RECIPE_LIMIT more from
+// TheMealDB. $totalMatchCount (whole library) drives the upsell line.
+$hasFullLibrary = user_has_full_library($user);
+$totalMatchCount = count($matches);
+if (!$hasFullLibrary) {
+    $matches = array_slice(array_values(array_filter($matches, fn($m) => !recipe_plan_locked($user, $m['recipe']))), 0, FREE_PANTRY_MATCH_LIMIT);
+}
+$moreWithPremium = $totalMatchCount - count($matches);
+// Loaded after render by assets/js/world-recipes.js (external_matches.php).
+$showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -162,7 +175,7 @@ if ($pantry) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -189,6 +202,34 @@ if ($pantry) {
             <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
             <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
         </form>
+        <div class="pantry-scan-row">
+            <?php if ($isPremiumOrAdmin): ?>
+                <button type="button" class="btn btn-text btn-small" id="scan-open"><?= icon('search', 14) ?> Scan a barcode</button>
+            <?php else: ?>
+                <a class="btn btn-text btn-small" href="premium.php"><?= icon('lock', 14) ?> Scan a barcode (Premium)</a>
+            <?php endif; ?>
+        </div>
+        <?php if ($isPremiumOrAdmin): ?>
+            <div class="pantry-scan-panel" id="scan-panel" hidden>
+                <div id="scan-reader" class="pantry-scan-reader"></div>
+                <p class="muted pantry-scan-status" id="scan-status" role="status">Point your camera at the barcode on the pack.</p>
+                <form class="pantry-scan-manual" id="scan-manual">
+                    <input type="text" id="scan-code" inputmode="numeric" pattern="[0-9]{6,14}" placeholder="...or type the barcode number" aria-label="Barcode number">
+                    <button type="submit" class="btn btn-small">Look up</button>
+                </form>
+                <form method="post" class="pantry-scan-result" id="scan-result" hidden>
+                    <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="add">
+                    <label for="scan-name" class="muted" style="font-size:12.5px;">Found it. Edit the name if needed, then add it:</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" name="ingredient_name" id="scan-name" required>
+                        <button type="submit" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add</button>
+                    </div>
+                </form>
+                <p class="muted" style="font-size:11.5px;margin:10px 0 0;">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL).
+                    <button type="button" class="btn btn-text btn-small" id="scan-close">Close</button></p>
+            </div>
+        <?php endif; ?>
 
         <?php if ($pantry): ?>
             <div class="tag-row mt-16">
@@ -317,7 +358,28 @@ if ($pantry) {
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+
+        <?php if (!$hasFullLibrary && $moreWithPremium > 0): ?>
+            <div class="plan-limit-banner mt-16">
+                <?= icon('wand', 18) ?>
+                <p>Your pantry matches <strong><?= $totalMatchCount ?> recipe<?= $totalMatchCount === 1 ? '' : 's' ?></strong>.
+                    The free plan shows <?= FREE_PANTRY_MATCH_LIMIT ?>; Premium shows every match, plus up to <?= EXTERNAL_RECIPE_LIMIT ?> more from around the world.</p>
+                <a href="premium.php" class="btn btn-primary btn-small">Go Premium</a>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($showWorld): ?>
+            <section id="world-recipes" data-src="external_matches.php" aria-busy="true" aria-live="polite">
+                <h2 class="mb-16" style="margin-top:28px;">More from around the world</h2>
+                <p class="muted world-recipes-status">Finding recipes from around the world that use your ingredients...</p>
+            </section>
+        <?php endif; ?>
     <?php endif; ?>
 </main>
+<?php if ($isPremiumOrAdmin): ?>
+<script src="assets/js/vendor/html5-qrcode.min.js" defer></script>
+<script src="assets/js/pantry-scan.js" defer></script>
+<script src="assets/js/world-recipes.js" defer></script>
+<?php endif; ?>
 </body>
 </html>

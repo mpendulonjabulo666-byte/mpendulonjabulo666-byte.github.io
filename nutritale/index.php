@@ -28,6 +28,15 @@ $params = [];
 // just turned this one off).
 $where[] = 'r.is_published = 1';
 
+// Free accounts browse FREE_RECIPE_LIMIT recipes; Premium sees them all.
+[$planSql, $planParams] = recipe_plan_filter($user);
+if ($planSql !== '') {
+    $where[] = $planSql;
+    array_push($params, ...$planParams);
+}
+$hasFullLibrary = user_has_full_library($user);
+$libraryTotal = (int)db()->query('SELECT COUNT(*) FROM recipes WHERE is_published = 1')->fetchColumn();
+
 // A vendor recipe unpublishes from browse/search if its seller's own
 // Premium lapses (selling requires Premium - profile.php's vendor toggle).
 // First cut of this used users.is_premium_member directly, accepting the
@@ -168,7 +177,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -231,6 +240,15 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
         </select>
         <button type="submit" class="btn btn-primary">Filter</button>
     </form>
+
+    <?php if (!$hasFullLibrary && $libraryTotal > FREE_RECIPE_LIMIT): ?>
+        <div class="plan-limit-banner">
+            <?= icon('wand', 18) ?>
+            <p>You're on the free plan: <strong><?= count(free_recipe_ids()) ?> of <?= $libraryTotal ?> recipes</strong>.
+                Premium unlocks every recipe, plus extra matches from around the world in What Can I Make?</p>
+            <a href="premium.php" class="btn btn-primary btn-small">Go Premium</a>
+        </div>
+    <?php endif; ?>
 
     <?php if (!$recipes): ?>
         <p class="muted center-text mt-16">No recipes match your filters.</p>

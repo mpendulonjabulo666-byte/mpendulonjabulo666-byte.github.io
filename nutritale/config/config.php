@@ -149,6 +149,24 @@ define('AI_PANTRY_FREE_DAILY_CAP', 2);
 define('AI_PANTRY_DAILY_CAP', 20);
 define('AI_PANTRY_COOLDOWN_SECONDS', 30);
 
+// Free vs Premium recipe access. Free accounts browse a fixed set of
+// FREE_RECIPE_LIMIT free-tier recipes (free_recipe_ids() in
+// includes/functions_core.php - enforced server-side in browse, the recipe
+// page, the planner and the pantry matcher) and see at most
+// FREE_PANTRY_MATCH_LIMIT matches on "What Can I Make?". Premium sees every
+// recipe, every match, plus up to EXTERNAL_RECIPE_LIMIT extra matches from
+// TheMealDB (includes/external_recipes.php).
+define('FREE_RECIPE_LIMIT', 20);
+define('FREE_PANTRY_MATCH_LIMIT', 3);
+define('EXTERNAL_RECIPE_LIMIT', 10);
+
+// TheMealDB (themealdb.com) - the external recipe source above. '1' is
+// their public test key: fine for development, but their terms ask apps
+// released publicly to become a supporter and use the upgraded key they
+// email you - set MEALDB_API_KEY (config.local.php / env) to that before
+// launch. Set it to '' to switch the internet recipes off entirely.
+define('MEALDB_API_KEY', getenv('MEALDB_API_KEY') !== false ? getenv('MEALDB_API_KEY') : '1');
+
 // Outgoing email (password resets, "someone rated your recipe" notices).
 // Leave SMTP_HOST blank to fall back to PHP's mail(), which many hosts
 // block or silently drop (see DEPLOYMENT.md) - fine for local development,

@@ -727,6 +727,9 @@ a { color: inherit; text-decoration: none; }
    toast — set to display:none only via the hidden attribute — stays
    visible on page load instead of appearing just after a share click. */
 .share-toast[hidden] { display: none; }
+/* Same specificity tie for the share menu: .share-menu's display:flex was
+   beating [hidden], so the menu showed permanently on every recipe page. */
+.share-menu[hidden] { display: none; }
 
 .premium-tag {
     display: inline-flex;
@@ -1575,6 +1578,62 @@ a { color: inherit; text-decoration: none; }
 .landing-section-heading { text-align: center; margin: 56px 0 28px; position: relative; z-index: 1; }
 .landing-section-heading h2 { font-size: 32px; margin: 0; }
 
+/* Landing recipe ring (assets/js/recipe-ring.js positions every card each
+   frame). The stage spans the full content width and clips, so side cards
+   on narrow screens are cut off instead of causing horizontal scroll. */
+.recipe-ring-section { position: relative; z-index: 1; }
+.recipe-ring-sub { margin: 8px 0 0; font-size: 15px; }
+.recipe-ring-stage {
+    position: relative;
+    height: clamp(300px, 58vw, 500px);
+    margin: -8px -28px 0;
+    overflow: hidden;
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: var(--radius);
+}
+.recipe-ring-stage.is-dragging { cursor: grabbing; }
+.recipe-ring-stage:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }
+.recipe-ring-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--ring-card-w, 150px);
+    aspect-ratio: 4 / 5;
+    margin: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--green-light);
+    box-shadow: 0 22px 40px -20px rgba(0, 0, 0, 0.5);
+    will-change: transform, opacity, filter;
+}
+.recipe-ring-card img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.recipe-ring-card figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 26px 11px 10px;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.74));
+}
+/* No JS: a plain horizontally scrollable row instead of an overlapped pile. */
+.recipe-ring-stage:not(.is-live) { display: flex; gap: 12px; height: auto; overflow-x: auto; padding: 8px 28px 16px; cursor: auto; }
+.recipe-ring-stage:not(.is-live) .recipe-ring-card { position: relative; left: auto; top: auto; flex: 0 0 150px; }
+.recipe-ring-caption { text-align: center; margin: 10px 0 0; min-height: 2.9em; }
+.recipe-ring-caption-title { display: block; font-size: 16px; }
+.recipe-ring-caption-credit, .recipe-ring-credits { font-size: 12.5px; color: var(--muted); }
+.recipe-ring-credit a { text-decoration: underline; text-underline-offset: 2px; }
+.recipe-ring-credits { max-width: 720px; margin: 8px auto 0; text-align: center; }
+.recipe-ring-credits summary { cursor: pointer; display: inline-block; padding: 4px 8px; }
+.recipe-ring-credits ol { text-align: left; columns: 2 280px; column-gap: 28px; margin: 10px 0 0; padding-left: 22px; }
+.recipe-ring-credits li { break-inside: avoid; margin-bottom: 4px; }
+
 /* Trust bar: real, true-today claims (no fabricated customer/partner
    logos exist yet) at the same visual weight a logo row would carry. */
 /* Equal-width grid columns (auto-fit) rather than a centered flex row:
@@ -1868,6 +1927,218 @@ a { color: inherit; text-decoration: none; }
     .auth-social-grid { grid-template-columns: 1fr; }
 }
 
+/* Free-plan limit notice (browse + pantry) */
+.plan-limit-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--green-light);
+    color: var(--ink);
+}
+.plan-limit-banner > svg { flex: 0 0 auto; color: var(--green-dark); }
+.plan-limit-banner p { margin: 0; flex: 1; font-size: 13.5px; }
+.plan-limit-banner .btn { flex: 0 0 auto; }
+@media (max-width: 560px) { .plan-limit-banner { flex-wrap: wrap; } }
+
+/* Pantry barcode scanner (Premium) */
+.pantry-scan-row { margin-top: 8px; }
+.pantry-scan-panel { margin-top: 12px; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; }
+.pantry-scan-reader { max-width: 420px; margin: 0 auto; border-radius: 10px; overflow: hidden; }
+.pantry-scan-reader:empty { display: none; }
+.pantry-scan-status { font-size: 13px; margin: 10px 0; }
+.pantry-scan-manual, .pantry-scan-result > div { display: flex; gap: 8px; }
+.pantry-scan-manual input, .pantry-scan-result input[type="text"] {
+    flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink);
+}
+.pantry-scan-result { margin-top: 12px; }
+
+/* ---------- Ring pill: Log in / Create account / Log out ----------
+   Icon disc wearing an iridescent ring: a conic gradient masked down to its
+   outer 2.5px, orbiting (rotate) while its colour cycles (hue-rotate). On
+   hover the orbit pauses and the hue keeps running, so it settles without
+   going static. */
+.ring-pill {
+    --ring-fill: rgba(28, 37, 33, 0.04);
+    --ring-line: rgba(28, 37, 33, 0.16);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 20px 9px 9px;
+    border-radius: 999px;
+    background: var(--ring-fill);
+    border: 1px solid var(--ring-line);
+    color: var(--ink);
+    font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+button.ring-pill { appearance: none; -webkit-appearance: none; }
+.ring-pill:hover, .ring-pill:focus-visible { --ring-fill: rgba(28, 37, 33, 0.08); --ring-line: rgba(28, 37, 33, 0.3); }
+.ring-pill:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 3px; }
+:root[data-theme="dark"] .ring-pill { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
+:root[data-theme="dark"] .ring-pill:hover, :root[data-theme="dark"] .ring-pill:focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .ring-pill { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
+    :root:not([data-theme="light"]) .ring-pill:hover, :root:not([data-theme="light"]) .ring-pill:focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
+}
+/* Primary actions (log in / create account submits): same pill, solid fill. */
+.ring-pill.ring-pill-strong { --ring-fill: var(--emphasis-bg); --ring-line: var(--brand-tale); color: var(--emphasis-fg); }
+.ring-pill.ring-pill-strong:hover, .ring-pill.ring-pill-strong:focus-visible { --ring-fill: var(--emphasis-bg); box-shadow: 0 12px 26px -14px rgba(255, 110, 169, 0.55); }
+.ring-pill-block { display: flex; width: 100%; }
+/* Label centred on the whole pill, not just the space right of the disc. */
+.ring-pill-block .ring-pill-label { flex: 1; text-align: center; padding-right: 35px; }
+.ring-pill-disc {
+    position: relative;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #161d1a;
+    color: #fff;
+    display: grid;
+    place-items: center;
+}
+.ring-pill-disc > svg { position: relative; z-index: 2; }
+.ring-pill-disc::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 50%;
+    background: conic-gradient(from 0turn, transparent 0 58%, #ff6ea9 68%, #ffd36e 76%, #6ef0ff 84%, transparent 92%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+    animation: ring-orbit 2.6s linear infinite, ring-hue 7s linear infinite;
+}
+.ring-pill:hover .ring-pill-disc::before, .ring-pill:focus .ring-pill-disc::before { animation-play-state: paused, running; }
+@keyframes ring-orbit { to { transform: rotate(1turn); } }
+@keyframes ring-hue { to { filter: hue-rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .ring-pill-disc::before { animation: none; transform: rotate(0.3turn); }
+}
+
+/* ---------- Sidebar: Go Premium ----------
+   Dark pill whose border is a full-spectrum conic gradient that keeps
+   travelling round it (animated via a registered custom property). */
+@property --premium-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.premium-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    background:
+        linear-gradient(135deg, #1d2a24, #0f1512) padding-box,
+        conic-gradient(from var(--premium-angle), #ff6ea9, #ffd36e, #6ef0ff, #9d8cff, #ff6ea9) border-box;
+    box-shadow: 0 10px 24px -14px rgba(157, 140, 255, 0.7);
+    animation: premium-spin 5s linear infinite;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+.premium-cta .app-nav-link-main svg { color: #ffd36e; filter: drop-shadow(0 0 6px rgba(255, 211, 110, 0.55)); }
+.premium-cta > svg { opacity: 0.75; }
+.premium-cta:hover, .premium-cta:focus-visible { transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(255, 110, 169, 0.55); }
+.premium-cta:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 3px; }
+@keyframes premium-spin { to { --premium-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .premium-cta { animation: none; } }
+
+/* ---------- Sidebar: identity row ---------- */
+.app-nav-identity-link { color: var(--ink); min-width: 0; text-decoration: none; }
+.app-nav-identity-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.app-nav-identity-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.app-nav-identity-plan { font-size: 11.5px; color: var(--muted); }
+
+/* ---------- Recipe page: folder-card rail ----------
+   Stack, back to front: iridescent sheen, a cut-out object (mostly hidden
+   below), the SVG-masked folder face, a mono label. Hovering/focusing one
+   lifts it, slides its face off to reveal the sheen, raises the object,
+   and pushes the other two back. */
+.folder-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 22px 0 30px; padding-top: 10px; }
+.folder-card {
+    position: relative;
+    z-index: 1;
+    display: block;
+    aspect-ratio: 240 / 150;
+    border-radius: 16px;
+    overflow: hidden;
+    isolation: isolate;
+    text-decoration: none;
+    color: #fff;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.folder-sheen {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.55), transparent 55%),
+        linear-gradient(125deg, #ff9ec7 0%, #ffd98a 28%, #9ff2e0 55%, #a9b8ff 78%, #f3a6ff 100%);
+}
+.folder-object {
+    position: absolute;
+    left: 50%;
+    top: 16%;
+    z-index: 2;
+    width: 30%;
+    max-width: 66px;
+    aspect-ratio: 1;
+    border-radius: 24%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(145deg, #34423b, var(--obj-a, #1c2521));
+    box-shadow: 0 14px 26px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    transform: translate(-50%, 40%) rotate(-7deg);
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.folder-face { position: absolute; inset: 0; z-index: 3; display: block; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.folder-face-title { fill: #fff; font: 700 19px var(--font-display); }
+.folder-label {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
+    z-index: 4;
+    font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.folder-rail:hover .folder-card,
+.folder-rail:focus-within .folder-card { transform: scale(0.93); opacity: 0.6; filter: saturate(0.6); }
+.folder-rail .folder-card:hover,
+.folder-rail .folder-card:focus { transform: translateY(-7%) scale(1.07); opacity: 1; filter: none; z-index: 5; }
+.folder-rail .folder-card:hover .folder-face,
+.folder-rail .folder-card:focus .folder-face { transform: translateY(52%); }
+.folder-rail .folder-card:hover .folder-object,
+.folder-rail .folder-card:focus .folder-object { transform: translate(-50%, -4%) rotate(3deg); }
+.folder-rail .folder-card:hover .folder-label,
+.folder-rail .folder-card:focus .folder-label { opacity: 0; }
+.folder-card:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 4px; }
+#ingredients, #method, #nutrition { scroll-margin-top: 24px; }
+@media (max-width: 640px) {
+    .folder-rail { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 210px; overflow-x: auto; padding: 16px 4px 12px; scroll-snap-type: x mandatory; }
+    .folder-card { scroll-snap-align: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .folder-card, .folder-face, .folder-object, .folder-label { transition: none; }
+}
 /* Photo credit is revealed by clicking/tapping the recipe photo
    (assets/js/photo-credit.js). Without JS it simply stays visible. */
 .recipe-photo-credit[hidden] { display: none; }

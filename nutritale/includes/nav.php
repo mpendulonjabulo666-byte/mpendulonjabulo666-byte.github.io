@@ -48,24 +48,25 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
         </nav>
         <div class="app-nav-user">
             <?php if (empty($user['is_premium_member']) && empty($user['is_admin'])): ?>
-                <a href="premium.php" class="btn btn-emphasis btn-block">
+                <a href="premium.php" class="premium-cta">
                     <span class="app-nav-link-main"><?= icon('sparkles', 16) ?> Go Premium</span>
                     <?= icon('chevron-right', 14) ?>
                 </a>
             <?php endif; ?>
             <div class="app-nav-user-row">
-                <a href="<?= !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php' ?>" class="muted app-nav-identity-link">
+                <a href="<?= !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php' ?>" class="app-nav-identity-link">
                     <?= user_avatar($user['name']) ?>
-                    <span><?= h($user['name']) ?></span>
+                    <span class="app-nav-identity-text">
+                        <span class="app-nav-identity-name"><?= h($user['name']) ?></span>
+                        <span class="app-nav-identity-plan"><?= !empty($user['is_admin']) ? 'Admin' : (!empty($user['is_premium_member']) ? 'Premium' : 'Free plan') ?></span>
+                    </span>
                 </a>
+                <?= render_theme_toggle() ?>
             </div>
-            <div class="app-nav-user-row">
-                <a href="logout.php" class="btn btn-text btn-small"><?= icon('logout', 16) ?> Logout</a>
-                <div class="app-nav-user-actions">
-                    <?= render_theme_toggle() ?>
-                    <span class="app-nav-leaf-accent" aria-hidden="true"><?= icon('leaf', 14) ?></span>
-                </div>
-            </div>
+            <a href="logout.php" class="ring-pill ring-pill-block">
+                <span class="ring-pill-disc"><?= icon('logout', 16) ?></span>
+                <span class="ring-pill-label">Log out</span>
+            </a>
         </div>
     </div>
 </header>
