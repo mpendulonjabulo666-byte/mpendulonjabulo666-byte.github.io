@@ -481,4 +481,16 @@ return [
             }
         }
     },
+
+    // Pantry expiry dates for the "use these up soon" banner. Idempotent: a
+    // column that already exists (fresh install re-run) is left alone.
+    '2026_09_30_pantry_expiry' => function (PDO $pdo): void {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_pantry_items' AND COLUMN_NAME = 'expires_on'"
+        )->fetchColumn();
+        if (!$has) {
+            $pdo->exec('ALTER TABLE user_pantry_items ADD COLUMN expires_on DATE NULL');
+        }
+    },
 ];

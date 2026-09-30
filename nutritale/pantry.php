@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
 require_once __DIR__ . '/includes/ingredient_matching.php';
 require_once __DIR__ . '/includes/external_recipes.php';
+require_once __DIR__ . '/includes/pantry_expiry.php';
 
 $user = require_login();
 
@@ -38,8 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             // "chicken, spinach, rice" (the field's own placeholder text)
             // becomes three rows, not one - see split_pantry_entry().
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
-            foreach (split_pantry_entry($raw) as $name) {
+            $names = split_pantry_entry($raw);
+            foreach ($names as $name) {
                 $stmt->execute([$user['id'], $name]);
+            }
+            // Optional expiry date; adding an item again with a new date updates it.
+            $expires = pantry_parse_expiry($_POST['expires_on'] ?? '');
+            if ($expires !== null && $names) {
+                try {
+                    $dateStmt = db()->prepare('UPDATE user_pantry_items SET expires_on = ? WHERE user_id = ? AND ingredient_name = ?');
+                    foreach ($names as $name) {
+                        $dateStmt->execute([$expires, $user['id'], $name]);
+                    }
+                } catch (Throwable $e) {
+                    // expires_on column not there yet (setup.php not re-run) - item is still added.
+                }
             }
         }
     } elseif ($action === 'remove') {
@@ -74,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     redirect('pantry.php');
 }
 
+$expiryMap = pantry_expiry_map((int)$user['id']);
+$expiryAlerts = pantry_expiry_alerts($expiryMap);
 $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
 
@@ -175,7 +191,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=10">
+<link rel="stylesheet" href="assets/css/style.css?v=11">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -195,11 +211,14 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
         </p>
     <?php endif; ?>
 
+    <?= render_pantry_expiry_banner($expiryAlerts) ?>
+
     <div class="card mb-16">
-        <form method="post" style="display:flex;gap:8px;">
+        <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="add">
-            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+            <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
             <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
         </form>
         <div class="pantry-scan-row">
@@ -223,6 +242,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <label for="scan-name" class="muted" style="font-size:12.5px;">Found it. Edit the name if needed, then add it:</label>
                     <div style="display:flex;gap:8px;">
                         <input type="text" name="ingredient_name" id="scan-name" required>
+                        <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
                         <button type="submit" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add</button>
                     </div>
                 </form>
@@ -238,7 +258,8 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="remove">
                         <input type="hidden" name="ingredient_name" value="<?= h($item) ?>">
-                        <button type="submit" class="pantry-chip"><?= h($item) ?> <?= icon('x', 12) ?></button>
+                        <?php $itemExpiry = isset($expiryMap[$item]) ? pantry_expiry_days((string)$expiryMap[$item]) : null; ?>
+                        <button type="submit" class="pantry-chip"><?= h($item) ?><?php if ($itemExpiry !== null): ?> <span class="pantry-expiry expiry-<?= h(pantry_expiry_state($itemExpiry)) ?>"><?= h(pantry_expiry_label($itemExpiry)) ?></span><?php endif; ?> <?= icon('x', 12) ?></button>
                     </form>
                 <?php endforeach; ?>
             </div>
