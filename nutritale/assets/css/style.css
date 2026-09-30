@@ -2139,3 +2139,8 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 @media (prefers-reduced-motion: reduce) {
     .folder-card, .folder-face, .folder-object, .folder-label { transition: none; }
 }
+/* Photo credit is revealed by clicking/tapping the recipe photo
+   (assets/js/photo-credit.js). Without JS it simply stays visible. */
+.recipe-photo-credit[hidden] { display: none; }
+.recipe-detail-image.has-credit { cursor: pointer; }
+.recipe-detail-image.has-credit:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }

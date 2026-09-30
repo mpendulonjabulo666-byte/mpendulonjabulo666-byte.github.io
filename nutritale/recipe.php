@@ -175,6 +175,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <script src="assets/js/theme-init.js"></script>
 <link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/photo-credit.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -185,7 +186,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
     </div>
 
     <div class="recipe-detail">
-        <div class="recipe-detail-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
+        <div class="recipe-detail-image" title="Click the photo for its credit" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
         <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-photo-credit') ?>
 
         <div class="recipe-detail-body">
