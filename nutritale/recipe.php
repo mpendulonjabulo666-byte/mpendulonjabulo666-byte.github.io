@@ -171,8 +171,9 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/style.css?v=10">
 <script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/photo-credit.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -183,7 +184,7 @@ $isTierLocked = !$isPurchaseLocked && $recipe['tier'] === 'premium' && empty($us
     </div>
 
     <div class="recipe-detail">
-        <div class="recipe-detail-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
+        <div class="recipe-detail-image" title="Click the photo for its credit" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
         <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-photo-credit') ?>
 
         <div class="recipe-detail-body">

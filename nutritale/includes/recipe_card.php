@@ -13,7 +13,6 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
                     <?= icon('heart', 18) ?>
                 </button>
             </form>
-            <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
         </div>
         <div class="recipe-card-body">
             <h3><a class="recipe-card-link" href="recipe.php?id=<?= urlencode($recipe['id']) ?>"><?= h($recipe['title']) ?></a></h3>
