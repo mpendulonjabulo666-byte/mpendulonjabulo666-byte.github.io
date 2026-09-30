@@ -67,6 +67,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
                 <span class="ring-pill-disc"><?= icon('logout', 16) ?></span>
                 <span class="ring-pill-label">Log out</span>
             </a>
+            <p class="photo-credits-note">Photos: Unsplash &amp; Wikimedia Commons</p>
         </div>
     </div>
 </header>

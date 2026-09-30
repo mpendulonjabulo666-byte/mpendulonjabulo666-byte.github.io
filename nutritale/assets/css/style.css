@@ -2144,3 +2144,6 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 .recipe-photo-credit[hidden] { display: none; }
 .recipe-detail-image.has-credit { cursor: pointer; }
 .recipe-detail-image.has-credit:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }
+
+/* Site-wide photo source line (sidebar footer + landing footer). */
+.photo-credits-note { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--muted); text-align: center; }

@@ -266,6 +266,7 @@ $testimonials = [];
     <!-- Social follow icons go here once there are real NutriTale accounts
          to link - none exist yet, so nothing is shown rather than linking
          to a placeholder/guessed handle. -->
+    <p class="photo-credits-note">Photos: Unsplash &amp; Wikimedia Commons</p>
     <p style="margin:14px 0 0;">&copy; <?= date('Y') ?> <?= APP_NAME ?>. All rights reserved.</p>
 </footer>
 </body>
