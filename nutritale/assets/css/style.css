@@ -1276,6 +1276,11 @@ a { color: inherit; text-decoration: none; }
         visibility: hidden;
         z-index: 50;
         overflow-y: auto;
+        /* Base rule uses space-between for the landing top bar; in this
+           column drawer it spread close button / links / user block over
+           the full height, leaving a big gap above "Recipes". Stack from
+           the top instead and pin the user block to the bottom below. */
+        justify-content: flex-start;
     }
     .app-nav-toggle-input:checked ~ .app-nav-collapsible { transform: translateX(0); visibility: visible; }
     .app-nav-links { flex-direction: column; gap: 4px; }
@@ -1283,6 +1288,7 @@ a { color: inherit; text-decoration: none; }
     .app-nav-links a:hover, .app-nav-links a.is-active { background: var(--green-light); }
     .app-nav-links a.is-active { font-weight: 700; }
     .app-nav-user { flex-direction: column; align-items: stretch; gap: 12px; }
+    .app-nav:not(.landing-nav) .app-nav-user { margin-top: auto; padding-top: 14px; }
     /* landing.php reuses .app-nav/.app-nav-user for its own plain top bar
        (see the :not(.landing-nav) note at min-width:901px below) - it has
        none of the drawer/toggle markup the column-stack above is actually
@@ -1398,6 +1404,9 @@ a { color: inherit; text-decoration: none; }
 .landing-nav {
     background: var(--landing-bg);
     border-bottom: 1px solid var(--landing-glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .landing-main {
@@ -1982,11 +1991,11 @@ a { color: inherit; text-decoration: none; }
 button.ring-pill { appearance: none; -webkit-appearance: none; }
 .ring-pill:hover, .ring-pill:focus-visible { --ring-fill: rgba(28, 37, 33, 0.08); --ring-line: rgba(28, 37, 33, 0.3); }
 .ring-pill:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 3px; }
-:root[data-theme="dark"] .ring-pill { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
-:root[data-theme="dark"] .ring-pill:hover, :root[data-theme="dark"] .ring-pill:focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
+:root[data-theme="dark"] .ring-pill:not(.ring-pill-strong) { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
+:root[data-theme="dark"] .ring-pill:not(.ring-pill-strong):hover, :root[data-theme="dark"] .ring-pill:not(.ring-pill-strong):focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
 @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .ring-pill { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
-    :root:not([data-theme="light"]) .ring-pill:hover, :root:not([data-theme="light"]) .ring-pill:focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
+    :root:not([data-theme="light"]) .ring-pill:not(.ring-pill-strong) { --ring-fill: rgba(255, 255, 255, 0.05); --ring-line: rgba(255, 255, 255, 0.16); }
+    :root:not([data-theme="light"]) .ring-pill:not(.ring-pill-strong):hover, :root:not([data-theme="light"]) .ring-pill:not(.ring-pill-strong):focus-visible { --ring-fill: rgba(255, 255, 255, 0.09); --ring-line: rgba(255, 255, 255, 0.3); }
 }
 /* Primary actions (log in / create account submits): same pill, solid fill. */
 .ring-pill.ring-pill-strong { --ring-fill: var(--emphasis-bg); --ring-line: var(--brand-tale); color: var(--emphasis-fg); }
@@ -2145,8 +2154,6 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 .recipe-detail-image.has-credit { cursor: pointer; }
 .recipe-detail-image.has-credit:focus-visible { outline: 2px solid var(--green-dark); outline-offset: -2px; }
 
-/* Site-wide photo source line (sidebar footer + landing footer). */
-.photo-credits-note { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--muted); text-align: center; }
 
 /* Pantry expiry: "use these up soon" banner + per-item labels. */
 .expiry-banner {
