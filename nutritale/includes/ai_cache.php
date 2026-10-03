@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/db_conn.php';
 // Kept separate from ai_pantry.php, which is deliberately DB-free and
 // tested without a database, an API key, or a network call - see
 // tests/ai_pantry_test.php. Everything in this file needs the ai_generations
-// table from sql/migrations.php.
+// table from sql/db_migrations.php.
 //
 // A successful request (status 'ok') is stored under ai_pantry_hash() from
 // includes/ai_pantry.php. An identical request within AI_PANTRY_CACHE_DAYS

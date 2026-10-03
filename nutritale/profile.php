@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
 require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/avatars.php';
 
 $user = require_login();
 
@@ -14,10 +15,35 @@ $allergenOptions = ALLERGEN_OPTIONS;
 
 $errors = [];
 
+// A POST body over post_max_size arrives with $_POST (and so the CSRF token)
+// emptied by PHP before any of this runs, which would otherwise fail the
+// csrf_check() below and show nothing at all. Only an oversized photo can
+// realistically do that here, so say so rather than appearing to ignore it.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$_POST && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    $errors[] = 'That photo is too large to upload. Pick one under 5MB.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $form = $_POST['form'] ?? '';
 
-    if ($form === 'details') {
+    if ($form === 'avatar') {
+        [$ok, $result] = avatar_store($_FILES['avatar'] ?? [], (int)$user['id']);
+        if (!$ok) {
+            $errors[] = $result;
+        } else {
+            // Replace, don't accumulate: the previous file is removed only
+            // after the new one is safely on disk.
+            avatar_delete($user['avatar_path'] ?? null);
+            db()->prepare('UPDATE users SET avatar_path = ? WHERE id = ?')->execute([$result, $user['id']]);
+            flash_set('success', 'Profile photo updated.');
+            redirect('profile.php');
+        }
+    } elseif ($form === 'avatar_remove') {
+        avatar_delete($user['avatar_path'] ?? null);
+        db()->prepare('UPDATE users SET avatar_path = NULL WHERE id = ?')->execute([$user['id']]);
+        flash_set('success', 'Profile photo removed.');
+        redirect('profile.php');
+    } elseif ($form === 'details') {
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
@@ -166,13 +192,13 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=14">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main" style="max-width:640px;">
-    <h1 class="mb-16">Your profile</h1>
+    <h1 class="mb-16 profile-page-title">Your profile</h1>
 
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
@@ -181,7 +207,44 @@ $goals = $goalStmt->fetch() ?: [];
         <div class="alert alert-error"><?= h($error) ?></div>
     <?php endforeach; ?>
 
-    <div class="card mb-16">
+    <?php /* Identity block: photo, name, email. Centered and card-like on
+             phones (matching the app mockup), a compact left-aligned row on
+             desktop so the existing page keeps its shape there. */ ?>
+    <section class="profile-hero mb-16">
+        <form method="post" enctype="multipart/form-data" class="profile-hero-photo" id="avatar-form">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="form" value="avatar">
+            <label class="profile-avatar-wrap" for="avatar-input">
+                <?= user_avatar($user['name'], 96, $user['avatar_path'] ?? null) ?>
+                <span class="profile-avatar-badge" aria-hidden="true"><?= icon('camera', 15) ?></span>
+                <span class="profile-avatar-label">
+                    <?= !empty($user['avatar_path']) ? 'Change photo' : 'Add a photo' ?>
+                </span>
+            </label>
+            <input type="file" id="avatar-input" name="avatar" class="profile-avatar-input"
+                   accept="image/jpeg,image/png,image/webp">
+            <button type="submit" class="btn btn-small profile-avatar-submit">Upload photo</button>
+        </form>
+
+        <div class="profile-hero-id">
+            <h2 class="profile-hero-name"><?= h($user['name']) ?></h2>
+            <p class="profile-hero-email muted"><?= h($user['email']) ?></p>
+            <div class="profile-hero-actions">
+                <a href="#account-details" class="ring-pill profile-hero-edit">
+                    <span class="ring-pill-label">Edit profile</span>
+                </a>
+                <?php if (!empty($user['avatar_path'])): ?>
+                    <form method="post" class="profile-hero-remove">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="form" value="avatar_remove">
+                        <button type="submit" class="btn btn-text btn-small">Remove photo</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
+
+    <div class="card mb-16" id="account-details">
         <h2 style="font-size:16px;margin-top:0;">Account details</h2>
         <form method="post">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
@@ -314,5 +377,6 @@ $goals = $goalStmt->fetch() ?: [];
         <?php endif; ?>
     </div>
 </main>
+<script src="assets/js/avatar-upload.js" defer></script>
 </body>
 </html>

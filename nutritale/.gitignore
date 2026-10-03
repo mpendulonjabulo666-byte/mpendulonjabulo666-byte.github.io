@@ -4,3 +4,10 @@ config/config.local.php
 # Large design/handoff dumps - not app source, keep these out of git
 *.zip
 scripts/image_review/
+
+# Uploaded profile photos are per-install user data, not source. The
+# directory's .htaccess (which stops anything there being executed) is
+# committed so the protection exists before the first upload - see
+# avatar_ensure_dir() in includes/avatars.php, which recreates both.
+assets/img/avatars/*
+!assets/img/avatars/.htaccess

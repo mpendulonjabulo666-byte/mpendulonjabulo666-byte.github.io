@@ -596,6 +596,87 @@ a { color: inherit; text-decoration: none; }
     .skeleton-block { animation: none; }
 }
 
+/* Profile identity block (profile.php). Desktop keeps a compact left-aligned
+   row; the phone layout below switches to the centered, card-like stack from
+   the app mockup. .user-avatar-photo is the uploaded image variant of the
+   initials badge - same circle, so both sizes/crop identically. */
+.user-avatar-photo {
+    object-fit: cover;
+    background: var(--green-light);
+}
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.profile-hero-photo { margin: 0; }
+.profile-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.profile-avatar-wrap:focus-within {
+    outline: 2px solid var(--green-dark);
+    outline-offset: 3px;
+}
+.profile-avatar-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #06210f;
+    border: 2px solid var(--bg);
+}
+/* The label text only exists for screen readers and the no-JS path; the
+   camera badge is the visible affordance. */
+.profile-avatar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.profile-avatar-input { display: none; }
+.profile-hero-name { margin: 0; font-size: 20px; }
+.profile-hero-email { margin: 2px 0 0; font-size: 13.5px; word-break: break-word; }
+.profile-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.profile-hero-remove { margin: 0; }
+/* Without JS the file input and its submit button are the whole control; the
+   script below swaps to pick-and-upload-immediately and hides both. */
+.profile-avatar-input.is-enhanced,
+.profile-avatar-submit.is-enhanced { display: none; }
+
+@media (max-width: 700px) {
+    .profile-page-title { display: none; }
+    .profile-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+        padding: 24px 20px 20px;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+    }
+    .profile-hero-name { font-size: 22px; }
+    .profile-hero-actions { justify-content: center; margin-top: 14px; }
+}
+
 .pantry-chip {
     display: inline-flex;
     align-items: center;
@@ -1103,6 +1184,71 @@ a { color: inherit; text-decoration: none; }
     white-space: nowrap;
 }
 .admin-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+
+/* Phone bottom tab bar (includes/nav.php). Desktop keeps the sidebar, so
+   this only exists under the drawer breakpoint. .app-main gets matching
+   bottom padding there so the bar never covers the last of the content. */
+.app-tabbar { display: none; }
+
+@media (max-width: 900px) {
+    .app-tabbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 45;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        background: var(--white);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.06);
+    }
+    .app-tabbar-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        /* 56px keeps every tab at/above the 44px minimum touch target. */
+        min-height: 56px;
+        padding: 7px 2px 9px;
+        color: var(--muted);
+        text-align: center;
+    }
+    .app-tabbar-icon { display: inline-flex; }
+    .app-tabbar-label {
+        font-size: 10.5px;
+        line-height: 1.1;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .app-tabbar-item.is-active { color: var(--green-dark); font-weight: 700; }
+    .app-tabbar-item:focus-visible {
+        outline: 2px solid var(--green-dark);
+        outline-offset: -2px;
+    }
+    .app-main { padding-bottom: 86px; }
+}
+
+/* Admin page header ("Admin portal" + "My profile"). Was an inline flex row
+   with no wrap on all nine admin pages: on a phone the <h1> got squeezed
+   until the title broke across two lines that then collided, because the
+   display face sets no line-height of its own at that size. Wrapping the
+   row and pinning a line-height fixes both halves of that. */
+.admin-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+.admin-page-head h1 {
+    margin: 0;
+    min-width: 0;
+    line-height: 1.25;
+}
 
 .admin-tabbar {
     display: flex;

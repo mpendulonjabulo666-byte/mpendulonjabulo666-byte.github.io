@@ -67,8 +67,17 @@ function recipe_photo_credit(string $recipeId, ?string $imageUrl, string $class 
 // since every real call site pairs it with the same name as visible
 // text right next to it - a screen reader doesn't need "N M" read out
 // between them.
-function user_avatar(string $name, int $size = 34): string
+// $avatarPath is users.avatar_path (see includes/avatars.php); null or a
+// file that has since gone missing falls back to the initials badge, so a
+// deleted upload never renders as a broken image.
+function user_avatar(string $name, int $size = 34, ?string $avatarPath = null): string
 {
+    if ($avatarPath !== null && $avatarPath !== '' && is_file(dirname(__DIR__) . '/' . $avatarPath)) {
+        return '<img class="user-avatar user-avatar-photo" src="' . h($avatarPath) . '"'
+            . ' width="' . $size . '" height="' . $size . '"'
+            . ' style="width:' . $size . 'px;height:' . $size . 'px;"'
+            . ' alt="" loading="lazy" decoding="async">';
+    }
     $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY);
     $initials = $words ? mb_strtoupper(mb_substr($words[0], 0, 1)) : '';
     if (count($words) > 1) {
@@ -86,7 +95,7 @@ function current_user(): ?array
     }
     static $user = null;
     if ($user === null) {
-        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, is_premium_member, pantry_free_uses_used, created_at FROM users WHERE id = ?');
+        $stmt = db()->prepare('SELECT id, name, email, onboarded_at, is_admin, email_notifications, is_vendor, is_premium_member, pantry_free_uses_used, avatar_path, created_at FROM users WHERE id = ?');
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch() ?: null;
         if ($user && $user['is_premium_member']) {
@@ -107,7 +116,7 @@ function current_user(): ?array
 // over a month ago with no successful renewal since.
 //
 // A NULL period-end (no active subscription row, or one created before
-// sql/migrations.php's 2026_09_15_premium_period_end ran and never
+// sql/db_migrations.php's 2026_09_15_premium_period_end ran and never
 // renewed since) is left alone, not treated as expired - we don't know
 // that subscription's real paid-through date, and guessing "expired"
 // would downgrade someone who may still be legitimately paying. It starts

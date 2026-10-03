@@ -1,0 +1,7 @@
+# Uploaded images only - never executed.
+php_flag engine off
+SetHandler default-handler
+Options -ExecCGI -Indexes
+<FilesMatch "\.(?i:php|phtml|phar|cgi|pl|py|sh|htaccess)$">
+    Require all denied
+</FilesMatch>

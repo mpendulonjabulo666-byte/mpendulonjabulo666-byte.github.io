@@ -26,9 +26,9 @@ try {
 
     // Schema changes that can't be expressed as a safe-to-repeat CREATE
     // (an ALTER on a table that might already have it, say) live in
-    // sql/migrations.php instead, tracked one-time here so a redeploy
+    // sql/db_migrations.php instead, tracked one-time here so a redeploy
     // never re-runs one that already succeeded. See CONTINUE.md step 4.
-    $migrations = require __DIR__ . '/sql/migrations.php';
+    $migrations = require __DIR__ . '/sql/db_migrations.php';
     $alreadyApplied = $pdo->query('SELECT version FROM schema_migrations')->fetchAll(PDO::FETCH_COLUMN);
     $newlyApplied = 0;
     foreach ($migrations as $version => $migration) {
@@ -106,7 +106,7 @@ try {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=14">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>

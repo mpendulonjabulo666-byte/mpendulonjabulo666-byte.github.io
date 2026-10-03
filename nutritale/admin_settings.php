@@ -37,13 +37,13 @@ $settings = db()->query('SELECT * FROM platform_settings WHERE id = 1')->fetch()
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=14">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;" class="mb-16">
+    <div class="admin-page-head mb-16">
         <h1 style="margin:0;"><?= icon('shield', 20) ?> Admin portal</h1>
         <a href="admin_profile.php" class="btn btn-text btn-small"><?= icon('user', 16) ?> My profile</a>
     </div>

@@ -493,4 +493,18 @@ return [
             $pdo->exec('ALTER TABLE user_pantry_items ADD COLUMN expires_on DATE NULL');
         }
     },
+
+    // Profile photos. Stores the web path relative to the app root
+    // (assets/img/avatars/<random>.<ext>), never a user-supplied filename -
+    // see avatar_store() in includes/avatars.php. NULL means "no photo", and
+    // user_avatar() falls back to the initials badge it always rendered.
+    '2026_10_03_user_avatar' => function (PDO $pdo): void {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'avatar_path'"
+        )->fetchColumn();
+        if (!$has) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL');
+        }
+    },
 ];
