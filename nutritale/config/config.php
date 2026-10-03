@@ -146,6 +146,7 @@ define('APPLE_OAUTH_PRIVATE_KEY', getenv('APPLE_OAUTH_PRIVATE_KEY') ?: '');
 // one. See includes/ai_cache.php.
 define('AI_PANTRY_CACHE_DAYS', 3);
 define('AI_PANTRY_FREE_DAILY_CAP', 2);
+define('AI_PANTRY_FREE_WINDOW_DAYS', 3); // free accounts: AI_PANTRY_FREE_DAILY_CAP generations per rolling N days
 define('AI_PANTRY_DAILY_CAP', 20);
 define('AI_PANTRY_COOLDOWN_SECONDS', 30);
 

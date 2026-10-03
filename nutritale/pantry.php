@@ -16,8 +16,13 @@ $isPremiumOrAdmin = $user['is_premium_member'] || $user['is_admin'];
 // per-day count (AI_PANTRY_FREE_DAILY_CAP / AI_PANTRY_DAILY_CAP) rather
 // than the old lifetime "3 free trials ever" counter - see config.php.
 $aiDailyCap = $isPremiumOrAdmin ? AI_PANTRY_DAILY_CAP : AI_PANTRY_FREE_DAILY_CAP;
-$aiUsedToday = ai_daily_attempt_count((int)$user['id']);
+// Free accounts: AI_PANTRY_FREE_DAILY_CAP generations per rolling
+// AI_PANTRY_FREE_WINDOW_DAYS days (default 3 if the constant is missing from
+// a host's older config.php - never a fatal). Premium/admin: per day.
+$aiWindowDays = $isPremiumOrAdmin ? 1 : (defined('AI_PANTRY_FREE_WINDOW_DAYS') ? max(1, (int)AI_PANTRY_FREE_WINDOW_DAYS) : 3);
+$aiUsedToday = ai_daily_attempt_count((int)$user['id'], $aiWindowDays);
 $aiCapReached = $aiUsedToday >= $aiDailyCap;
+$aiPeriodLabel = $aiWindowDays > 1 ? "in any $aiWindowDays days" : 'per day';
 
 $pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
 $pantryStmt->execute([$user['id']]);
@@ -72,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             // no daily-cap count added, no cooldown started.
             $_SESSION['ai_pantry_ideas'] = $cached + ['from_cache' => true];
         } elseif ($aiCapReached) {
-            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached today's AI suggestion limit ($aiDailyCap). "
-                . ($isPremiumOrAdmin ? 'Try again tomorrow.' : 'Try again tomorrow, or go Premium for a higher daily limit.')];
+            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached the AI suggestion limit ($aiDailyCap $aiPeriodLabel). "
+                . ($isPremiumOrAdmin ? 'Try again tomorrow.' : 'Try again in a day or two, or go Premium for up to ' . (int)AI_PANTRY_DAILY_CAP . ' a day.')];
         } elseif ($secondsSinceLast !== null && $secondsSinceLast < AI_PANTRY_COOLDOWN_SECONDS) {
             $wait = AI_PANTRY_COOLDOWN_SECONDS - $secondsSinceLast;
             $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "Please wait $wait more second" . ($wait === 1 ? '' : 's') . ' before requesting new ideas.'];
@@ -206,8 +211,8 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 
     <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
-            <?= $aiCapReached ? "You've used today's $aiDailyCap free AI idea generations." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left today.' ?>
-            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for a higher daily limit.
+            <?= $aiCapReached ? "You've used your $aiDailyCap free AI idea generations ($aiPeriodLabel)." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left (' . $aiDailyCap . ' ' . $aiPeriodLabel . ').' ?>
+            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for up to <?= (int)AI_PANTRY_DAILY_CAP ?> a day.
         </p>
     <?php endif; ?>
 
