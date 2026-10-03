@@ -173,7 +173,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=15">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/photo-credit.js" defer></script>
 </head>
@@ -181,7 +181,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
     <div class="mb-16" style="display:flex;justify-content:space-between;align-items:center;">
-        <a href="index.php" class="btn btn-text btn-small"><?= icon('chevron-left', 16) ?> Back to recipes</a>
+        <a href="index.php" class="btn-back"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to recipes</span></a>
         <button type="button" class="btn btn-text btn-small" onclick="window.print()"><?= icon('printer', 16) ?> Print</button>
     </div>
 

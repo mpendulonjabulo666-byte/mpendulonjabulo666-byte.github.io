@@ -33,13 +33,13 @@ $isOwn = (int)$listing['seller_id'] === (int)$user['id'];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=15">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main" style="max-width:520px;">
-    <a href="marketplace.php" class="muted" style="display:inline-flex;align-items:center;gap:4px;margin-bottom:16px;"><?= icon('chevron-left', 14) ?> Back to marketplace</a>
+    <a href="marketplace.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to marketplace</span></a>
 
     <div class="card">
         <h1 style="margin:0 0 4px;font-size:22px;"><?= h($listing['ingredient_name']) ?></h1>

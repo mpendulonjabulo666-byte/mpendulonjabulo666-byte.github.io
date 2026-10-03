@@ -140,13 +140,13 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=15">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main" style="max-width:640px;">
-    <a href="admin.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to admin</a>
+    <a href="admin.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to admin</span></a>
 
     <div class="card mb-16">
         <div style="display:flex;align-items:center;gap:16px;">
