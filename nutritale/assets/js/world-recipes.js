@@ -15,5 +15,7 @@
         .catch(function () {
             box.querySelector('.world-recipes-status').textContent = 'Worldwide recipes could not be loaded right now. Refresh to try again.';
             box.removeAttribute('aria-busy');
+            var skeleton = box.querySelector('.recipe-grid');
+            if (skeleton) skeleton.remove();
         });
 })();
