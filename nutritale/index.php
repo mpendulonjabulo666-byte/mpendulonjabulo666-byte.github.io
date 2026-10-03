@@ -3,6 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/recipe_card.php';
+require_once __DIR__ . '/includes/pantry_expiry.php';
 
 enforce_maintenance_mode();
 
@@ -177,7 +178,7 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=11">
+<link rel="stylesheet" href="assets/css/style.css?v=13">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -189,6 +190,8 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
     <?php if ($error = flash_get('error')): ?>
         <div class="alert alert-error"><?= h($error) ?></div>
     <?php endif; ?>
+
+    <?= render_pantry_expiry_banner(pantry_expiry_alerts(pantry_expiry_map((int)$user['id'])), true) ?>
 
     <?php if ($todayMeals): ?>
         <div class="card mb-16 today-widget">

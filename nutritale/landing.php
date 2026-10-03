@@ -62,7 +62,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=11">
+<link rel="stylesheet" href="assets/css/style.css?v=13">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
 <script src="assets/js/recipe-ring.js" defer></script>
@@ -94,7 +94,6 @@ $testimonials = [];
                     </p>
                     <div class="landing-cta">
                         <a href="register.php" class="btn btn-primary"><?= LANDING_CTA_LABEL ?></a>
-                        <a href="login.php" class="btn btn-text">I already have an account</a>
                     </div>
                     <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
                 </div>

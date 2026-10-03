@@ -38,12 +38,24 @@ function ai_cache_lookup(int $userId, string $pantryHash, int $withinDays): ?arr
 // triggered by an allergen violation still costs one) this user has made
 // today. Compared against AI_PANTRY_DAILY_CAP for premium/admin accounts,
 // which pantry.php's free-trial counter never touches - see config.php.
-function ai_daily_attempt_count(int $userId): int
+//
+// $windowDays = 1 (default, premium/admin) counts since midnight today.
+// A larger window (free accounts: AI_PANTRY_FREE_WINDOW_DAYS, 3) counts a
+// rolling N x 24 hours instead, so "2 ideas per 3 days" is a real rolling
+// limit rather than a calendar one.
+function ai_daily_attempt_count(int $userId, int $windowDays = 1): int
 {
-    $stmt = db()->prepare(
-        'SELECT COALESCE(SUM(attempts), 0) FROM ai_generations WHERE user_id = ? AND created_at >= CURDATE()'
-    );
-    $stmt->execute([$userId]);
+    if ($windowDays <= 1) {
+        $stmt = db()->prepare(
+            'SELECT COALESCE(SUM(attempts), 0) FROM ai_generations WHERE user_id = ? AND created_at >= CURDATE()'
+        );
+        $stmt->execute([$userId]);
+    } else {
+        $stmt = db()->prepare(
+            'SELECT COALESCE(SUM(attempts), 0) FROM ai_generations WHERE user_id = ? AND created_at >= (NOW() - INTERVAL ? DAY)'
+        );
+        $stmt->execute([$userId, $windowDays]);
+    }
     return (int)$stmt->fetchColumn();
 }
 

@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
 require_once __DIR__ . '/includes/ingredient_matching.php';
 require_once __DIR__ . '/includes/external_recipes.php';
+require_once __DIR__ . '/includes/pantry_expiry.php';
 
 $user = require_login();
 
@@ -15,8 +16,13 @@ $isPremiumOrAdmin = $user['is_premium_member'] || $user['is_admin'];
 // per-day count (AI_PANTRY_FREE_DAILY_CAP / AI_PANTRY_DAILY_CAP) rather
 // than the old lifetime "3 free trials ever" counter - see config.php.
 $aiDailyCap = $isPremiumOrAdmin ? AI_PANTRY_DAILY_CAP : AI_PANTRY_FREE_DAILY_CAP;
-$aiUsedToday = ai_daily_attempt_count((int)$user['id']);
+// Free accounts: AI_PANTRY_FREE_DAILY_CAP generations per rolling
+// AI_PANTRY_FREE_WINDOW_DAYS days (default 3 if the constant is missing from
+// a host's older config.php - never a fatal). Premium/admin: per day.
+$aiWindowDays = $isPremiumOrAdmin ? 1 : (defined('AI_PANTRY_FREE_WINDOW_DAYS') ? max(1, (int)AI_PANTRY_FREE_WINDOW_DAYS) : 3);
+$aiUsedToday = ai_daily_attempt_count((int)$user['id'], $aiWindowDays);
 $aiCapReached = $aiUsedToday >= $aiDailyCap;
+$aiPeriodLabel = $aiWindowDays > 1 ? "in any $aiWindowDays days" : 'per day';
 
 $pantryStmt = db()->prepare('SELECT ingredient_name FROM user_pantry_items WHERE user_id = ? ORDER BY ingredient_name');
 $pantryStmt->execute([$user['id']]);
@@ -38,8 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             // "chicken, spinach, rice" (the field's own placeholder text)
             // becomes three rows, not one - see split_pantry_entry().
             $stmt = db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)');
-            foreach (split_pantry_entry($raw) as $name) {
+            $names = split_pantry_entry($raw);
+            foreach ($names as $name) {
                 $stmt->execute([$user['id'], $name]);
+            }
+            // Optional expiry date; adding an item again with a new date updates it.
+            $expires = pantry_parse_expiry($_POST['expires_on'] ?? '');
+            if ($expires !== null && $names) {
+                try {
+                    $dateStmt = db()->prepare('UPDATE user_pantry_items SET expires_on = ? WHERE user_id = ? AND ingredient_name = ?');
+                    foreach ($names as $name) {
+                        $dateStmt->execute([$expires, $user['id'], $name]);
+                    }
+                } catch (Throwable $e) {
+                    // expires_on column not there yet (setup.php not re-run) - item is still added.
+                }
             }
         }
     } elseif ($action === 'remove') {
@@ -58,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             // no daily-cap count added, no cooldown started.
             $_SESSION['ai_pantry_ideas'] = $cached + ['from_cache' => true];
         } elseif ($aiCapReached) {
-            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached today's AI suggestion limit ($aiDailyCap). "
-                . ($isPremiumOrAdmin ? 'Try again tomorrow.' : 'Try again tomorrow, or go Premium for a higher daily limit.')];
+            $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "You've reached the AI suggestion limit ($aiDailyCap $aiPeriodLabel). "
+                . ($isPremiumOrAdmin ? 'Try again tomorrow.' : 'Try again in a day or two, or go Premium for up to ' . (int)AI_PANTRY_DAILY_CAP . ' a day.')];
         } elseif ($secondsSinceLast !== null && $secondsSinceLast < AI_PANTRY_COOLDOWN_SECONDS) {
             $wait = AI_PANTRY_COOLDOWN_SECONDS - $secondsSinceLast;
             $_SESSION['ai_pantry_ideas'] = ['ok' => false, 'error' => "Please wait $wait more second" . ($wait === 1 ? '' : 's') . ' before requesting new ideas.'];
@@ -74,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     redirect('pantry.php');
 }
 
+$expiryMap = pantry_expiry_map((int)$user['id']);
+$expiryAlerts = pantry_expiry_alerts($expiryMap);
 $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
 
@@ -175,7 +196,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=11">
+<link rel="stylesheet" href="assets/css/style.css?v=13">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -190,16 +211,19 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 
     <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
-            <?= $aiCapReached ? "You've used today's $aiDailyCap free AI idea generations." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left today.' ?>
-            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for a higher daily limit.
+            <?= $aiCapReached ? "You've used your $aiDailyCap free AI idea generations ($aiPeriodLabel)." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left (' . $aiDailyCap . ' ' . $aiPeriodLabel . ').' ?>
+            <a href="premium.php" style="color:var(--green-dark);font-weight:600;">Go Premium</a> for up to <?= (int)AI_PANTRY_DAILY_CAP ?> a day.
         </p>
     <?php endif; ?>
 
+    <?= render_pantry_expiry_banner($expiryAlerts) ?>
+
     <div class="card mb-16">
-        <form method="post" style="display:flex;gap:8px;">
+        <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="add">
-            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+            <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
+            <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
             <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
         </form>
         <div class="pantry-scan-row">
@@ -223,6 +247,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <label for="scan-name" class="muted" style="font-size:12.5px;">Found it. Edit the name if needed, then add it:</label>
                     <div style="display:flex;gap:8px;">
                         <input type="text" name="ingredient_name" id="scan-name" required>
+                        <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
                         <button type="submit" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add</button>
                     </div>
                 </form>
@@ -238,7 +263,8 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="remove">
                         <input type="hidden" name="ingredient_name" value="<?= h($item) ?>">
-                        <button type="submit" class="pantry-chip"><?= h($item) ?> <?= icon('x', 12) ?></button>
+                        <?php $itemExpiry = isset($expiryMap[$item]) ? pantry_expiry_days((string)$expiryMap[$item]) : null; ?>
+                        <button type="submit" class="pantry-chip"><?= h($item) ?><?php if ($itemExpiry !== null): ?> <span class="pantry-expiry expiry-<?= h(pantry_expiry_state($itemExpiry)) ?>"><?= h(pantry_expiry_label($itemExpiry)) ?></span><?php endif; ?> <?= icon('x', 12) ?></button>
                     </form>
                 <?php endforeach; ?>
             </div>
