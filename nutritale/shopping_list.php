@@ -87,14 +87,14 @@ function format_qty(float $qty): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
     <div class="mb-16" style="display:flex;justify-content:space-between;align-items:center;">
-        <a href="planner.php?week=<?= h($monday->format('Y-m-d')) ?>" class="btn btn-text btn-small"><?= icon('chevron-left', 16) ?> Back to planner</a>
+        <a href="planner.php?week=<?= h($monday->format('Y-m-d')) ?>" class="btn-back"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to planner</span></a>
         <div style="display:flex;gap:8px;">
             <a class="btn btn-text btn-small" href="shopping_list_export.php?week=<?= h($monday->format('Y-m-d')) ?>"><?= icon('download', 16) ?> Export CSV</a>
             <button type="button" class="btn btn-text btn-small" onclick="window.print()"><?= icon('printer', 16) ?> Print</button>

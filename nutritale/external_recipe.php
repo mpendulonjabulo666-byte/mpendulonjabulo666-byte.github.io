@@ -47,14 +47,14 @@ $youtube = (string)($meal['strYoutube'] ?? '');
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2fae66">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
     <div class="mb-16">
-        <a href="pantry.php" class="btn btn-text btn-small"><?= icon('chevron-left', 16) ?> Back to What Can I Make?</a>
+        <a href="pantry.php" class="btn-back"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to What Can I Make?</span></a>
     </div>
 
     <?php if ($locked): ?>

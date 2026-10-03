@@ -21,7 +21,7 @@ require_once __DIR__ . '/../config/db_conn.php';
 //      mismatches ("tomatos", "tomatoes" -> "tomato") without needing to
 //      seed every regular plural by hand.
 //   2. A canonical ingredient + alias table (ingredients /
-//      ingredient_aliases, seeded in sql/migrations.php) for the mismatches
+//      ingredient_aliases, seeded in sql/db_migrations.php) for the mismatches
 //      that aren't mechanical - a genuine synonym ("passata" is tomato,
 //      "capsicum" is a bell pepper) or an irregular form the depluralizer
 //      would get wrong. Only ingredients that actually need one of those
@@ -74,7 +74,7 @@ function ingredient_tokens(string $text): array
 // A conservative, deliberately small depluralizer used only as a fallback
 // when a token isn't in the alias table - see canonicalize_token(). Not
 // meant to be linguistically complete: ingredients this app actually knows
-// about are covered by explicit aliases in sql/migrations.php instead,
+// about are covered by explicit aliases in sql/db_migrations.php instead,
 // including the irregular ones a blind "-s" strip would get wrong.
 // Three-letter-or-shorter words are returned unchanged - short enough that
 // a trailing "s" is as likely to be part of the word ("gas") as a plural.

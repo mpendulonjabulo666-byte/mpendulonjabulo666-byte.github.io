@@ -74,13 +74,13 @@ if ($templates) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <a href="planner.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to planner</a>
+    <a href="planner.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to planner</span></a>
     <h1 class="mb-16"><?= icon('calendar', 20) ?> Meal plan templates</h1>
     <p class="muted" style="margin-top:-8px;">Ready-made weekly plans — adopt one to fill your planner starting from any date.</p>
 

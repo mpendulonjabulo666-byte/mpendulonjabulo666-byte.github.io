@@ -196,7 +196,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -398,6 +398,18 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
             <section id="world-recipes" data-src="external_matches.php" aria-busy="true" aria-live="polite">
                 <h2 class="mb-16" style="margin-top:28px;">More from around the world</h2>
                 <p class="muted world-recipes-status">Finding recipes from around the world that use your ingredients...</p>
+                <div class="recipe-grid" aria-hidden="true">
+                    <?php for ($i = 0; $i < 3; $i++): ?>
+                    <div class="recipe-card skeleton-card">
+                        <div class="recipe-card-image skeleton-block"></div>
+                        <div class="recipe-card-body">
+                            <div class="skeleton-block skeleton-title"></div>
+                            <div class="skeleton-block skeleton-line"></div>
+                            <div class="skeleton-block skeleton-line short"></div>
+                        </div>
+                    </div>
+                    <?php endfor; ?>
+                </div>
             </section>
         <?php endif; ?>
     <?php endif; ?>

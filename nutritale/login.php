@@ -17,7 +17,7 @@ const LOCKOUT_MINUTES = 15;
 // policy, applied to a pairing the pre-existing users.failed_attempts/
 // locked_until columns can't cover on their own (an email with no
 // matching row never touches those columns at all - see
-// sql/migrations.php's 2026_09_21_login_attempts for the full reasoning).
+// sql/db_migrations.php's 2026_09_21_login_attempts for the full reasoning).
 // A simple, honest version of "remember me": extends this browser's own
 // session cookie lifetime rather than issuing a separate persistent
 // login token - real, not decorative (checking the box does keep you
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=13">
+<link rel="stylesheet" href="assets/css/style.css?v=16">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -159,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="auth-form-panel">
             <div class="auth-form-card">
-                <a href="landing.php" class="btn btn-text btn-small mb-16"><?= icon('chevron-left', 16) ?> Back to home</a>
+                <a href="landing.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to home</span></a>
                 <a href="landing.php" class="center-text mb-16" style="display:block;" aria-label="<?= h(APP_NAME) ?> home"><?= nutritale_logo_svg(48) ?></a>
                 <h1>Welcome Back</h1>
                 <p class="auth-form-subtitle">Log in to continue your food journey</p>

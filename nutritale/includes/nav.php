@@ -55,7 +55,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
             <?php endif; ?>
             <div class="app-nav-user-row">
                 <a href="<?= !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php' ?>" class="app-nav-identity-link">
-                    <?= user_avatar($user['name']) ?>
+                    <?= user_avatar($user['name'], 34, $user['avatar_path'] ?? null) ?>
                     <span class="app-nav-identity-text">
                         <span class="app-nav-identity-name"><?= h($user['name']) ?></span>
                         <span class="app-nav-identity-plan"><?= !empty($user['is_admin']) ? 'Admin' : (!empty($user['is_premium_member']) ? 'Premium' : 'Free plan') ?></span>
@@ -70,4 +70,35 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
         </div>
     </div>
 </header>
+
+<?php
+/* Phone-only bottom tab bar (the app mockup's five-up nav). Hidden from
+   901px up, where the sidebar already covers the same destinations. Only
+   the logged-in app gets this - landing.php has its own header and does
+   not include this file. */
+// Fourth element lists every page the tab counts as "current" for. Profile
+// needs both: an admin's tab points at admin_profile.php, but they can still
+// land on plain profile.php, and the tab should light up either way.
+$tabs = [
+    ['index.php', 'list', 'Recipes', ['index.php']],
+    ['pantry.php', 'wand', 'Pantry', ['pantry.php']],
+    ['planner.php', 'calendar', 'Planner', ['planner.php']],
+    ['favorites.php', 'heart', 'Favorites', ['favorites.php']],
+    [
+        !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php',
+        'user',
+        'Profile',
+        ['profile.php', 'admin_profile.php'],
+    ],
+];
+?>
+<nav class="app-tabbar" aria-label="Main">
+    <?php foreach ($tabs as [$page, $iconName, $label, $activeOn]): ?>
+        <?php $isActive = in_array($navCurrent, $activeOn, true); ?>
+        <a href="<?= h($page) ?>" class="app-tabbar-item<?= $isActive ? ' is-active' : '' ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
+            <span class="app-tabbar-icon"><?= icon($iconName, 20) ?></span>
+            <span class="app-tabbar-label"><?= h($label) ?></span>
+        </a>
+    <?php endforeach; ?>
+</nav>
 <script src="assets/js/nav-drawer-keyboard.js" defer></script>
