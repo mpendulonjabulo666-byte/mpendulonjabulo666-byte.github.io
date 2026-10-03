@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=14">
+<link rel="stylesheet" href="assets/css/style.css?v=15">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="oauth_apple.php" class="auth-social-btn"<?= oauth_apple_configured() ? '' : ' aria-disabled="true" tabindex="-1" title="Apple sign-in isn\'t set up on this server yet."' ?>><?= icon_apple(20) ?> Apple</a>
                 </div>
 
-                <p class="auth-switch-link">Don't have an account? <a href="register.php">Sign Up →</a></p>
+                <p class="auth-switch-link">Don't have an account? <a href="register.php">Sign Up <span class="auth-switch-arrow" aria-hidden="true">→</span></a></p>
             </div>
         </div>
     </div>
