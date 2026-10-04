@@ -438,15 +438,6 @@ a { color: inherit; text-decoration: none; }
     text-align: center;
 }
 
-/* Brand mark colours (nutritale_logo_svg). Pointed at the brand tokens
-   rather than fixed hexes, so the mark lightens with everything else on the
-   dark theme instead of going near-invisible. */
-.brand-mark {
-    --logo-ink: var(--brand-nutri);
-    --logo-leaf: var(--green);
-    display: block;
-    flex: none;
-}
 .brand-nutri { color: var(--brand-nutri); }
 .brand-tale { color: var(--brand-tale); }
 .app-nav-brand-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
