@@ -11,7 +11,11 @@
     var whatsappLink = document.getElementById('share-whatsapp');
     var facebookLink = document.getElementById('share-facebook');
     var copyBtn = document.getElementById('share-copy');
-    var menuItems = [whatsappLink, facebookLink, copyBtn];
+    var qrBtn = document.getElementById('share-qr');
+    var qrPanel = document.getElementById('share-qr-panel');
+    var qrCode = document.getElementById('share-qr-code');
+    var qrClose = document.getElementById('share-qr-close');
+    var menuItems = [whatsappLink, facebookLink, copyBtn, qrBtn].filter(Boolean);
 
     function showToast(text) {
         toast.textContent = text;
@@ -124,6 +128,42 @@
             closeMenu(false);
         }
     });
+
+    // QR of the page's own URL, drawn once and kept. 'M' error correction
+    // is the usual trade for a screen-displayed code: still readable at an
+    // angle or half-lit, without inflating the module count the way 'H'
+    // would on a long recipe URL.
+    function renderQr() {
+        if (qrCode.firstChild) return true;
+        if (typeof qrcode !== 'function') return false;
+        var qr = qrcode(0, 'M');
+        qr.addData(window.location.href);
+        qr.make();
+        qrCode.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true });
+        return true;
+    }
+
+    if (qrBtn && qrPanel && qrCode && qrClose) {
+        qrBtn.addEventListener('click', function () {
+            if (!renderQr()) {
+                showToast('QR code unavailable right now.');
+                return;
+            }
+            closeMenu(false);
+            qrPanel.hidden = false;
+            qrClose.focus();
+        });
+        qrClose.addEventListener('click', function () {
+            qrPanel.hidden = true;
+            shareBtn.focus();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !qrPanel.hidden) {
+                qrPanel.hidden = true;
+                shareBtn.focus();
+            }
+        });
+    }
 
     copyBtn.addEventListener('click', function () {
         copyLink(shareData().url);

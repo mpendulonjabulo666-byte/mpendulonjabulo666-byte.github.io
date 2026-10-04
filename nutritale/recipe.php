@@ -173,7 +173,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=17">
+<link rel="stylesheet" href="assets/css/style.css?v=18">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/photo-credit.js" defer></script>
 </head>
@@ -211,6 +211,15 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                  reaches on a phone where those apps are installed. There's
                                  nothing a browser-side link could hand them here. -->
                             <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-menu-item">Copy link</button>
+                            <?php /* Opens this recipe on any phone that points its own camera
+                                     at it - no app install, no in-app scanner, iOS and Android
+                                     alike. Drawn client-side from the page's own URL. */ ?>
+                            <button type="button" role="menuitem" tabindex="-1" id="share-qr" class="share-menu-item"><?= icon('grid', 18) ?> QR code</button>
+                        </div>
+                        <div id="share-qr-panel" class="share-qr-panel" hidden>
+                            <div id="share-qr-code" class="share-qr-code"></div>
+                            <p class="share-qr-hint">Point a phone camera at this to open the recipe.</p>
+                            <button type="button" class="btn btn-text btn-small" id="share-qr-close">Close</button>
                         </div>
                     </div>
                     <form method="post" action="favorite_toggle.php" class="print-hide">
@@ -484,6 +493,9 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 })();
 
 </script>
+<?php /* qrcode-generator 1.4.4 (Kazuhiko Arase, MIT), vendored unmodified.
+         Loaded before recipe-share.js, which calls into it. */ ?>
+<script src="assets/js/vendor/qrcode-generator.min.js" defer></script>
 <script src="assets/js/recipe-share.js" defer></script>
 </body>
 </html>

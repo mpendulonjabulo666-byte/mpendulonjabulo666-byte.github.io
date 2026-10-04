@@ -176,10 +176,32 @@ function user_is_currently_premium(int $userId): bool
     return $periodEnd === null || strtotime($periodEnd) >= time();
 }
 
+// A post-login destination is only ever one of this app's own pages: a
+// bare .php filename plus an optional query string. A scheme, a host, a
+// traversal or a protocol-relative //evil.com is refused, so a crafted
+// link can never turn the return-after-login into an open redirect.
+function login_safe_target(string $target): ?string
+{
+    return preg_match('/^[a-z0-9_]+\.php(\?[A-Za-z0-9_\-=&%.,+]*)?$/', $target) === 1 ? $target : null;
+}
+
 function require_login(): array
 {
     $user = current_user();
     if (!$user) {
+        // Remember where they were headed so login can return them there.
+        // A shared link or a scanned QR pointing at a recipe is useless if
+        // signing in always lands on the home page instead. GET only -
+        // bouncing back to a POST endpoint would replay an action rather
+        // than show a page.
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            $query = parse_url($uri, PHP_URL_QUERY);
+            $candidate = basename((string)parse_url($uri, PHP_URL_PATH)) . ($query ? '?' . $query : '');
+            if (login_safe_target($candidate) !== null) {
+                $_SESSION['login_redirect'] = $candidate;
+            }
+        }
         header('Location: login.php');
         exit;
     }

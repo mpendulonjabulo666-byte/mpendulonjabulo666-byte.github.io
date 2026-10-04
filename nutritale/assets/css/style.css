@@ -402,6 +402,42 @@ a { color: inherit; text-decoration: none; }
    than the 600 weight headings use, so it reads as a brand mark rather
    than a section title that happens to say "NutriTale". */
 .brand-wordmark { font-weight: 800; }
+/* Share > QR code panel (recipe.php). The code itself is always drawn on
+   white with a quiet zone, whatever the theme: a dark-mode-inverted QR is
+   measurably harder for phone cameras to lock onto, and this exists to be
+   scanned off a screen. */
+.share-qr-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    border-radius: var(--radius);
+    background: var(--white);
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.3);
+}
+.share-qr-code {
+    width: 168px;
+    height: 168px;
+    padding: 8px;
+    border-radius: 10px;
+    background: #fff;
+}
+.share-qr-code svg { display: block; width: 100%; height: 100%; }
+.share-qr-hint {
+    margin: 0;
+    max-width: 170px;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--muted);
+    text-align: center;
+}
+
 /* Brand mark colours (nutritale_logo_svg). Pointed at the brand tokens
    rather than fixed hexes, so the mark lightens with everything else on the
    dark theme instead of going near-invisible. */
