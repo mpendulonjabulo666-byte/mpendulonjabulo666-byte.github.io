@@ -27,7 +27,7 @@ $recipes = $stmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=18"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=18">
+<link rel="stylesheet" href="assets/css/style.css?v=19">
 <script src="assets/js/theme-toggle.js?v=18" defer></script>
 </head>
 <body>

@@ -72,17 +72,20 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
 </header>
 
 <?php
-/* Phone-only bottom tab bar (the app mockup's five-up nav). Hidden from
-   901px up, where the sidebar already covers the same destinations. Only
-   the logged-in app gets this - landing.php has its own header and does
-   not include this file. */
-// Fourth element lists every page the tab counts as "current" for. Profile
-// needs both: an admin's tab points at admin_profile.php, but they can still
-// land on plain profile.php, and the tab should light up either way.
-$tabs = [
+/* Phone-only bottom tab bar. Hidden from 901px up, where the sidebar
+   already covers the same destinations. Only the logged-in app gets this -
+   landing.php has its own header and does not include this file.
+   Four real tabs plus a raised, glowing center FAB for Add Recipe (the
+   floating-pill-with-center-button pattern). Planner stays reachable from
+   the hamburger drawer above; it gave up its tabbar slot to the FAB.
+   Third element lists every page the tab counts as "current" for. Profile
+   needs both: an admin's tab points at admin_profile.php, but they can
+   still land on plain profile.php, and the tab should light up either way. */
+$tabsBeforeFab = [
     ['index.php', 'list', 'Recipes', ['index.php']],
     ['pantry.php', 'wand', 'Pantry', ['pantry.php']],
-    ['planner.php', 'calendar', 'Planner', ['planner.php']],
+];
+$tabsAfterFab = [
     ['favorites.php', 'heart', 'Favorites', ['favorites.php']],
     [
         !empty($user['is_admin']) ? 'admin_profile.php' : 'profile.php',
@@ -91,14 +94,22 @@ $tabs = [
         ['profile.php', 'admin_profile.php'],
     ],
 ];
+$renderTab = function (array $tab) use ($navCurrent) {
+    [$page, $iconName, $label, $activeOn] = $tab;
+    $isActive = in_array($navCurrent, $activeOn, true);
+    echo '<a href="' . h($page) . '" class="app-tabbar-item' . ($isActive ? ' is-active' : '') . '"'
+        . ($isActive ? ' aria-current="page"' : '') . '>'
+        . '<span class="app-tabbar-icon">' . icon($iconName, 20) . '</span>'
+        . '<span class="app-tabbar-label">' . h($label) . '</span>'
+        . '</a>';
+};
 ?>
 <nav class="app-tabbar" aria-label="Main">
-    <?php foreach ($tabs as [$page, $iconName, $label, $activeOn]): ?>
-        <?php $isActive = in_array($navCurrent, $activeOn, true); ?>
-        <a href="<?= h($page) ?>" class="app-tabbar-item<?= $isActive ? ' is-active' : '' ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
-            <span class="app-tabbar-icon"><?= icon($iconName, 20) ?></span>
-            <span class="app-tabbar-label"><?= h($label) ?></span>
-        </a>
-    <?php endforeach; ?>
+    <?php foreach ($tabsBeforeFab as $tab) { $renderTab($tab); } ?>
+    <a href="add_recipe.php" class="app-tabbar-fab" aria-label="Add recipe">
+        <span class="app-tabbar-fab-glow" aria-hidden="true"></span>
+        <span class="app-tabbar-fab-icon"><?= icon('plus', 24) ?></span>
+    </a>
+    <?php foreach ($tabsAfterFab as $tab) { $renderTab($tab); } ?>
 </nav>
 <script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>

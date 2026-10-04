@@ -1187,37 +1187,50 @@ a { color: inherit; text-decoration: none; }
 
 /* Phone bottom tab bar (includes/nav.php). Desktop keeps the sidebar, so
    this only exists under the drawer breakpoint. .app-main gets matching
-   bottom padding there so the bar never covers the last of the content. */
+   bottom padding there so the bar never covers the last of the content.
+   Floating pill with a raised, glowing center FAB (Add Recipe) - the
+   home/chat/[+]/bell/profile pattern, mapped to Recipes/Pantry/[+]/
+   Favorites/Profile. The FAB sits on a white/dark ring matching the bar's
+   own background so it reads as breaking out of the pill rather than a
+   separate floating circle. */
 .app-tabbar { display: none; }
 
 @media (max-width: 900px) {
     .app-tabbar {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
         z-index: 45;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
+        align-items: center;
         background: var(--white);
-        border-top: 1px solid var(--border);
-        box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.06);
+        border-radius: 999px;
+        padding: 6px;
+        box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.28), 0 2px 10px rgba(0, 0, 0, 0.08);
     }
     .app-tabbar-item {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 3px;
-        /* 56px keeps every tab at/above the 44px minimum touch target. */
-        min-height: 56px;
-        padding: 7px 2px 9px;
+        gap: 2px;
+        /* 52px keeps every tab at/above the 44px minimum touch target. */
+        min-height: 52px;
+        padding: 6px 2px;
+        border-radius: 999px;
         color: var(--muted);
         text-align: center;
+        transition: color 0.2s ease;
     }
-    .app-tabbar-icon { display: inline-flex; }
+    .app-tabbar-icon {
+        display: inline-flex;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
     .app-tabbar-label {
-        font-size: 10.5px;
+        font-size: 10px;
         line-height: 1.1;
         max-width: 100%;
         overflow: hidden;
@@ -1225,11 +1238,77 @@ a { color: inherit; text-decoration: none; }
         white-space: nowrap;
     }
     .app-tabbar-item.is-active { color: var(--green-dark); font-weight: 700; }
+    .app-tabbar-item.is-active .app-tabbar-icon { transform: translateY(-2px); }
+    /* Small dot that pops in under the active tab's icon. */
+    .app-tabbar-item.is-active::after {
+        content: "";
+        position: absolute;
+        bottom: 1px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--green-dark);
+        animation: tabbar-dot-in 0.25s ease;
+    }
     .app-tabbar-item:focus-visible {
         outline: 2px solid var(--green-dark);
         outline-offset: -2px;
     }
-    .app-main { padding-bottom: 86px; }
+
+    /* Center floating action button - Add Recipe. */
+    .app-tabbar-fab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        transform: translateY(-18px);
+        border-radius: 50%;
+        background: linear-gradient(145deg, var(--green), var(--green-dark));
+        color: var(--white);
+        box-shadow: 0 10px 22px -6px rgba(47, 174, 102, 0.55), 0 0 0 6px var(--white);
+        transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+    }
+    .app-tabbar-fab-icon {
+        position: relative;
+        z-index: 2;
+        display: inline-flex;
+    }
+    /* Soft breathing halo behind the FAB - the glow from the reference. */
+    .app-tabbar-fab-glow {
+        position: absolute;
+        inset: -11px;
+        z-index: 1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(47, 174, 102, 0.5), transparent 70%);
+        animation: tabbar-fab-breathe 2.6s ease-in-out infinite;
+        pointer-events: none;
+    }
+    .app-tabbar-fab:active {
+        transform: translateY(-18px) scale(0.88);
+        box-shadow: 0 5px 12px -3px rgba(47, 174, 102, 0.5), 0 0 0 6px var(--white);
+    }
+    .app-tabbar-fab:focus-visible {
+        outline: 2px solid var(--green-dark);
+        outline-offset: 4px;
+    }
+
+    .app-main { padding-bottom: 96px; }
+}
+
+@keyframes tabbar-fab-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.14); }
+}
+@keyframes tabbar-dot-in {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .app-tabbar-fab-glow { animation: none; }
+    .app-tabbar-icon, .app-tabbar-fab { transition: none; }
 }
 
 /* Admin page header ("Admin portal" + "My profile"). Was an inline flex row

@@ -12,7 +12,7 @@
 // CACHE_VERSION is bumped whenever this file's caching behavior changes, so
 // activate() below tears down every previous version's caches — an old
 // service worker's stale content can never outlive an update to this file.
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = 'nutritale-static-' + CACHE_VERSION;
 const PAGE_CACHE = 'nutritale-pages-' + CACHE_VERSION;
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE];
