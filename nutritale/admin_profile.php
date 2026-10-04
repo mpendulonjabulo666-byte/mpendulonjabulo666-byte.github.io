@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
 require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/avatars.php';
 
 $user = require_admin();
 
@@ -12,10 +13,31 @@ $allergenOptions = ALLERGEN_OPTIONS;
 
 $errors = [];
 
+// Same guard as profile.php: a POST over post_max_size arrives with $_POST
+// (and the CSRF token) emptied by PHP, which would otherwise fail silently.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$_POST && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    $errors[] = 'That photo is too large to upload. Pick one under 5MB.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $form = $_POST['form'] ?? '';
 
-    if ($form === 'details') {
+    if ($form === 'avatar') {
+        [$ok, $result] = avatar_store($_FILES['avatar'] ?? [], (int)$user['id']);
+        if (!$ok) {
+            $errors[] = $result;
+        } else {
+            avatar_delete($user['avatar_path'] ?? null);
+            db()->prepare('UPDATE users SET avatar_path = ? WHERE id = ?')->execute([$result, $user['id']]);
+            flash_set('success', 'Profile photo updated.');
+            redirect('admin_profile.php');
+        }
+    } elseif ($form === 'avatar_remove') {
+        avatar_delete($user['avatar_path'] ?? null);
+        db()->prepare('UPDATE users SET avatar_path = NULL WHERE id = ?')->execute([$user['id']]);
+        flash_set('success', 'Profile photo removed.');
+        redirect('admin_profile.php');
+    } elseif ($form === 'details') {
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
@@ -133,14 +155,14 @@ $goals = $goalStmt->fetch() ?: [];
 <title>Admin Profile · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=16">
+<link rel="stylesheet" href="assets/css/style.css?v=17">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
@@ -148,16 +170,37 @@ $goals = $goalStmt->fetch() ?: [];
 <main class="app-main" style="max-width:640px;">
     <a href="admin.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to admin</span></a>
 
-    <div class="card mb-16">
-        <div style="display:flex;align-items:center;gap:16px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;flex:none;border-radius:18px;background:var(--green-dark);color:#fff;"><?= icon('user', 30) ?></span>
-            <div>
-                <h2 style="margin:0 0 4px;font-size:19px;"><?= h($user['name']) ?></h2>
-                <p class="muted" style="margin:0;font-size:13px;">Administrator since <?= h((new DateTime($user['created_at']))->format('j F Y')) ?></p>
-                <span class="tag" style="margin-top:8px;display:inline-block;">Full access</span>
+    <section class="profile-hero mb-16">
+        <form method="post" enctype="multipart/form-data" class="profile-hero-photo" id="avatar-form">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="form" value="avatar">
+            <label class="profile-avatar-wrap" for="avatar-input">
+                <?= user_avatar($user['name'], 96, $user['avatar_path'] ?? null) ?>
+                <span class="profile-avatar-badge" aria-hidden="true"><?= icon('camera', 15) ?></span>
+                <span class="profile-avatar-label">
+                    <?= !empty($user['avatar_path']) ? 'Change photo' : 'Add a photo' ?>
+                </span>
+            </label>
+            <input type="file" id="avatar-input" name="avatar" class="profile-avatar-input"
+                   accept="image/jpeg,image/png,image/webp">
+            <button type="submit" class="btn btn-small profile-avatar-submit">Upload photo</button>
+        </form>
+
+        <div class="profile-hero-id">
+            <h2 class="profile-hero-name"><?= h($user['name']) ?></h2>
+            <p class="profile-hero-email muted">Administrator since <?= h((new DateTime($user['created_at']))->format('j F Y')) ?></p>
+            <div class="profile-hero-actions">
+                <span class="tag">Full access</span>
+                <?php if (!empty($user['avatar_path'])): ?>
+                    <form method="post" class="profile-hero-remove">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="form" value="avatar_remove">
+                        <button type="submit" class="btn btn-text btn-small">Remove photo</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
-    </div>
+    </section>
 
     <?php if ($success = flash_get('success')): ?>
         <div class="alert alert-success"><?= h($success) ?></div>
@@ -307,6 +350,8 @@ $goals = $goalStmt->fetch() ?: [];
             <span class="tag">Full access</span>
         </div>
     </div>
+<?php include __DIR__ . '/includes/profile_more.php'; ?>
 </main>
+<script src="assets/js/avatar-upload.js" defer></script>
 </body>
 </html>

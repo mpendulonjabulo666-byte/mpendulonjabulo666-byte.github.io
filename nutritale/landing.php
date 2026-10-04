@@ -55,14 +55,14 @@ $testimonials = [];
 <meta name="description" content="Turn what's already in your kitchen into real meals. NutriTale gives you AI-powered recipe ideas from your pantry, allergy-safe filtering, meal planning, and shopping lists that build themselves.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=16">
+<link rel="stylesheet" href="assets/css/style.css?v=17">
 <script src="assets/js/theme-toggle.js" defer></script>
 <script src="assets/js/hero-photo-motion.js" defer></script>
 <script src="assets/js/recipe-ring.js" defer></script>
@@ -73,7 +73,7 @@ $testimonials = [];
     <div class="app-nav-user">
         <?= render_theme_toggle() ?>
         <a href="login.php" class="ring-pill"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Log in</span></a>
-        <a href="register.php" class="ring-pill ring-pill-strong"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Create account</span></a>
+        <a href="register.php" class="ring-pill ring-pill-strong"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label"><span class="lbl-full">Create account</span><span class="lbl-short">Sign up</span></span></a>
     </div>
 </header>
 
