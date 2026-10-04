@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('theme-toggle');
-    if (!btn) return;
+    var btns = document.querySelectorAll('.theme-toggle-btn');
+    if (!btns.length) return;
 
+    btns.forEach(function (btn) {
     btn.addEventListener('click', function () {
         var current = document.documentElement.getAttribute('data-theme') || 'light';
         var next = current === 'dark' ? 'light' : 'dark';
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             // localStorage unavailable - theme choice just won't persist.
         }
+    });
     });
 });
 

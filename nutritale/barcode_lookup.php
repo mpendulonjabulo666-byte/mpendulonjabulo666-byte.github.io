@@ -31,7 +31,9 @@ if (!preg_match('/^\d{6,14}$/', $code)) {
 $url = 'https://world.openfoodfacts.org/api/v2/product/' . $code . '.json?fields=product_name,generic_name,brands';
 $data = external_fetch_json([$url])[$url];
 if (!is_array($data)) {
-    echo json_encode(['ok' => false, 'error' => 'The product database is not responding right now. You can still type the ingredient in above.']);
+    // 'unreachable' tells the scanner JS to retry from the phone's browser
+    // (free hosts block outgoing requests; the browser is not affected).
+    echo json_encode(['ok' => false, 'unreachable' => true, 'error' => 'The product database is not responding right now. You can still type the ingredient in above.']);
     exit;
 }
 $p = $data['product'] ?? null;

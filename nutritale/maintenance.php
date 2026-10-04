@@ -22,8 +22,8 @@ if (!function_exists('ga4_script')) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Down for maintenance · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=16">
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
 </head>
 <body>
 <div style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;">

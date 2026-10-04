@@ -189,15 +189,15 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <title>What Can I Make? · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=16">
-<script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=20">
+<script src="assets/js/theme-toggle.js?v=18" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -415,9 +415,9 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
     <?php endif; ?>
 </main>
 <?php if ($isPremiumOrAdmin): ?>
-<script src="assets/js/vendor/html5-qrcode.min.js" defer></script>
-<script src="assets/js/pantry-scan.js" defer></script>
-<script src="assets/js/world-recipes.js" defer></script>
+<script src="assets/js/vendor/html5-qrcode.min.js?v=18" defer></script>
+<script src="assets/js/pantry-scan.js?v=18" defer></script>
+<script src="assets/js/world-recipes.js?v=18" defer></script>
 <?php endif; ?>
 </body>
 </html>
