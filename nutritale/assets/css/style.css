@@ -2489,3 +2489,142 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 :root[data-theme="dark"] .pantry-expiry.expiry-today, :root[data-theme="dark"] .pantry-expiry.expiry-soon { color: #fbbf24; }
 .pantry-date-input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
 @media (max-width: 560px) { .expiry-banner { flex-wrap: wrap; } }
+
+/* ==========================================================================
+   v17 - phone app shell, landing header fit, login fit, scanner viewfinder,
+   hero 3D turn. Appended last on purpose so each rule wins over the earlier
+   one it refines; nothing above was edited.
+   ========================================================================== */
+
+/* -- Phone (<=900px): the bottom tab bar is the ONLY nav. The hamburger
+      drawer is gone, the header is a slim logo bar, and what used to live
+      in the drawer (admin portal, My Recipes, Marketplace, Premium, dark
+      mode, log out) is on the Profile tab (includes/profile_more.php). -- */
+.profile-more { display: none; }
+@media (max-width: 900px) {
+    .app-nav:not(.landing-nav) {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        min-height: 60px;
+    }
+    .app-nav:not(.landing-nav) .app-nav-toggle,
+    .app-nav:not(.landing-nav) .app-nav-backdrop,
+    .app-nav:not(.landing-nav) .app-nav-collapsible { display: none !important; }
+    .app-nav-brand { min-width: 0; }
+    /* Same 16px left/right edge as the header so logo and content line up. */
+    .app-main { padding-left: 16px; padding-right: 16px; }
+
+    .profile-more {
+        display: block;
+        margin-top: 16px;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+    }
+    .profile-more-title { font-size: 16px; margin: 0 0 6px; }
+    .profile-more-links { display: flex; flex-direction: column; }
+    .profile-more-links a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 50px;
+        border-bottom: 1px solid var(--border);
+        color: var(--ink);
+        font-weight: 600;
+    }
+    .profile-more-links a.is-strong { color: var(--green-dark); }
+    .profile-more-main { display: inline-flex; align-items: center; gap: 10px; }
+    .profile-more-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 54px;
+        font-weight: 600;
+    }
+}
+
+/* -- Landing header on a phone: ONE row (logo | theme | Log in | Sign up).
+      Before, the two pills wrapped onto separate lines. -- */
+.landing-nav .lbl-short { display: none; }
+@media (max-width: 520px) {
+    .landing-nav { flex-wrap: nowrap; gap: 6px; padding: 10px 12px; }
+    .landing-nav .app-nav-brand { flex: 1 1 auto; min-width: 0; gap: 6px; font-size: 17px; }
+    .landing-nav .app-nav-brand > :first-child { width: 24px; height: 24px; flex: none; }
+    .landing-nav .app-nav-user {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 6px;
+        width: auto;
+        margin: 0;
+        padding: 0;
+    }
+    .landing-nav .ring-pill { padding: 0 11px; min-height: 36px; gap: 0; font-size: 10.5px; letter-spacing: 0.08em; white-space: nowrap; }
+    .landing-nav .ring-pill-disc { display: none; }
+    .landing-nav .lbl-full { display: none; }
+    .landing-nav .lbl-short { display: inline; }
+    .landing-nav .theme-toggle-btn { flex: none; }
+}
+
+/* -- Login / register: the grid's 1fr track could not shrink below its
+      widest child, so on a phone the card ran off the right edge (tabs,
+      inputs, "Forgot password" and the Log in pill were all clipped).
+      minmax(0, 1fr) lets it shrink to the viewport. -- */
+.auth-split { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+    .auth-split { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); }
+}
+.auth-form-panel, .auth-form-card { min-width: 0; }
+.auth-form-card input, .auth-form-card .ring-pill { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 520px) {
+    .auth-split-shell { padding: 12px; align-items: flex-start; }
+    .auth-form-panel { padding: 28px 16px 24px; }
+    .auth-split { border-radius: 20px; }
+}
+
+/* -- Barcode scanner: the preview box is hidden until a camera is live,
+      then shown at full width BEFORE the library measures it (an empty
+      display:none box measured 0px wide, so the camera never showed). -- */
+.pantry-scan-reader { display: none; width: 100%; max-width: 420px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #000; }
+.pantry-scan-reader.is-live { display: block; min-height: 240px; }
+.pantry-scan-reader video { width: 100% !important; height: auto !important; display: block; }
+.pantry-scan-manual { flex-wrap: wrap; }
+.pantry-scan-manual input { flex: 1 1 180px; min-width: 0; }
+.pantry-scan-manual .btn { flex: 0 0 auto; }
+
+/* -- Hero photo: tilt-and-turn in 3D (like a globe turning toward and away
+      from you) instead of a flat clock-hand spin. One flat photo has no
+      "other side", so this swings it +/-28deg about its vertical axis with
+      a lit-sphere sheen; it does not reveal a back. -- */
+.landing-hero-photo-wrap { perspective: 900px; }
+.landing-hero-photo {
+    animation: landing-hero-photo-turn 14s ease-in-out infinite alternate;
+    animation-play-state: paused;
+    will-change: transform;
+}
+.landing-hero-photo.is-in-view { animation-play-state: running; }
+.landing-hero-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.30), transparent 46%),
+        radial-gradient(circle at 50% 50%, transparent 58%, rgba(0, 0, 0, 0.26) 100%);
+}
+@keyframes landing-hero-photo-turn {
+    0%   { transform: rotateY(-28deg) rotateX(4deg)  translateY(0); }
+    50%  { transform: rotateY(0deg)   rotateX(-2deg) translateY(-6px); }
+    100% { transform: rotateY(28deg)  rotateX(4deg)  translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-hero-photo { animation: none; }
+}

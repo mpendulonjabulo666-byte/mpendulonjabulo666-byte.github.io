@@ -44,14 +44,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
 <title>Welcome · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=16">
+<link rel="stylesheet" href="assets/css/style.css?v=17">
 <script src="assets/js/theme-toggle.js" defer></script>
 </head>
 <body>
