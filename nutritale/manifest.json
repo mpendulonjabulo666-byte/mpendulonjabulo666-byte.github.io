@@ -1,4 +1,5 @@
 {
+    "id": "landing.php",
     "name": "NutriTale — Cook what you have, plan what you need",
     "short_name": "NutriTale",
     "description": "Meal planning, recipe discovery, and an AI-powered pantry matcher.",
@@ -21,5 +22,11 @@
             "type": "image/png",
             "purpose": "any maskable"
         }
-    ]
+    ],
+    "lang": "en-ZA",
+    "categories": [
+        "food",
+        "lifestyle"
+    ],
+    "prefer_related_applications": false
 }

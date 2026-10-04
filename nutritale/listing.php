@@ -26,15 +26,15 @@ $isOwn = (int)$listing['seller_id'] === (int)$user['id'];
 <title><?= h($listing['ingredient_name']) ?> · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=18">
-<script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/theme-init.js?v=21"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=21">
+<script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>

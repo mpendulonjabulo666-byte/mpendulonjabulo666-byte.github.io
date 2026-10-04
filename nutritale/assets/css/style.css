@@ -856,36 +856,95 @@ a { color: inherit; text-decoration: none; }
 .goal-progress-fill.is-over { background: #e0455f; }
 
 .share-wrap { position: relative; display: inline-block; }
+/* Floating glassy share card: a frosted icon row (WhatsApp / Instagram / X
+   / Facebook as round icon buttons) over a solid gradient "Copy link"
+   pill, with a soft ambient glow ring - the same breathing-glow language
+   as the bottom tabbar's center FAB, reused here for visual consistency
+   across the app rather than a one-off card style. */
 .share-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
     z-index: 20;
     display: flex;
     flex-direction: column;
-    min-width: 180px;
-    padding: 6px;
+    gap: 10px;
+    min-width: 232px;
+    padding: 14px;
     background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 20px 40px -20px rgba(20, 40, 28, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 22px 46px -20px rgba(20, 40, 28, 0.4), 0 0 0 1px rgba(47, 174, 102, 0.08);
 }
-.share-menu-item {
+.share-menu::before {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    border-radius: 28px;
+    background: radial-gradient(circle, rgba(47, 174, 102, 0.22), transparent 70%);
+    animation: tabbar-fab-breathe 2.8s ease-in-out infinite;
+    pointer-events: none;
+}
+.share-menu-icons {
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
     padding: 10px 12px;
-    border-radius: 10px;
-    background: none;
-    border: none;
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
 }
-.share-menu-item:hover, .share-menu-item:focus-visible { background: var(--bg); outline: none; }
+.share-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    border-radius: 50%;
+    border: none;
+    background: var(--white);
+    color: var(--muted);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(20, 40, 28, 0.12);
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s ease;
+}
+.share-icon-btn:hover, .share-icon-btn:focus-visible {
+    transform: translateY(-2px) scale(1.08);
+    outline: none;
+}
+.share-icon-whatsapp:hover, .share-icon-whatsapp:focus-visible { color: #25D366; }
+.share-icon-x:hover, .share-icon-x:focus-visible { color: var(--ink); }
+.share-icon-facebook:hover, .share-icon-facebook:focus-visible { color: #1877F2; }
+.share-icon-qr:hover, .share-icon-qr:focus-visible { color: var(--green-dark); }
+.share-icon-instagram:hover, .share-icon-instagram:focus-visible { transform: translateY(-2px) scale(1.12); }
+.share-copy-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(145deg, var(--green), var(--green-dark));
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 10px 22px -8px rgba(47, 174, 102, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.share-copy-btn:hover, .share-copy-btn:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+    box-shadow: 0 14px 26px -8px rgba(47, 174, 102, 0.65);
+}
+.share-copy-btn:active { transform: translateY(0) scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+    .share-menu::before { animation: none; }
+    .share-icon-btn, .share-copy-btn { transition: none; }
+}
 
 .share-toast {
     display: inline-block;
@@ -1232,37 +1291,50 @@ a { color: inherit; text-decoration: none; }
 
 /* Phone bottom tab bar (includes/nav.php). Desktop keeps the sidebar, so
    this only exists under the drawer breakpoint. .app-main gets matching
-   bottom padding there so the bar never covers the last of the content. */
+   bottom padding there so the bar never covers the last of the content.
+   Floating pill with a raised, glowing center FAB (Add Recipe) - the
+   home/chat/[+]/bell/profile pattern, mapped to Recipes/Pantry/[+]/
+   Favorites/Profile. The FAB sits on a white/dark ring matching the bar's
+   own background so it reads as breaking out of the pill rather than a
+   separate floating circle. */
 .app-tabbar { display: none; }
 
 @media (max-width: 900px) {
     .app-tabbar {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
         z-index: 45;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
+        align-items: center;
         background: var(--white);
-        border-top: 1px solid var(--border);
-        box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.06);
+        border-radius: 999px;
+        padding: 6px;
+        box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.28), 0 2px 10px rgba(0, 0, 0, 0.08);
     }
     .app-tabbar-item {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 3px;
-        /* 56px keeps every tab at/above the 44px minimum touch target. */
-        min-height: 56px;
-        padding: 7px 2px 9px;
+        gap: 2px;
+        /* 52px keeps every tab at/above the 44px minimum touch target. */
+        min-height: 52px;
+        padding: 6px 2px;
+        border-radius: 999px;
         color: var(--muted);
         text-align: center;
+        transition: color 0.2s ease;
     }
-    .app-tabbar-icon { display: inline-flex; }
+    .app-tabbar-icon {
+        display: inline-flex;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
     .app-tabbar-label {
-        font-size: 10.5px;
+        font-size: 10px;
         line-height: 1.1;
         max-width: 100%;
         overflow: hidden;
@@ -1270,11 +1342,77 @@ a { color: inherit; text-decoration: none; }
         white-space: nowrap;
     }
     .app-tabbar-item.is-active { color: var(--green-dark); font-weight: 700; }
+    .app-tabbar-item.is-active .app-tabbar-icon { transform: translateY(-2px); }
+    /* Small dot that pops in under the active tab's icon. */
+    .app-tabbar-item.is-active::after {
+        content: "";
+        position: absolute;
+        bottom: 1px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--green-dark);
+        animation: tabbar-dot-in 0.25s ease;
+    }
     .app-tabbar-item:focus-visible {
         outline: 2px solid var(--green-dark);
         outline-offset: -2px;
     }
-    .app-main { padding-bottom: 86px; }
+
+    /* Center floating action button - Add Recipe. */
+    .app-tabbar-fab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        transform: translateY(-18px);
+        border-radius: 50%;
+        background: linear-gradient(145deg, var(--green), var(--green-dark));
+        color: var(--white);
+        box-shadow: 0 10px 22px -6px rgba(47, 174, 102, 0.55), 0 0 0 6px var(--white);
+        transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+    }
+    .app-tabbar-fab-icon {
+        position: relative;
+        z-index: 2;
+        display: inline-flex;
+    }
+    /* Soft breathing halo behind the FAB - the glow from the reference. */
+    .app-tabbar-fab-glow {
+        position: absolute;
+        inset: -11px;
+        z-index: 1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(47, 174, 102, 0.5), transparent 70%);
+        animation: tabbar-fab-breathe 2.6s ease-in-out infinite;
+        pointer-events: none;
+    }
+    .app-tabbar-fab:active {
+        transform: translateY(-18px) scale(0.88);
+        box-shadow: 0 5px 12px -3px rgba(47, 174, 102, 0.5), 0 0 0 6px var(--white);
+    }
+    .app-tabbar-fab:focus-visible {
+        outline: 2px solid var(--green-dark);
+        outline-offset: 4px;
+    }
+
+    .app-main { padding-bottom: 96px; }
+}
+
+@keyframes tabbar-fab-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.14); }
+}
+@keyframes tabbar-dot-in {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .app-tabbar-fab-glow { animation: none; }
+    .app-tabbar-icon, .app-tabbar-fab { transition: none; }
 }
 
 /* Admin page header ("Admin portal" + "My profile"). Was an inline flex row
@@ -2534,3 +2672,142 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 :root[data-theme="dark"] .pantry-expiry.expiry-today, :root[data-theme="dark"] .pantry-expiry.expiry-soon { color: #fbbf24; }
 .pantry-date-input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
 @media (max-width: 560px) { .expiry-banner { flex-wrap: wrap; } }
+
+/* ==========================================================================
+   v17 - phone app shell, landing header fit, login fit, scanner viewfinder,
+   hero 3D turn. Appended last on purpose so each rule wins over the earlier
+   one it refines; nothing above was edited.
+   ========================================================================== */
+
+/* -- Phone (<=900px): the bottom tab bar is the ONLY nav. The hamburger
+      drawer is gone, the header is a slim logo bar, and what used to live
+      in the drawer (admin portal, My Recipes, Marketplace, Premium, dark
+      mode, log out) is on the Profile tab (includes/profile_more.php). -- */
+.profile-more { display: none; }
+@media (max-width: 900px) {
+    .app-nav:not(.landing-nav) {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        min-height: 60px;
+    }
+    .app-nav:not(.landing-nav) .app-nav-toggle,
+    .app-nav:not(.landing-nav) .app-nav-backdrop,
+    .app-nav:not(.landing-nav) .app-nav-collapsible { display: none !important; }
+    .app-nav-brand { min-width: 0; }
+    /* Same 16px left/right edge as the header so logo and content line up. */
+    .app-main { padding-left: 16px; padding-right: 16px; }
+
+    .profile-more {
+        display: block;
+        margin-top: 16px;
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+    }
+    .profile-more-title { font-size: 16px; margin: 0 0 6px; }
+    .profile-more-links { display: flex; flex-direction: column; }
+    .profile-more-links a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 50px;
+        border-bottom: 1px solid var(--border);
+        color: var(--ink);
+        font-weight: 600;
+    }
+    .profile-more-links a.is-strong { color: var(--green-dark); }
+    .profile-more-main { display: inline-flex; align-items: center; gap: 10px; }
+    .profile-more-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 54px;
+        font-weight: 600;
+    }
+}
+
+/* -- Landing header on a phone: ONE row (logo | theme | Log in | Sign up).
+      Before, the two pills wrapped onto separate lines. -- */
+.landing-nav .lbl-short { display: none; }
+@media (max-width: 520px) {
+    .landing-nav { flex-wrap: nowrap; gap: 6px; padding: 10px 12px; }
+    .landing-nav .app-nav-brand { flex: 1 1 auto; min-width: 0; gap: 6px; font-size: 17px; }
+    .landing-nav .app-nav-brand > :first-child { width: 24px; height: 24px; flex: none; }
+    .landing-nav .app-nav-user {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 6px;
+        width: auto;
+        margin: 0;
+        padding: 0;
+    }
+    .landing-nav .ring-pill { padding: 0 11px; min-height: 36px; gap: 0; font-size: 10.5px; letter-spacing: 0.08em; white-space: nowrap; }
+    .landing-nav .ring-pill-disc { display: none; }
+    .landing-nav .lbl-full { display: none; }
+    .landing-nav .lbl-short { display: inline; }
+    .landing-nav .theme-toggle-btn { flex: none; }
+}
+
+/* -- Login / register: the grid's 1fr track could not shrink below its
+      widest child, so on a phone the card ran off the right edge (tabs,
+      inputs, "Forgot password" and the Log in pill were all clipped).
+      minmax(0, 1fr) lets it shrink to the viewport. -- */
+.auth-split { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+    .auth-split { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); }
+}
+.auth-form-panel, .auth-form-card { min-width: 0; }
+.auth-form-card input, .auth-form-card .ring-pill { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 520px) {
+    .auth-split-shell { padding: 12px; align-items: flex-start; }
+    .auth-form-panel { padding: 28px 16px 24px; }
+    .auth-split { border-radius: 20px; }
+}
+
+/* -- Barcode scanner: the preview box is hidden until a camera is live,
+      then shown at full width BEFORE the library measures it (an empty
+      display:none box measured 0px wide, so the camera never showed). -- */
+.pantry-scan-reader { display: none; width: 100%; max-width: 420px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #000; }
+.pantry-scan-reader.is-live { display: block; min-height: 240px; }
+.pantry-scan-reader video { width: 100% !important; height: auto !important; display: block; }
+.pantry-scan-manual { flex-wrap: wrap; }
+.pantry-scan-manual input { flex: 1 1 180px; min-width: 0; }
+.pantry-scan-manual .btn { flex: 0 0 auto; }
+
+/* -- Hero photo: tilt-and-turn in 3D (like a globe turning toward and away
+      from you) instead of a flat clock-hand spin. One flat photo has no
+      "other side", so this swings it +/-28deg about its vertical axis with
+      a lit-sphere sheen; it does not reveal a back. -- */
+.landing-hero-photo-wrap { perspective: 900px; }
+.landing-hero-photo {
+    animation: landing-hero-photo-turn 14s ease-in-out infinite alternate;
+    animation-play-state: paused;
+    will-change: transform;
+}
+.landing-hero-photo.is-in-view { animation-play-state: running; }
+.landing-hero-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.30), transparent 46%),
+        radial-gradient(circle at 50% 50%, transparent 58%, rgba(0, 0, 0, 0.26) 100%);
+}
+@keyframes landing-hero-photo-turn {
+    0%   { transform: rotateY(-28deg) rotateX(4deg)  translateY(0); }
+    50%  { transform: rotateY(0deg)   rotateX(-2deg) translateY(-6px); }
+    100% { transform: rotateY(28deg)  rotateX(4deg)  translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-hero-photo { animation: none; }
+}

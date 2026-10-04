@@ -112,7 +112,7 @@ $myRatingStmt->execute([$id, $user['id']]);
 $myRating = $myRatingStmt->fetch();
 
 $reviewsStmt = db()->prepare(
-    'SELECT rr.rating, rr.review, rr.created_at, u.name
+    'SELECT rr.rating, rr.review, rr.created_at, u.name, u.avatar_path
      FROM recipe_ratings rr JOIN users u ON u.id = rr.user_id
      WHERE rr.recipe_id = ? AND rr.review IS NOT NULL AND rr.review != ""
      ORDER BY rr.created_at DESC'
@@ -166,16 +166,16 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <title><?= h($recipe['title']) ?> · <?= APP_NAME ?></title>
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=18">
-<script src="assets/js/theme-toggle.js" defer></script>
-<script src="assets/js/photo-credit.js" defer></script>
+<script src="assets/js/theme-init.js?v=21"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=21">
+<script src="assets/js/theme-toggle.js?v=21" defer></script>
+<script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -201,20 +201,24 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                             <?= icon('share', 20) ?>
                         </button>
                         <div id="share-menu" class="share-menu" role="menu" hidden>
-                            <a role="menuitem" tabindex="-1" id="share-whatsapp" class="share-menu-item" href="#" target="_blank" rel="noopener"><?= icon_whatsapp(18) ?> WhatsApp</a>
-                            <a role="menuitem" tabindex="-1" id="share-facebook" class="share-menu-item" href="#" target="_blank" rel="noopener"><?= icon_facebook(18) ?> Facebook</a>
-                            <!-- Instagram and TikTok have no public, unauthenticated web
-                                 endpoint for posting someone else's link/image the way
-                                 WhatsApp's wa.me and Facebook's sharer.php do - both only
-                                 accept content through their own native-app share sheet,
-                                 which is exactly what navigator.share() above already
-                                 reaches on a phone where those apps are installed. There's
-                                 nothing a browser-side link could hand them here. -->
-                            <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-menu-item">Copy link</button>
-                            <?php /* Opens this recipe on any phone that points its own camera
-                                     at it - no app install, no in-app scanner, iOS and Android
-                                     alike. Drawn client-side from the page's own URL. */ ?>
-                            <button type="button" role="menuitem" tabindex="-1" id="share-qr" class="share-menu-item"><?= icon('grid', 18) ?> QR code</button>
+                            <div class="share-menu-icons">
+                                <a role="menuitem" tabindex="-1" id="share-whatsapp" class="share-icon-btn share-icon-whatsapp" href="#" target="_blank" rel="noopener" aria-label="Share on WhatsApp"><?= icon_whatsapp(18) ?></a>
+                                <!-- Instagram has no public, unauthenticated web endpoint for
+                                     posting someone else's link/image the way WhatsApp's wa.me
+                                     and X's intent URL do - it only accepts content through its
+                                     own native-app share sheet, which is exactly what
+                                     navigator.share() above already reaches on a phone with
+                                     Instagram installed. So this one copies the link instead of
+                                     linking anywhere real. -->
+                                <button type="button" role="menuitem" tabindex="-1" id="share-instagram" class="share-icon-btn share-icon-instagram" aria-label="Copy link to share on Instagram"><?= icon_instagram(18) ?></button>
+                                <a role="menuitem" tabindex="-1" id="share-x" class="share-icon-btn share-icon-x" href="#" target="_blank" rel="noopener" aria-label="Share on X"><?= icon_x(18) ?></a>
+                                <a role="menuitem" tabindex="-1" id="share-facebook" class="share-icon-btn share-icon-facebook" href="#" target="_blank" rel="noopener" aria-label="Share on Facebook"><?= icon_facebook(18) ?></a>
+                                <?php /* Opens this recipe on any phone that points its
+                                         own camera at it - no app install, no in-app
+                                         scanner, iOS and Android alike. */ ?>
+                                <button type="button" role="menuitem" tabindex="-1" id="share-qr" class="share-icon-btn share-icon-qr" aria-label="Show QR code"><?= icon('grid', 18) ?></button>
+                            </div>
+                            <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-copy-btn">Copy link</button>
                         </div>
                         <div id="share-qr-panel" class="share-qr-panel" hidden>
                             <div id="share-qr-code" class="share-qr-code"></div>
@@ -450,6 +454,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                     <?php foreach ($reviews as $rev): ?>
                         <div class="review-item">
                             <div class="review-item-head">
+                                <?= user_avatar($rev['name'], 24, $rev['avatar_path'] ?? null) ?>
                                 <strong><?= h($rev['name']) ?></strong>
                                 <?= render_stars((float)$rev['rating'], null, 12) ?>
                                 <span class="muted"><?= h((new DateTime($rev['created_at']))->format('M j, Y')) ?></span>
@@ -493,9 +498,6 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 })();
 
 </script>
-<?php /* qrcode-generator 1.4.4 (Kazuhiko Arase, MIT), vendored unmodified.
-         Loaded before recipe-share.js, which calls into it. */ ?>
-<script src="assets/js/vendor/qrcode-generator.min.js" defer></script>
-<script src="assets/js/recipe-share.js" defer></script>
+<script src="assets/js/recipe-share.js?v=19" defer></script>
 </body>
 </html>

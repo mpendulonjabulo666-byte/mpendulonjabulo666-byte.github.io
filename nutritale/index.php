@@ -171,15 +171,15 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
 <meta name="description" content="Browse <?= APP_NAME ?>'s recipe library filtered by diet and allergy needs, or head to your pantry for AI-generated meal ideas from what you already have.">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=18">
-<script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/theme-init.js?v=21"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=21">
+<script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -247,8 +247,8 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
     <?php if (!$hasFullLibrary && $libraryTotal > FREE_RECIPE_LIMIT): ?>
         <div class="plan-limit-banner">
             <?= icon('wand', 18) ?>
-            <p>You're on the free plan: <strong><?= count(free_recipe_ids()) ?> of <?= $libraryTotal ?> recipes</strong>.
-                Premium unlocks every recipe, plus extra matches from around the world in What Can I Make?</p>
+            <p>You're on the free plan. <strong>Go Premium</strong> to unlock every recipe,
+                plus extra matches from around the world in What Can I Make?</p>
             <a href="premium.php" class="btn btn-primary btn-small">Go Premium</a>
         </div>
     <?php endif; ?>
