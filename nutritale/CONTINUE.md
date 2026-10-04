@@ -1675,24 +1675,34 @@ false success or dead silence, and neither actually touched the row.
 **Real counts, unchanged from the migration itself**: 94 total, 49
 visible (28 free / 21 premium), 45 hidden.
 
-**Barcode scanning - logged as deferred, `pantry.php` untouched.** Per
-§2.18: no camera access, barcode detection, or product-lookup integration
-exists anywhere in this codebase today. Real scope for its own step,
-after the demo:
-- Camera access via `getUserMedia` + a barcode-detection library (the
-  native `BarcodeDetector` API isn't available in every browser this app
-  needs to support - Safari support is inconsistent - so a JS polyfill/
-  library is the realistic choice, not assumed available for free).
-- Product lookup against the **Open Food Facts API**
-  (`world.openfoodfacts.org/api`) - free, no key needed, barcode → product
-  name/category, which is what would actually populate a pantry item from
-  a scan.
-- Needs its own premium gate once built (the original ask for this whole
-  thread), following the same pattern as the recipe-tier gate (§2.17) and
-  the vendor/Premium gate (§2.18): server-side enforcement, not just a
-  hidden button.
+**Barcode scanning - ✅ DONE, this section was stale.** Re-verified directly
+against the code 2026-10-04 (cloud session, branch `claude/app-continuation-s4hyzj`,
+commit `51f4c46`) rather than trusted on an old note: it's fully built and wired
+up, not deferred.
+- `barcode_lookup.php` (new since this section was written) - Premium-gated via
+  `user_has_full_library()`, validates the code is 6-14 digits, queries Open Food
+  Facts (`world.openfoodfacts.org/api/v2/product/...`), returns a cleaned product
+  name via `product_pantry_name()` (`includes/external_recipes.php`, covered by
+  `tests/external_recipes_test.php`).
+- `assets/js/pantry-scan.js` (167 lines) - live camera scan via the vendored
+  `html5-qrcode` library (`assets/js/vendor/`, Apache-2.0), manual barcode-number
+  entry as a no-camera fallback, and a client-side Open Food Facts fallback for
+  free hosts that block outgoing server requests (InfinityFree etc.) - the server
+  path still enforces Premium either way.
+- Wired into `pantry.php` (`#scan-open` / `#scan-panel` / `#scan-reader` /
+  `#scan-result`, `assets/js/pantry-scan.js?v=18` enqueued) with a locked
+  "Scan a barcode (Premium)" link shown instead for free users.
+- Not independently verified in this session (no camera, no live browser here) -
+  the code reads correct and follows this app's existing patterns throughout, but
+  a real phone-camera scan hasn't been watched end-to-end. Worth one real scan
+  test next time you're at a keyboard with a camera.
 
-Not committed - reported back for review, per the request.
+2026-10-04 full-suite re-run (cloud session, DB-free tests only, no live
+server/browser): all 168 tests pass (`ai_pantry_test.php` 30,
+`allergen_test.php` 34, `external_recipes_test.php` 19,
+`ingredient_matching_test.php` 37, `oauth_test.php` 13, `payfast_test.php` 13,
+`vendor_payouts_test.php` 22) and `php -l` is clean on every `.php` file in
+`nutritale/`. Baseline is healthy - nothing broken as of this commit.
 
 ---
 
@@ -1990,10 +2000,13 @@ Each step is independently shippable. Don't batch them.
       (both `status` and the date, matching what a real renewal actually
       needs) brings it back. See §2.18 for the full trail on all six
       items.
-- [ ] **Step 21 — Hide the 45 mystery recipes, widen admin_recipes.php,
+- [x] **Step 21 — Hide the 45 mystery recipes, widen admin_recipes.php,
       log barcode scan as deferred** (§2.19) — hide + widen done and
-      verified live; barcode scan logged only, `pantry.php` untouched;
-      not committed
+      verified live. Barcode scanning note below was stale: re-checked the
+      code 2026-10-04 and it's actually fully built (`barcode_lookup.php`,
+      `assets/js/pantry-scan.js`, wired into `pantry.php`) — see §2.19's
+      updated barcode entry. Not independently confirmed with a real camera
+      yet.
       No existing "unpublished recipe" mechanism anywhere in this schema
       (checked every table's `status`-like column first - all belong to
       transaction/report workflows, none to `recipes`) - added a minimal
