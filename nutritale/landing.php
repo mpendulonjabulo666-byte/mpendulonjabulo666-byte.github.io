@@ -61,11 +61,11 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=17">
-<script src="assets/js/theme-toggle.js" defer></script>
-<script src="assets/js/hero-photo-motion.js" defer></script>
-<script src="assets/js/recipe-ring.js" defer></script>
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=18">
+<script src="assets/js/theme-toggle.js?v=18" defer></script>
+<script src="assets/js/hero-photo-motion.js?v=18" defer></script>
+<script src="assets/js/recipe-ring.js?v=18" defer></script>
 </head>
 <body class="landing-body">
 <header class="app-nav landing-nav">
@@ -208,7 +208,8 @@ $testimonials = [];
         <details class="faq-item">
             <summary>Is it free to start?<?= icon('chevron-right', 16) ?></summary>
             <p>Yes. Creating an account, browsing every recipe, and building meal plans costs nothing.
-                The AI-powered pantry matcher gives you 3 free tries before Premium.</p>
+                Free accounts also get <?= AI_PANTRY_FREE_DAILY_CAP ?> AI-generated pantry ideas every day,
+                on top of the always-free rule-based pantry matcher.</p>
         </details>
         <details class="faq-item">
             <summary>How does the AI know about my allergies?<?= icon('chevron-right', 16) ?></summary>
@@ -217,10 +218,11 @@ $testimonials = [];
                 discard anything that slipped through — the code check is what actually decides, not the AI's word.</p>
         </details>
         <details class="faq-item">
-            <summary>What happens after my free trial?<?= icon('chevron-right', 16) ?></summary>
-            <p>You keep everything else. Recipe browsing, meal planning, ratings, and the free rule-based
-                pantry matcher all keep working — only unlimited AI-generated ideas need Premium
-                (R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month).</p>
+            <summary>What does Premium actually add?<?= icon('chevron-right', 16) ?></summary>
+            <p>Every recipe in the library (free accounts can open <?= FREE_RECIPE_LIMIT ?> to start), and a
+                higher AI pantry-idea cap — <?= AI_PANTRY_DAILY_CAP ?> a day instead of <?= AI_PANTRY_FREE_DAILY_CAP ?> —
+                for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month. Nothing you already have on the free
+                plan goes away or expires.</p>
         </details>
         <details class="faq-item">
             <summary>Is payment secure?<?= icon('chevron-right', 16) ?></summary>

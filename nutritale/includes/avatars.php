@@ -44,7 +44,13 @@ function avatar_ensure_dir(): bool
     if (!is_file($htaccess)) {
         @file_put_contents($htaccess, implode("\n", [
             '# Uploaded images only - never executed.',
-            'php_flag engine off',
+            // "php_flag engine off" deliberately NOT here: it only works
+            // under mod_php. On hosts that run PHP via FastCGI/CGI
+            // instead (InfinityFree included), Apache can't parse an
+            // unrecognized php_flag directive and 500s every request to
+            // this whole directory - including the images themselves.
+            // The FilesMatch block below blocks php execution without
+            // depending on which SAPI is running PHP.
             'SetHandler default-handler',
             'Options -ExecCGI -Indexes',
             '<FilesMatch "\.(?i:php|phtml|phar|cgi|pl|py|sh|htaccess)$">',

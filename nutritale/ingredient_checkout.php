@@ -58,8 +58,8 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=17">
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=18">
 </head>
 <body>
 <div class="auth-shell">

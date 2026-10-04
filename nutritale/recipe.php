@@ -112,7 +112,7 @@ $myRatingStmt->execute([$id, $user['id']]);
 $myRating = $myRatingStmt->fetch();
 
 $reviewsStmt = db()->prepare(
-    'SELECT rr.rating, rr.review, rr.created_at, u.name
+    'SELECT rr.rating, rr.review, rr.created_at, u.name, u.avatar_path
      FROM recipe_ratings rr JOIN users u ON u.id = rr.user_id
      WHERE rr.recipe_id = ? AND rr.review IS NOT NULL AND rr.review != ""
      ORDER BY rr.created_at DESC'
@@ -172,10 +172,10 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=17">
-<script src="assets/js/theme-toggle.js" defer></script>
-<script src="assets/js/photo-credit.js" defer></script>
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=18">
+<script src="assets/js/theme-toggle.js?v=18" defer></script>
+<script src="assets/js/photo-credit.js?v=18" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -441,6 +441,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                     <?php foreach ($reviews as $rev): ?>
                         <div class="review-item">
                             <div class="review-item-head">
+                                <?= user_avatar($rev['name'], 24, $rev['avatar_path'] ?? null) ?>
                                 <strong><?= h($rev['name']) ?></strong>
                                 <?= render_stars((float)$rev['rating'], null, 12) ?>
                                 <span class="muted"><?= h((new DateTime($rev['created_at']))->format('M j, Y')) ?></span>
@@ -484,6 +485,6 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 })();
 
 </script>
-<script src="assets/js/recipe-share.js" defer></script>
+<script src="assets/js/recipe-share.js?v=18" defer></script>
 </body>
 </html>

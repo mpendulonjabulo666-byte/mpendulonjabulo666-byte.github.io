@@ -101,4 +101,4 @@ $tabs = [
         </a>
     <?php endforeach; ?>
 </nav>
-<script src="assets/js/nav-drawer-keyboard.js" defer></script>
+<script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>

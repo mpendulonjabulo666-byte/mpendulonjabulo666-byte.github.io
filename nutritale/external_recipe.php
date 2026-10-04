@@ -46,9 +46,9 @@ $youtube = (string)($meal['strYoutube'] ?? '');
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
-<script src="assets/js/theme-init.js"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=17">
-<script src="assets/js/theme-toggle.js" defer></script>
+<script src="assets/js/theme-init.js?v=18"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=18">
+<script src="assets/js/theme-toggle.js?v=18" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
