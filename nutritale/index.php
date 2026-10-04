@@ -247,8 +247,8 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
     <?php if (!$hasFullLibrary && $libraryTotal > FREE_RECIPE_LIMIT): ?>
         <div class="plan-limit-banner">
             <?= icon('wand', 18) ?>
-            <p>You're on the free plan: <strong><?= count(free_recipe_ids()) ?> of <?= $libraryTotal ?> recipes</strong>.
-                Premium unlocks every recipe, plus extra matches from around the world in What Can I Make?</p>
+            <p>You're on the free plan. <strong>Go Premium</strong> to unlock every recipe,
+                plus extra matches from around the world in What Can I Make?</p>
             <a href="premium.php" class="btn btn-primary btn-small">Go Premium</a>
         </div>
     <?php endif; ?>
