@@ -9,9 +9,11 @@
     if (!shareBtn || !menu || !toast) return;
 
     var whatsappLink = document.getElementById('share-whatsapp');
+    var instagramBtn = document.getElementById('share-instagram');
+    var xLink = document.getElementById('share-x');
     var facebookLink = document.getElementById('share-facebook');
     var copyBtn = document.getElementById('share-copy');
-    var menuItems = [whatsappLink, facebookLink, copyBtn];
+    var menuItems = [whatsappLink, instagramBtn, xLink, facebookLink, copyBtn].filter(Boolean);
 
     function showToast(text) {
         toast.textContent = text;
@@ -20,10 +22,11 @@
         showToast._t = setTimeout(function () { toast.hidden = true; }, 2500);
     }
 
-    function copyLink(url) {
+    function copyLink(url, successMessage) {
+        var message = successMessage || 'Link copied!';
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url)
-                .then(function () { showToast('Link copied!'); })
+                .then(function () { showToast(message); })
                 .catch(function () { showToast(url); });
         } else {
             showToast(url);
@@ -69,6 +72,9 @@
     function openMenu() {
         var data = shareData();
         whatsappLink.href = 'https://wa.me/?text=' + encodeURIComponent(data.title + ' ' + data.url);
+        if (xLink) {
+            xLink.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(data.title) + '&url=' + encodeURIComponent(data.url);
+        }
         facebookLink.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(data.url);
         menu.hidden = false;
         shareBtn.setAttribute('aria-expanded', 'true');
@@ -129,6 +135,13 @@
         copyLink(shareData().url);
         closeMenu(true);
     });
+    if (instagramBtn) {
+        instagramBtn.addEventListener('click', function () {
+            copyLink(shareData().url, 'Link copied - paste it in Instagram');
+            closeMenu(true);
+        });
+    }
     whatsappLink.addEventListener('click', function () { closeMenu(false); });
+    if (xLink) xLink.addEventListener('click', function () { closeMenu(false); });
     facebookLink.addEventListener('click', function () { closeMenu(false); });
 })();

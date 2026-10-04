@@ -89,7 +89,7 @@ function render_bar_chart(array $series, string $unit = ''): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=18"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=19">
+<link rel="stylesheet" href="assets/css/style.css?v=20">
 <script src="assets/js/theme-toggle.js?v=18" defer></script>
 </head>
 <body>
