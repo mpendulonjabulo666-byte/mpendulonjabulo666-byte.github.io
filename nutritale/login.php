@@ -112,7 +112,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setcookie(session_name(), session_id(), $cookieOptions);
             }
             $_SESSION['user_id'] = (int)$user['id'];
-            redirect($user['is_admin'] ? 'admin.php' : 'index.php');
+            // Back to whatever page sent them here (a shared or scanned
+            // recipe link), else the usual landing spot. Re-validated on
+            // the way out, not just on the way in.
+            $next = $_SESSION['login_redirect'] ?? null;
+            unset($_SESSION['login_redirect']);
+            $fallback = $user['is_admin'] ? 'admin.php' : 'index.php';
+            redirect($next !== null ? (login_safe_target($next) ?? $fallback) : $fallback);
         }
     }
 }
@@ -133,9 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=18"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=20">
-<script src="assets/js/theme-toggle.js?v=18" defer></script>
+<script src="assets/js/theme-init.js?v=21"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
 <div class="auth-split-shell">

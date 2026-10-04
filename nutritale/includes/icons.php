@@ -186,12 +186,21 @@ function render_theme_toggle(): string
 // aspect ratio (the isolated book mark isn't square). 1024x525 is the new
 // (2026-09) illustration's real pixel size - update this ratio again if
 // the source image is ever replaced with a differently-proportioned one.
+// The book-and-leaf artwork. Same image the app has always used, but with
+// its white background knocked out (scripts/make_logo.php cuts it from
+// assets/img/logo/source-book.png), so it sits on the page instead of
+// showing a white plate behind itself in the dark header.
+//
+// The name is not part of the image: it is real HTML text beside it, see
+// brand_wordmark_html(). Baking a wordmark into the artwork is what made
+// the old app icon unreadable at launcher size.
 function nutritale_logo_svg(int $size = 48): string
 {
     $height = $size;
-    $width = (int)round($size * 1024 / 525);
-    return '<img src="assets/img/logo/book-mark.png" alt="' . h(APP_NAME) . '" width="' . $width . '" height="' . $height
-        . '" style="display:inline-block;vertical-align:middle;">';
+    $width = (int)round($size * 600 / 308); // the cut-out's own aspect
+    return '<img src="assets/img/logo/book-mark.png" alt="' . h(APP_NAME) . '"'
+        . ' width="' . $width . '" height="' . $height . '"'
+        . ' style="display:inline-block;vertical-align:middle;">';
 }
 
 // The "NutriTale" wordmark styled to match the brand mark: "Nutri" in a

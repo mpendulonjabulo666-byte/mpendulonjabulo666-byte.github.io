@@ -172,10 +172,10 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=18"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=20">
-<script src="assets/js/theme-toggle.js?v=18" defer></script>
-<script src="assets/js/photo-credit.js?v=18" defer></script>
+<script src="assets/js/theme-init.js?v=21"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-toggle.js?v=21" defer></script>
+<script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -213,8 +213,17 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                 <button type="button" role="menuitem" tabindex="-1" id="share-instagram" class="share-icon-btn share-icon-instagram" aria-label="Copy link to share on Instagram"><?= icon_instagram(18) ?></button>
                                 <a role="menuitem" tabindex="-1" id="share-x" class="share-icon-btn share-icon-x" href="#" target="_blank" rel="noopener" aria-label="Share on X"><?= icon_x(18) ?></a>
                                 <a role="menuitem" tabindex="-1" id="share-facebook" class="share-icon-btn share-icon-facebook" href="#" target="_blank" rel="noopener" aria-label="Share on Facebook"><?= icon_facebook(18) ?></a>
+                                <?php /* Opens this recipe on any phone that points its
+                                         own camera at it - no app install, no in-app
+                                         scanner, iOS and Android alike. */ ?>
+                                <button type="button" role="menuitem" tabindex="-1" id="share-qr" class="share-icon-btn share-icon-qr" aria-label="Show QR code"><?= icon('grid', 18) ?></button>
                             </div>
                             <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-copy-btn">Copy link</button>
+                        </div>
+                        <div id="share-qr-panel" class="share-qr-panel" hidden>
+                            <div id="share-qr-code" class="share-qr-code"></div>
+                            <p class="share-qr-hint">Point a phone camera at this to open the recipe.</p>
+                            <button type="button" class="btn btn-text btn-small" id="share-qr-close">Close</button>
                         </div>
                     </div>
                     <form method="post" action="favorite_toggle.php" class="print-hide">
