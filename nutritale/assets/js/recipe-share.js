@@ -1,7 +1,12 @@
-// "Share this recipe" (recipe.php): the Web Share API where it exists -
-// including the recipe photo, when the browser can actually share files -
-// with a manual fallback menu (WhatsApp / Facebook / copy link) on
-// browsers (mainly desktop) that don't implement navigator.share() at all.
+// "Share this recipe" (recipe.php): one menu on every device - WhatsApp,
+// Instagram (copies the link), X, Facebook, a QR code, Copy link and, where
+// the browser has the Web Share API, the device's own share sheet.
+//
+// The share button used to skip this menu whenever navigator.share existed
+// and open the OS share sheet instead. That is every phone, plus Chrome and
+// Edge on Windows - so the QR code, which only lives in this menu, could
+// not be reached on exactly the devices it was made for. The OS sheet is
+// still here, one tap further, as the round button beside "Copy link".
 (function () {
     var shareBtn = document.getElementById('share-btn');
     var menu = document.getElementById('share-menu');
@@ -13,11 +18,18 @@
     var xLink = document.getElementById('share-x');
     var facebookLink = document.getElementById('share-facebook');
     var copyBtn = document.getElementById('share-copy');
+    var nativeBtn = document.getElementById('share-native');
     var qrBtn = document.getElementById('share-qr');
     var qrPanel = document.getElementById('share-qr-panel');
     var qrCode = document.getElementById('share-qr-code');
     var qrClose = document.getElementById('share-qr-close');
-    var menuItems = [whatsappLink, instagramBtn, xLink, facebookLink, copyBtn, qrBtn].filter(Boolean);
+    // Read now: document.currentScript is only set while this file first runs.
+    var scriptSrc = document.currentScript ? document.currentScript.src : '';
+
+    if (nativeBtn && navigator.share) nativeBtn.hidden = false;
+    // Keyboard order follows the menu's visual order.
+    var menuItems = [whatsappLink, instagramBtn, xLink, facebookLink, qrBtn, copyBtn, nativeBtn]
+        .filter(function (item) { return item && !item.hidden; });
 
     function showToast(text) {
         toast.textContent = text;
@@ -41,7 +53,8 @@
         return {
             title: shareBtn.getAttribute('data-title'),
             text: shareBtn.getAttribute('data-text'),
-            url: window.location.href,
+            // Without the #ingredients/#method fragment the folder tabs add.
+            url: window.location.href.split('#')[0],
         };
     }
 
@@ -49,15 +62,11 @@
     // only when - this browser both supports sharing files at all and is
     // willing to share this specific one (canShare's file check, not just
     // navigator.share existing - some Web Share implementations support
-    // text/links but not files). No server-side resizing happens here:
-    // this app has no image-processing utility (nothing like PHP's GD/
-    // Imagick is used anywhere else in it), so it reuses the same
-    // Unsplash-served, already-width-capped image (?w=800 in the URL,
-    // matching the size the page itself displays) rather than re-encoding
-    // a new copy just for sharing. If the fetch fails for any reason
-    // (offline, a CORS-restricted image host, an unsupported type) sharing
-    // still proceeds with just title/text/url - a missing photo is never
-    // worth blocking the share itself.
+    // text/links but not files). It reuses the same already-width-capped
+    // image the page displays rather than re-encoding a copy for sharing.
+    // If the fetch fails for any reason (offline, a CORS-restricted image
+    // host, an unsupported type) sharing still proceeds with just
+    // title/text/url - a missing photo is never worth blocking the share.
     function withImageIfShareable(data, imageUrl) {
         if (!imageUrl || !navigator.canShare) {
             return Promise.resolve(data);
@@ -73,6 +82,17 @@
             .catch(function () { return data; });
     }
 
+    // navigator.share() has to be called while the tap that asked for it
+    // still counts as a user gesture, and Safari does not wait for a photo
+    // download first - it rejects the share. So the photo is fetched when
+    // the menu opens, and the button shares whatever is ready by then.
+    var preparedShare = null;
+    function prepareNativeShare() {
+        if (!nativeBtn || nativeBtn.hidden || preparedShare) return;
+        withImageIfShareable(shareData(), shareBtn.getAttribute('data-image'))
+            .then(function (data) { preparedShare = data; });
+    }
+
     function openMenu() {
         var data = shareData();
         whatsappLink.href = 'https://wa.me/?text=' + encodeURIComponent(data.title + ' ' + data.url);
@@ -80,12 +100,14 @@
             xLink.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(data.title) + '&url=' + encodeURIComponent(data.url);
         }
         facebookLink.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(data.url);
+        closeQr(false);
         menu.hidden = false;
         shareBtn.setAttribute('aria-expanded', 'true');
         menuItems.forEach(function (item) { item.tabIndex = 0; });
         whatsappLink.focus();
         document.addEventListener('click', onOutsideClick);
         document.addEventListener('keydown', onMenuKeydown);
+        prepareNativeShare();
     }
 
     function closeMenu(returnFocus) {
@@ -97,8 +119,11 @@
         if (returnFocus) shareBtn.focus();
     }
 
+    // contains(), not ===: a click on the button's icon targets the <svg>
+    // inside it, which would otherwise count as "outside" and close the
+    // menu in the same click that opened it.
     function onOutsideClick(event) {
-        if (!menu.contains(event.target) && event.target !== shareBtn) {
+        if (!menu.contains(event.target) && !shareBtn.contains(event.target)) {
             closeMenu(false);
         }
     }
@@ -122,12 +147,6 @@
     }
 
     shareBtn.addEventListener('click', function () {
-        if (navigator.share) {
-            withImageIfShareable(shareData(), shareBtn.getAttribute('data-image')).then(function (data) {
-                navigator.share(data).catch(function () { /* user cancelled - no-op */ });
-            });
-            return;
-        }
         if (menu.hidden) {
             openMenu();
         } else {
@@ -135,40 +154,90 @@
         }
     });
 
-    // QR of the page's own URL, drawn once and kept. 'M' error correction
+    if (nativeBtn && !nativeBtn.hidden) {
+        nativeBtn.addEventListener('click', function () {
+            var data = preparedShare || shareData();
+            closeMenu(true);
+            navigator.share(data).catch(function () { /* cancelled - no-op */ });
+        });
+    }
+
+    // qrcode-generator (assets/js/vendor/) is loaded by recipe.php ahead of
+    // this file. If it is missing anyway - a dropped script tag, a blocked
+    // or failed request - it is fetched on first use instead of leaving an
+    // empty box. A dropped tag is exactly how every recipe's QR went blank
+    // before (a merge removed it), and nothing on the page said so.
+    var qrLibPromise = null;
+    function loadQrLib() {
+        if (typeof qrcode === 'function') return Promise.resolve();
+        if (!qrLibPromise) {
+            qrLibPromise = new Promise(function (resolve, reject) {
+                var script = document.createElement('script');
+                script.src = (scriptSrc ? scriptSrc.replace(/[^/]*$/, '') : 'assets/js/') + 'vendor/qrcode-generator.min.js';
+                script.onload = function () {
+                    if (typeof qrcode === 'function') { resolve(); } else { reject(new Error('qrcode missing')); }
+                };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            }).catch(function (err) {
+                qrLibPromise = null; // let the next tap try again
+                throw err;
+            });
+        }
+        return qrLibPromise;
+    }
+
+    // QR of the recipe's own URL, drawn once and kept. 'M' error correction
     // is the usual trade for a screen-displayed code: still readable at an
     // angle or half-lit, without inflating the module count the way 'H'
     // would on a long recipe URL.
     function renderQr() {
-        if (qrCode.firstChild) return true;
-        if (typeof qrcode !== 'function') return false;
-        var qr = qrcode(0, 'M');
-        qr.addData(window.location.href);
-        qr.make();
-        qrCode.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true });
-        return true;
+        if (qrCode.firstChild) return Promise.resolve();
+        return loadQrLib().then(function () {
+            var qr = qrcode(0, 'M');
+            qr.addData(shareData().url);
+            qr.make();
+            qrCode.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+            var svg = qrCode.firstChild;
+            svg.setAttribute('role', 'img');
+            svg.setAttribute('aria-label', 'QR code that opens this recipe');
+        });
+    }
+
+    function onQrOutsideClick(event) {
+        if (!qrPanel.contains(event.target) && !qrBtn.contains(event.target)) {
+            closeQr(false);
+        }
+    }
+
+    function onQrKeydown(event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeQr(true);
+        }
+    }
+
+    function closeQr(returnFocus) {
+        if (!qrPanel || qrPanel.hidden) return;
+        qrPanel.hidden = true;
+        document.removeEventListener('click', onQrOutsideClick);
+        document.removeEventListener('keydown', onQrKeydown);
+        if (returnFocus) shareBtn.focus();
     }
 
     if (qrBtn && qrPanel && qrCode && qrClose) {
         qrBtn.addEventListener('click', function () {
-            if (!renderQr()) {
-                showToast('QR code unavailable right now.');
-                return;
-            }
             closeMenu(false);
-            qrPanel.hidden = false;
-            qrClose.focus();
+            renderQr().then(function () {
+                qrPanel.hidden = false;
+                qrClose.focus();
+                document.addEventListener('click', onQrOutsideClick);
+                document.addEventListener('keydown', onQrKeydown);
+            }, function () {
+                showToast("Couldn't draw the QR code. Check your connection and try again.");
+            });
         });
-        qrClose.addEventListener('click', function () {
-            qrPanel.hidden = true;
-            shareBtn.focus();
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && !qrPanel.hidden) {
-                qrPanel.hidden = true;
-                shareBtn.focus();
-            }
-        });
+        qrClose.addEventListener('click', function () { closeQr(true); });
     }
 
     copyBtn.addEventListener('click', function () {

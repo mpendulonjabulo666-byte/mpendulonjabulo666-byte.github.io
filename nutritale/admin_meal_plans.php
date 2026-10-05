@@ -82,8 +82,8 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
@@ -109,6 +109,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
         <?php if (!$templates): ?>
             <p class="muted">No templates yet — create one below.</p>
         <?php else: ?>
+            <div style="overflow-x:auto;">
             <table class="admin-table">
                 <thead><tr><th>Title</th><th>Recipes</th><th>Created by</th><th>Date</th><th></th></tr></thead>
                 <tbody>
@@ -130,6 +131,7 @@ $recipes = db()->query('SELECT id, title FROM recipes ORDER BY title')->fetchAll
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </div>
 

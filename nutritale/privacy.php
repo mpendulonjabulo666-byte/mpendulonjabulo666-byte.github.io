@@ -14,8 +14,8 @@ require_once __DIR__ . '/includes/icons.php';
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body class="landing-body">

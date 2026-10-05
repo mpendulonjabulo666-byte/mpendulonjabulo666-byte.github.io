@@ -20,10 +20,11 @@ So: use those docs for **what still needs to exist and why** (especially
 `00-START-HERE.md` §3 and §4, and `08-AI-ENGINE.md`). Ignore them entirely on
 **how to build it**. Nothing here is getting rewritten in React.
 
-### 0.1 — Three filenames are permanently renamed because of this dev machine's antivirus
+### 0.1 — Four filenames are permanently renamed because of this dev machine's antivirus
 
-`config/database.php`, `install.php`, and `includes/functions.php` no longer
-exist, on purpose, and should **not** be renamed back:
+`config/database.php`, `install.php`, `includes/functions.php`, and
+`includes/payfast.php` no longer exist, on purpose, and should **not** be
+renamed back:
 
 - `install.php` → `setup.php` — Avast deletes/blocks this file whenever it's
   *run* via `php.exe`, because it does schema DDL (`CREATE DATABASE`,
@@ -49,12 +50,25 @@ exist, on purpose, and should **not** be renamed back:
   `disclaimer()`/`DISCLAIMERS`, `enforce_maintenance_mode()`, etc.) — every
   `require_once .../includes/functions.php` reference across the app was
   repointed to `functions_core.php` in the same pass.
+- `includes/payfast.php` → `includes/payfast_gateway.php` (2026-10-05,
+  Step 22) — deleted from disk mid-session, right after this machine's PHP
+  made live HTTPS calls to PayFast's subscription API (the Step 12
+  round-trip test in §2.5); recreating the file under the same name was
+  refused with "Permission denied". Restored from `HEAD` under the new
+  name, which wrote instantly. Required by `admin_profile.php`,
+  `checkout.php`, `ingredient_checkout.php`, `payfast_notify.php`,
+  `premium_checkout.php`, `profile.php` and `tests/payfast_test.php`, all
+  repointed. Most likely the antivirus (AVG, the same engine as Avast)
+  reacting to payment-API traffic from `php.exe` — so don't run live
+  PayFast calls from this machine again; do them from a real host.
 
-All three renames are permanent fixes, not workarounds to undo later — this
+All four renames are permanent fixes, not workarounds to undo later — this
 is a local machine quirk, not an app bug, and it will just recur if any of
-these names is reintroduced. If a fourth filename gets blocked, it's worth
-telling the user this points at Avast's name/behavior heuristics generally,
-not one-off bad luck per file.
+these names is reintroduced. A fourth filename did get blocked
+(`payfast.php`, above), which confirms this is the antivirus's
+name/behaviour heuristics generally, not one-off bad luck per file. The fix
+is always the same: restore the content under a new name and repoint the
+`require`s.
 
 ---
 
@@ -295,6 +309,21 @@ step didn't have:
   whether the older pattern has this bug. Left the two once-off branches
   as they were rather than change based on an unconfirmed hypothesis;
   confirm against a real PayFast `FAILED` ITN payload before touching them.
+
+  **Update (Step 22, 2026-10-05)**: still no real `FAILED` ITN — there is
+  no way to trigger one from here. PayFast can't reach `localhost` to
+  deliver an ITN, a tunnel to this machine wasn't set up without being
+  asked, and a hand-made ITN is (correctly) rejected by the signature,
+  source-IP and VALID-confirmation checks, so it would prove nothing about
+  real payloads. Re-read the code instead: the hypothesis is a real
+  *possibility* (`payfast_notify.php` checks the amount at lines 108–113
+  and 128–133, before `if ($newStatus)`), not an observed bug.
+  Recommendation, still not applied: scope both once-off amount checks to
+  `$newStatus === 'paid'`, exactly like the subscription branch. That is
+  safe whatever PayFast puts in a failure payload, because `FAILED` and
+  `CANCELLED` grant nothing — they only stop a row sitting at `pending`.
+  To confirm for real: one sandbox purchase on a deployed host with a card
+  PayFast declines, then read the ITN it posts.
 - ~~No self-serve subscription cancellation~~ ✅ DONE (Step 12). Was:
   `premium_cancel.php` only handled a `pending` row abandoned mid-checkout
   — there was no "cancel my subscription" action anywhere in the app for
@@ -350,6 +379,31 @@ step didn't have:
   needs the user's own approval, so it wasn't applied automatically. A
   real sandbox subscription (and a working TLS setup here, or on a real
   host) is the only way left to confirm the actual round-trip.
+
+  **Update (Step 22, 2026-10-05)**: the round-trip now reaches PayFast.
+  - The CA problem was more than a stale bundle: this machine's antivirus
+    (AVG Web Shield) intercepts TLS and re-signs it with its own root, so
+    even a current curl.se bundle failed. `C:\xampp\apache\bin\curl-ca-bundle.crt`
+    was rebuilt from the Windows certificate store plus curl.se (233
+    certificates, AVG's root included), and `php.ini` points `curl.cainfo`
+    and `openssl.cafile` at it. Dev-machine only; a real host needs none of
+    this.
+  - A real `PUT https://api.payfast.co.za/subscriptions/{token}/cancel?testing=true`
+    then got a genuine reply from PayFast: HTTP 401 `Merchant authorization
+    failed.` That is the expected answer for the public sandbox merchant
+    (10000100), which has no API access — so the request, headers and
+    signature reach PayFast and get parsed, and the code matches PayFast's
+    official SDK. What's left is credentials: a personal sandbox account
+    with API access and a passphrase set, then one real cancel.
+  - A real bug that reply exposed: PayFast puts the reason in
+    `data.response` (`{"code":401,"status":"failed","data":{"response":"Merchant authorization failed.","message":false}}`),
+    which `payfast_api_request()` never read, so a failed cancel showed a
+    bare "HTTP 401". New `payfast_api_error_reason()` reads it (falling
+    back to a top-level `message`, then the HTTP code);
+    `tests/payfast_test.php` +4 checks, including that exact 401 body as a
+    fixture (17 total).
+  - Right after those live calls the antivirus deleted `includes/payfast.php`
+    — see §0.1; it is now `includes/payfast_gateway.php`.
 
 ### 2.6 — Vendors can see earnings but cannot be paid ✅ DONE (Step 8)
 
@@ -1137,6 +1191,14 @@ environment's `resize_window` reports success but never actually changes
 Step 18 couldn't force one either. Leaving this box unticked until a real
 narrow viewport and the FAQ's click behaviour are both seen.
 
+**Amendment (Step 22, 2026-10-05)**: now seen. Headless Chrome (puppeteer,
+its own throwaway profile) at a true 375px and 768px viewport, plus a sweep
+of 700–900px: no horizontal overflow at any width, all six FAQ
+`<details>` open on a real click with their body visible and close again,
+zero console errors. The one real fault this turned up was not in the
+landing page at all — see §2.20 (the service worker could leave a returning
+visitor with the whole site unstyled).
+
 ---
 
 ### 2.16 — Four visual polish fixes, plus one incidental sidebar bug found while verifying them (Step 18)
@@ -1696,6 +1758,10 @@ up, not deferred.
   the code reads correct and follows this app's existing patterns throughout, but
   a real phone-camera scan hasn't been watched end-to-end. Worth one real scan
   test next time you're at a keyboard with a camera.
+- **Update (Step 22, 2026-10-05)**: watched end to end with a camera feed
+  and three real bugs fixed — see §2.20. Still not covered: a physical phone
+  camera, and Android Chrome's native `BarcodeDetector` path (Windows Chrome
+  has no `BarcodeDetector`, so only the JS decoder was exercised).
 
 2026-10-04 full-suite re-run (cloud session, DB-free tests only, no live
 server/browser): all 168 tests pass (`ai_pantry_test.php` 30,
@@ -1703,6 +1769,151 @@ server/browser): all 168 tests pass (`ai_pantry_test.php` 30,
 `ingredient_matching_test.php` 37, `oauth_test.php` 13, `payfast_test.php` 13,
 `vendor_payouts_test.php` 22) and `php -l` is clean on every `.php` file in
 `nutritale/`. Baseline is healthy - nothing broken as of this commit.
+
+---
+
+### 2.20 — The four-item brief, then "make it smooth, not vibe coded" (Step 22, 2026-10-05)
+
+Everything here was checked in a real browser engine: headless Chrome via
+puppeteer, always with its own throwaway profile (never the user's Chrome),
+at phone (375/390px, touch) and desktop (1280px) sizes, light and dark.
+
+**1. Barcode scanning — now verified with a camera feed.** Chrome was given a
+fake camera playing a real rendered EAN-13 (a Y4M video built from the
+barcode's actual bar pattern), so `pantry.php`'s real camera path ran:
+camera opens, the code decodes, Open Food Facts resolves 5449000000996 to
+"Coca-Cola Original", and Add puts it in `user_pantry_items`. Typed-number
+entry: 3017620422003 resolves to "Nutella" and is added. Three bugs fixed:
+- The result row (name, expiry date, Add) was a no-wrap flex row: 479px
+  inside a 278px panel on a 390px phone, with Add pushed outside the panel
+  and the whole page widened to 535px. It wraps now
+  (`.pantry-scan-result-row`).
+- Products whose name *is* their brand ("Nutella") said "no name listed":
+  `product_pantry_name()` strips brands on purpose (for recipe matching),
+  which emptied the whole name. `barcode_lookup.php` now falls back to the
+  raw product name in that case; the matcher's own behaviour is unchanged.
+- html5-qrcode shrinks the box's region of each frame to the box's on-screen
+  size before decoding, so a barcode merely *inside* the box can be too small
+  to read: measured, it decodes at ~69% and ~86% of the box width and never at
+  ~52%. The hint now says "Move closer until the barcode fills the box."
+
+**2. landing.php at 375/768 + FAQ** — see the §2.15 amendment; all good.
+What it did find: `sw.js` passed a rejected `caches.open()` straight to
+`respondWith()`, so when a browser's CacheStorage is unusable (seen for real
+with a profile under `C:\Windows\Temp`; storage pressure, some private modes
+and corrupted profiles do the same) every CSS/JS/image request failed and a
+returning visitor got the site unstyled. The cache is now an optimisation,
+never a dependency: on failure it goes to the network. `CACHE_VERSION` v6.
+
+**3. and 4. PayFast** — see the two Step 22 updates in §2.5.
+
+**Recipe page — QR code.** Blank on every recipe, for three separate reasons:
+- Merge `7f946e2` dropped the `qrcode-generator.min.js` script tag from
+  `recipe.php`, so the library never loaded.
+- `.share-qr-panel { display: flex }` beats the browser's `[hidden]` rule,
+  so the panel sat permanently open as an empty white square (the third time
+  this exact bug hit this app, after the share toast and menu). Fixed for
+  the whole app with one guard: `[hidden]:not([hidden="until-found"])` is
+  `display: none !important`.
+- The share button skipped its own menu whenever `navigator.share` existed
+  — every phone, plus Chrome/Edge on Windows — so the QR button, which only
+  lives in that menu, couldn't be reached on the devices it was built for.
+  The menu now always opens; the OS share sheet is a round button beside
+  "Copy link", with the recipe photo fetched when the menu opens so Safari's
+  user-gesture window isn't spent downloading it.
+
+Plus `recipe-share.js` fetches the library itself if its tag is ever lost
+again, and the shared link no longer carries the folder `#fragment`.
+Verified on **all 94 recipes** (including the 45 hidden ones, as admin):
+the panel is hidden on load, and the code drawn on screen decodes to that
+recipe's exact URL. It was checked with jsQR, an independent decoder,
+reading screenshot pixels (spot-checked at 1x/2x/3x pixel density). An
+earlier canvas+ZXing test had flagged 5 of the 94; all 5 decode fine from
+the real screen pixels, and jsQR decodes every generated matrix, so those
+were the test path, not the codes.
+
+**Recipe page — the folders hold the recipe.** Ingredients, Method and
+Nutrition were three cards that jumped to sections scattered down the page,
+with macros, diet tags and allergens loose above them. Now the cards are
+tabs over one sheet (`assets/js/recipe-folders.js`, WAI-ARIA tabs pattern,
+arrow keys/Home/End, the URL `#fragment` reopens the same folder): the
+open folder lifts and slides its front down, the sheet tints with that
+folder's colour and points up at it, and switching animates the height and
+fades the contents in. Ingredients holds the servings scaler and the list;
+Method numbered steps; Nutrition calories + macros, the nutrition
+disclaimer, diet tags, allergens and the allergen disclaimer. The paywall
+and Premium teaser now sit inside Ingredients/Method, with Nutrition still
+open to everyone (checked with a temporary marketplace recipe and a
+temporarily-free account, both restored). Without JS, and in print, the
+three panels stack. Titles are HTML sized to the card (container query
+units) — the old SVG `<text>` shrank to 8px on a phone card.
+
+**Moving between pages.** Cross-document View Transitions in `style.css`
+(`@view-transition`), so every same-site navigation animates in Chrome/Edge
+126+ and Safari 18.2+ (iOS included); other browsers navigate as before.
+- Fade-through, not cross-fade: a plain cross-fade showed both pages' text
+  ghosted over each other mid-way. Verified that the gap shows the new
+  page's own background (dark stays dark, no flash).
+- Held still: phone tab bar, phone top bar (now `position: sticky`, which
+  also keeps a transition from flying it in from above), desktop sidebar.
+- "You are here" is now the Add Recipe button's green: a filled pill on the
+  active phone tab (the + itself on the Add Recipe page) and a filled active
+  row in the desktop sidebar. It glides from the old tab to the new one,
+  with its white label on its own layer so two labels never overlap inside
+  the moving pill.
+- Log in ↔ Create account: the card changes shape instead of being swapped,
+  the brand panel holds still, the dark Login/Sign Up pill slides across.
+  `register.php` got the same "Back to home" link as `login.php` so the two
+  cards start identically.
+- `prefers-reduced-motion` turns transitions off entirely.
+- Verified by freezing transitions mid-way and screenshotting the frames,
+  for nine navigations in both directions, phone and desktop.
+- Chrome drops a cross-document transition if the next page isn't ready in
+  ~4s and simply shows it. Locally that happened now and then, because a
+  database connect on this machine sometimes takes 5–20s (the antivirus
+  again, §0.1); on a normal host it won't.
+- `theme-init.js` (the one script every page runs before first paint)
+  silences "AbortError: Transition was skipped": tapping again mid-
+  transition, or a POST that redirects, made the browser reject promises
+  nothing was listening to.
+
+**Fonts are self-hosted.** `style.css` `@import`ed Google Fonts, which made
+Google part of every page load: measured here, a hung fonts.googleapis.com
+request held the page for 33s, and every page transition waits on the new
+page being ready to draw. Playfair Display and DM Sans (SIL OFL, licences in
+`assets/fonts/`) now come from this server, cached by the service worker
+like any asset, using Google's own `@font-face` rules with only the URLs
+changed, so text renders exactly as before. No visitor's IP goes to Google
+just to draw text, which suits the landing page's POPIA claim.
+`.htaccess` declares the `.woff2` type for older Apache builds.
+
+**Add a recipe on a phone.** The five ingredient fields were one row with
+the fourth cut off at the screen edge, and the row inputs had no styling at
+all (raw browser fields). Each ingredient is now a small card on a phone
+(name + remove; qty / unit / aisle; "shown as"), the inputs match the
+form's other fields, steps are textareas that grow, a new row gets the
+cursor, and every phone page leaves room under its last element for the
+tab bar and the raised + (at 375px "Create recipe" ends 53px above it).
+
+**Also found and fixed:** `admin_meal_plans.php`'s published-templates
+table was the one admin table without the page's own horizontal-scroll
+wrapper (686px wide on a 390px phone).
+
+**How "no errors" was established**, since `APP_DEBUG=false` means a PHP
+fatal mid-page still returns HTTP 200 with truncated HTML — grepping output
+for "Fatal error" finds nothing. The sweep instead checks every response ends
+in `</html>` and diffs `C:/xampp/apache/logs/error.log` across the run. That
+is how an `index.php:271` fatal (2026-10-03, `string - int`) was traced to
+the tab bar's `foreach ($tabs as [$page, ...])` overwriting `index.php`'s own
+`$page`; the closure-based `$renderTab` that later replaced it fixed it.
+Final sweep: 33 pages x phone and desktop, as admin and logged out — no
+truncated pages, no new error-log lines, no console errors, no horizontal
+overflow. All 172 tests pass; `php -l` clean on every file.
+
+Asset versions bumped so the cache-first service worker serves the new
+files: `style.css` and `theme-init.js` `?v=23` on every page,
+`recipe-share.js` / `recipe-folders.js` / `qrcode-generator.min.js` /
+`pantry-scan.js` `?v=23`.
 
 ---
 
@@ -1796,7 +2007,10 @@ Each step is independently shippable. Don't batch them.
       status updates** (§2.5)
       Unverified hypothesis from Step 7 — confirm against a real PayFast
       `FAILED` ITN payload before touching `recipe_purchases` /
-      `ingredient_orders`'s branches.
+      `ingredient_orders`'s branches. Step 22: can't be triggered from
+      localhost; mechanism confirmed in the code, fix recommended (scope the
+      check to `paid`), not applied — needs a deployed host for a real
+      declined sandbox payment.
 - [x] **Step 12 — Self-serve subscription cancellation** (§2.5) — done,
       real sandbox round-trip unverified
       `payfast_api_signature()` + `payfast_cancel_subscription()` (new,
@@ -1809,6 +2023,10 @@ Each step is independently shippable. Don't batch them.
       actual network call couldn't be verified end-to-end — this machine's
       XAMPP CA bundle is stale (from 2022), blocking any real HTTPS call;
       see §2.5 for the fix staged and awaiting approval to apply.
+      Step 22: CA fixed (AVG re-signs TLS; bundle rebuilt), a real request
+      reaches PayFast and gets "Merchant authorization failed." for the
+      public sandbox merchant, as expected. Needs a personal sandbox account
+      + passphrase for one real cancel. Error-reason parsing bug fixed.
 - [x] **Step 10 — Split multi-ingredient pantry rows** (§2.9) — done
       `split_pantry_entry()` (new, `includes/ingredient_matching.php`),
       wired into `pantry.php`'s add handler. `tests/ingredient_matching_test.php`
@@ -2049,6 +2267,15 @@ Each step is independently shippable. Don't batch them.
       barcode detection + the free Open Food Facts API for product
       lookup, plus its own Premium gate once built) - `pantry.php` itself
       not touched, per the instruction. See §2.19 for the full trail.
+
+- [x] **Step 22 — Brief follow-up + the smoothness pass** (§2.20) — done
+      Barcode scan verified with a camera feed (row overflow, brand-name
+      and decode-size fixes); landing.php 375/768 + FAQ seen; service
+      worker no longer breaks styling when CacheStorage fails; PayFast
+      round-trip reaches the real API (§2.5); recipe QR fixed on all 94
+      recipes; recipe folders hold their contents; page-to-page
+      transitions; green active marker; self-hosted fonts; add-recipe fits
+      a phone. `includes/payfast.php` → `payfast_gateway.php` (§0.1).
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

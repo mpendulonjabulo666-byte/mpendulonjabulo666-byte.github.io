@@ -68,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
@@ -94,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="auth-form-panel">
             <div class="auth-form-card">
+                <a href="landing.php" class="btn-back mb-16"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to home</span></a>
                 <a href="landing.php" class="center-text mb-16" style="display:block;" aria-label="<?= h(APP_NAME) ?> home"><?= nutritale_logo_svg(48) ?></a>
                 <h1>Create Account</h1>
                 <p class="auth-form-subtitle">Start your food journey with NutriTale</p>

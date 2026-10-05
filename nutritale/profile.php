@@ -3,7 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
-require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/payfast_gateway.php';
 require_once __DIR__ . '/includes/avatars.php';
 
 $user = require_login();
@@ -191,8 +191,8 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>

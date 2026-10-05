@@ -8,7 +8,7 @@
 
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
-require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/payfast_gateway.php';
 
 http_response_code(200);
 

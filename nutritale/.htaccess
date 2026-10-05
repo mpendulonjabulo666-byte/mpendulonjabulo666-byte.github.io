@@ -27,6 +27,13 @@
     </IfModule>
 </FilesMatch>
 
+# Self-hosted fonts (assets/fonts/). Older Apache mime.types files have no
+# entry for .woff2, and a font served as text/plain or octet-stream is
+# refused by some browsers - the page would fall back to system fonts.
+<IfModule mod_mime.c>
+    AddType font/woff2 .woff2
+</IfModule>
+
 # Dotfiles (.git, .env, .htaccess itself, etc.) — never serve these.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

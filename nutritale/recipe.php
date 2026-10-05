@@ -172,8 +172,8 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 <script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
@@ -218,9 +218,15 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                          scanner, iOS and Android alike. */ ?>
                                 <button type="button" role="menuitem" tabindex="-1" id="share-qr" class="share-icon-btn share-icon-qr" aria-label="Show QR code"><?= icon('grid', 18) ?></button>
                             </div>
-                            <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-copy-btn">Copy link</button>
+                            <div class="share-menu-actions">
+                                <button type="button" role="menuitem" tabindex="-1" id="share-copy" class="share-copy-btn">Copy link</button>
+                                <?php /* The device's own share sheet (Messages, Mail, AirDrop,
+                                         any installed app). recipe-share.js reveals it only
+                                         where navigator.share exists. */ ?>
+                                <button type="button" role="menuitem" tabindex="-1" id="share-native" class="share-native-btn" aria-label="More ways to share" hidden><?= icon('share', 18) ?></button>
+                            </div>
                         </div>
-                        <div id="share-qr-panel" class="share-qr-panel" hidden>
+                        <div id="share-qr-panel" class="share-qr-panel" role="dialog" aria-label="QR code for this recipe" hidden>
                             <div id="share-qr-code" class="share-qr-code"></div>
                             <p class="share-qr-hint">Point a phone camera at this to open the recipe.</p>
                             <button type="button" class="btn btn-text btn-small" id="share-qr-close">Close</button>
@@ -258,36 +264,178 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 
             <div class="recipe-stats">
                 <div><?= icon('clock', 16) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</div>
-                <div class="servings-scaler">
-                    <?= icon('users', 16) ?> Serves
-                    <button type="button" id="servings-minus" aria-label="Fewer servings"><?= icon('minus', 12) ?></button>
-                    <span id="servings-value"><?= (int)$recipe['servings'] ?></span>
-                    <button type="button" id="servings-plus" aria-label="More servings"><?= icon('plus', 12) ?></button>
-                </div>
                 <div><?= icon('flame', 16) ?> <?= $recipe['calories'] !== null ? (int)$recipe['calories'] . ' cal' : 'Calories unknown' ?></div>
                 <div>Difficulty: <?= h(ucfirst($recipe['difficulty'])) ?></div>
             </div>
 
-            <div class="macro-row" id="nutrition">
-                <div class="macro-pill"><strong><?= $recipe['protein_g'] !== null ? (int)$recipe['protein_g'] . 'g' : '—' ?></strong><span>Protein</span></div>
-                <div class="macro-pill"><strong><?= $recipe['carbs_g'] !== null ? (int)$recipe['carbs_g'] . 'g' : '—' ?></strong><span>Carbs</span></div>
-                <div class="macro-pill"><strong><?= $recipe['fat_g'] !== null ? (int)$recipe['fat_g'] . 'g' : '—' ?></strong><span>Fat</span></div>
-                <div class="macro-pill"><strong><?= $recipe['fiber_g'] !== null ? (int)$recipe['fiber_g'] . 'g' : '—' ?></strong><span>Fiber</span></div>
-            </div>
-            <?= disclaimer('nutrition') ?>
+            <?php if ($recipe['is_premium'] && $hasPurchased): ?>
+                <p class="alert alert-success">You've purchased this recipe — enjoy!</p>
+            <?php endif; ?>
 
-            <?php if ($dietTags): ?>
-                <div class="tag-row mb-16">
-                    <?php foreach ($dietTags as $tag): ?><span class="tag"><?= h($tag) ?></span><?php endforeach; ?>
+            <?php
+            // The recipe itself lives in three folders: tap one and it opens
+            // with its contents in the sheet below (assets/js/recipe-folders.js).
+            // Each card is a real link to its panel, so without JS - and in
+            // print - the cards jump to three stacked sections instead.
+            $folders = [
+                ['id' => 'ingredients', 'icon' => 'list', 'title' => 'Ingredients', 'label' => count($ingredients) . ' ingredients', 'a' => '#2fae66', 'b' => '#1a6b3e'],
+                ['id' => 'method', 'icon' => 'clock', 'title' => 'Method', 'label' => count($steps) . ' steps · ' . (int)$recipe['cook_time_minutes'] . ' min', 'a' => '#f0b24a', 'b' => '#c9741f'],
+                ['id' => 'nutrition', 'icon' => 'flame', 'title' => 'Nutrition', 'label' => ($recipe['calories'] !== null ? (int)$recipe['calories'] . ' kcal' : 'Macros'), 'a' => '#e8667f', 'b' => '#a83a53'],
+            ];
+            $macroValue = fn($grams) => $grams !== null ? (int)$grams . 'g' : '—';
+            $renderPaywall = function () use ($recipe) { ?>
+                <div class="paywall">
+                    <?= icon('wand', 28) ?>
+                    <h3>Unlock the full recipe</h3>
+                    <p class="muted">Ingredients and step-by-step instructions for this premium recipe unlock after purchase.</p>
+                    <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
                 </div>
-            <?php endif; ?>
+            <?php };
+            // Real teaser content (first 2 ingredients, first step), not the
+            // full lists blurred over with CSS - a CSS blur still ships the
+            // underlying text to the browser, plainly readable via
+            // view-source, which would make this no real gate at all. Only
+            // this small, deliberately-safe slice is ever sent when tier-locked.
+            $renderTierLock = function (callable $teaser) { ?>
+                <div class="recipe-tier-locked">
+                    <div class="recipe-tier-teaser" aria-hidden="true"><?php $teaser(); ?></div>
+                    <div class="recipe-tier-lock-overlay">
+                        <?= icon('wand', 28) ?>
+                        <h3>Premium recipe</h3>
+                        <p class="muted">Upgrade to NutriTale Premium to see the full ingredients and step-by-step instructions.</p>
+                        <a class="btn btn-primary" href="premium.php">Upgrade to view</a>
+                    </div>
+                </div>
+            <?php };
+            ?>
+            <section class="folders" data-folders aria-label="Recipe">
+                <div class="folder-rail">
+                    <?php foreach ($folders as $n => $f): ?>
+                        <a class="folder-card" id="folder-tab-<?= $f['id'] ?>" href="#<?= $f['id'] ?>"
+                           style="--folder-a:<?= $f['a'] ?>;--folder-b:<?= $f['b'] ?>;"
+                           aria-label="<?= h($f['title'] . ', ' . $f['label']) ?>">
+                            <span class="folder-sheen" aria-hidden="true"></span>
+                            <span class="folder-object" aria-hidden="true" style="--obj-a:<?= $f['b'] ?>;"><?= icon($f['icon'], 26) ?></span>
+                            <span class="folder-front" aria-hidden="true">
+                                <svg class="folder-face" viewBox="0 0 240 150" preserveAspectRatio="none" focusable="false">
+                                    <defs>
+                                        <linearGradient id="folder-grad-<?= $n ?>" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0" stop-color="<?= $f['a'] ?>"/>
+                                            <stop offset="1" stop-color="<?= $f['b'] ?>"/>
+                                        </linearGradient>
+                                        <mask id="folder-mask-<?= $n ?>" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="150">
+                                            <rect width="240" height="150" fill="#fff"/>
+                                            <path fill="#000" d="M0 0 H37 C30 0 31 16 26 16 H14 C6 16 0 22 0 30 Z M117 0 C124 0 123 16 128 16 H226 C234 16 240 22 240 30 V0 Z"/>
+                                        </mask>
+                                    </defs>
+                                    <rect width="240" height="150" rx="16" fill="url(#folder-grad-<?= $n ?>)" mask="url(#folder-mask-<?= $n ?>)"/>
+                                </svg>
+                                <span class="folder-title"><?= h($f['title']) ?></span>
+                                <span class="folder-label"><?= h($f['label']) ?></span>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
 
-            <?php if ($allergens): ?>
-                <p class="muted">Contains: <?= h(implode(', ', $allergens)) ?></p>
-            <?php endif; ?>
-            <?php if ($allergens || $allergenConflicts): ?>
-                <?= disclaimer('allergens') ?>
-            <?php endif; ?>
+                <div class="folder-sheet" style="--folder-a:<?= $folders[0]['a'] ?>;--folder-b:<?= $folders[0]['b'] ?>;--folder-index:0;">
+                    <div class="folder-sheet-inner">
+                        <div class="folder-panel" id="ingredients">
+                            <div class="folder-panel-head">
+                                <h2>Ingredients</h2>
+                                <?php if (!$isPurchaseLocked && !$isTierLocked && $ingredients): ?>
+                                    <div class="servings-scaler">
+                                        <?= icon('users', 16) ?> Serves
+                                        <button type="button" id="servings-minus" aria-label="Fewer servings"><?= icon('minus', 12) ?></button>
+                                        <span id="servings-value" aria-live="polite"><?= (int)$recipe['servings'] ?></span>
+                                        <button type="button" id="servings-plus" aria-label="More servings"><?= icon('plus', 12) ?></button>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="folder-panel-meta"><?= icon('users', 14) ?> Serves <?= (int)$recipe['servings'] ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($isPurchaseLocked): ?>
+                                <?php $renderPaywall(); ?>
+                            <?php elseif ($isTierLocked): ?>
+                                <?php $renderTierLock(function () use ($ingredients) { ?>
+                                    <ul class="ingredient-list">
+                                        <?php foreach (array_slice($ingredients, 0, 2) as $ing): ?>
+                                            <li><?= h($ing['display_quantity']) ?> <?= h($ing['name']) ?></li>
+                                        <?php endforeach; ?>
+                                        <?php if (count($ingredients) > 2): ?><li>&hellip;</li><?php endif; ?>
+                                    </ul>
+                                <?php }); ?>
+                            <?php elseif (!$ingredients): ?>
+                                <p class="muted">No ingredients have been added to this recipe yet.</p>
+                            <?php else: ?>
+                                <ul class="ingredient-list" id="ingredient-list">
+                                    <?php foreach ($ingredients as $ing): ?>
+                                        <li
+                                            data-base-qty="<?= h($ing['quantity']) ?>"
+                                            data-unit="<?= h($ing['unit']) ?>"
+                                            data-display="<?= h($ing['display_quantity']) ?>"
+                                            data-name="<?= h($ing['name']) ?>"
+                                        ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="folder-panel" id="method">
+                            <div class="folder-panel-head">
+                                <h2>Method</h2>
+                                <span class="folder-panel-meta"><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min · <?= count($steps) ?> <?= count($steps) === 1 ? 'step' : 'steps' ?></span>
+                            </div>
+                            <?php if ($isPurchaseLocked): ?>
+                                <?php $renderPaywall(); ?>
+                            <?php elseif ($isTierLocked): ?>
+                                <?php $renderTierLock(function () use ($steps) { ?>
+                                    <ol class="step-list">
+                                        <?php if ($steps): ?><li><?= h($steps[0]['step_text']) ?></li><?php endif; ?>
+                                        <?php if (count($steps) > 1): ?><li>&hellip;</li><?php endif; ?>
+                                    </ol>
+                                <?php }); ?>
+                            <?php elseif (!$steps): ?>
+                                <p class="muted">No steps have been added to this recipe yet.</p>
+                            <?php else: ?>
+                                <ol class="step-list">
+                                    <?php foreach ($steps as $step): ?>
+                                        <li><?= h($step['step_text']) ?></li>
+                                    <?php endforeach; ?>
+                                </ol>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="folder-panel" id="nutrition">
+                            <div class="folder-panel-head">
+                                <h2>Nutrition</h2>
+                            </div>
+                            <div class="nutrition-grid">
+                                <div class="nutrition-tile nutrition-tile-calories"><strong><?= $recipe['calories'] !== null ? (int)$recipe['calories'] : '—' ?></strong><span>Calories</span></div>
+                                <div class="nutrition-tile"><strong><?= $macroValue($recipe['protein_g']) ?></strong><span>Protein</span></div>
+                                <div class="nutrition-tile"><strong><?= $macroValue($recipe['carbs_g']) ?></strong><span>Carbs</span></div>
+                                <div class="nutrition-tile"><strong><?= $macroValue($recipe['fat_g']) ?></strong><span>Fat</span></div>
+                                <div class="nutrition-tile"><strong><?= $macroValue($recipe['fiber_g']) ?></strong><span>Fiber</span></div>
+                            </div>
+                            <?= disclaimer('nutrition') ?>
+
+                            <?php if ($dietTags): ?>
+                                <h3 class="folder-subhead">Diet</h3>
+                                <div class="tag-row">
+                                    <?php foreach ($dietTags as $tag): ?><span class="tag"><?= h($tag) ?></span><?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($allergens): ?>
+                                <h3 class="folder-subhead">Allergens</h3>
+                                <p class="folder-allergens">Contains <?= h(implode(', ', $allergens)) ?></p>
+                            <?php endif; ?>
+                            <?php if ($allergens || $allergenConflicts): ?>
+                                <?= disclaimer('allergens') ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <?php if ((int)$recipe['created_by'] === (int)$user['id']): ?>
                 <div class="recipe-owner-actions mb-16">
@@ -321,110 +469,6 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                         <button type="submit" class="btn btn-text btn-small" style="color:var(--error);">Submit report</button>
                     </form>
                 </details>
-            <?php endif; ?>
-
-            <?php if (!$isPurchaseLocked): ?>
-                <?php
-                // Folder-card rail: jumps to the three sections. Face = SVG rect
-                // with an SVG mask notching a folder tab out of its top edge.
-                $folders = [
-                    ['href' => '#ingredients', 'icon' => 'list', 'label' => count($ingredients) . ' ingredients', 'title' => 'Ingredients', 'a' => '#2fae66', 'b' => '#1a6b3e'],
-                    ['href' => '#method', 'icon' => 'clock', 'label' => count($steps) . ' steps · ' . (int)$recipe['cook_time_minutes'] . ' min', 'title' => 'Method', 'a' => '#f0b24a', 'b' => '#c9741f'],
-                    ['href' => '#nutrition', 'icon' => 'flame', 'label' => ($recipe['calories'] !== null ? (int)$recipe['calories'] . ' kcal' : 'Nutrition'), 'title' => 'Nutrition', 'a' => '#e8667f', 'b' => '#a83a53'],
-                ];
-                ?>
-                <nav class="folder-rail" aria-label="Jump to a section">
-                    <?php foreach ($folders as $n => $f): ?>
-                        <a class="folder-card" href="<?= $f['href'] ?>" aria-label="<?= h($f['title'] . ': ' . $f['label']) ?>">
-                            <span class="folder-sheen" aria-hidden="true"></span>
-                            <span class="folder-object" aria-hidden="true" style="--obj-a:<?= $f['b'] ?>;"><?= icon($f['icon'], 26) ?></span>
-                            <svg class="folder-face" viewBox="0 0 240 150" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                                <defs>
-                                    <linearGradient id="folder-grad-<?= $n ?>" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0" stop-color="<?= $f['a'] ?>"/>
-                                        <stop offset="1" stop-color="<?= $f['b'] ?>"/>
-                                    </linearGradient>
-                                    <mask id="folder-mask-<?= $n ?>" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="150">
-                                        <rect width="240" height="150" fill="#fff"/>
-                                        <path fill="#000" d="M0 0 H37 C30 0 31 16 26 16 H14 C6 16 0 22 0 30 Z M117 0 C124 0 123 16 128 16 H226 C234 16 240 22 240 30 V0 Z"/>
-                                    </mask>
-                                </defs>
-                                <rect width="240" height="150" rx="16" fill="url(#folder-grad-<?= $n ?>)" mask="url(#folder-mask-<?= $n ?>)"/>
-                                <text x="20" y="54" class="folder-face-title"><?= h($f['title']) ?></text>
-                            </svg>
-                            <span class="folder-label" aria-hidden="true"><?= h($f['label']) ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </nav>
-            <?php endif; ?>
-
-            <?php if ($isPurchaseLocked): ?>
-                <div class="paywall card">
-                    <?= icon('wand', 28) ?>
-                    <h2 style="margin:10px 0 4px;">Unlock the full recipe</h2>
-                    <p class="muted" style="margin:0 0 16px;">Ingredients and step-by-step instructions for this premium recipe unlock after purchase.</p>
-                    <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
-                </div>
-            <?php elseif ($isTierLocked): ?>
-                <!-- Real teaser content (first 2 ingredients, first step),
-                     not the full lists blurred over with CSS - a CSS blur
-                     still ships the underlying text to the browser, plainly
-                     readable via view-source, which would make this no real
-                     gate at all. Only this small, deliberately-safe slice
-                     is ever sent when tier-locked. -->
-                <div class="recipe-columns recipe-tier-locked">
-                    <div class="recipe-tier-teaser" aria-hidden="true">
-                        <div>
-                            <h2 id="ingredients">Ingredients</h2>
-                            <ul class="ingredient-list">
-                                <?php foreach (array_slice($ingredients, 0, 2) as $ing): ?>
-                                    <li><?= h($ing['display_quantity']) ?> <?= h($ing['name']) ?></li>
-                                <?php endforeach; ?>
-                                <?php if (count($ingredients) > 2): ?><li>&hellip;</li><?php endif; ?>
-                            </ul>
-                        </div>
-                        <div>
-                            <h2 id="method">Instructions</h2>
-                            <ol class="step-list">
-                                <?php if ($steps): ?><li><?= h($steps[0]['step_text']) ?></li><?php endif; ?>
-                                <?php if (count($steps) > 1): ?><li>&hellip;</li><?php endif; ?>
-                            </ol>
-                        </div>
-                    </div>
-                    <div class="recipe-tier-lock-overlay">
-                        <?= icon('wand', 28) ?>
-                        <h2 style="margin:10px 0 4px;">Premium recipe</h2>
-                        <p class="muted" style="margin:0 0 16px;">Upgrade to NutriTale Premium to see the full ingredients and step-by-step instructions.</p>
-                        <a class="btn btn-primary" href="premium.php">Upgrade to view</a>
-                    </div>
-                </div>
-            <?php else: ?>
-                <?php if ($recipe['is_premium'] && $hasPurchased): ?>
-                    <p class="alert alert-success">You've purchased this recipe — enjoy!</p>
-                <?php endif; ?>
-                <div class="recipe-columns">
-                    <div>
-                        <h2 id="ingredients">Ingredients</h2>
-                        <ul class="ingredient-list" id="ingredient-list">
-                            <?php foreach ($ingredients as $ing): ?>
-                                <li
-                                    data-base-qty="<?= h($ing['quantity']) ?>"
-                                    data-unit="<?= h($ing['unit']) ?>"
-                                    data-display="<?= h($ing['display_quantity']) ?>"
-                                    data-name="<?= h($ing['name']) ?>"
-                                ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                    <div>
-                        <h2 id="method">Instructions</h2>
-                        <ol class="step-list">
-                            <?php foreach ($steps as $step): ?>
-                                <li><?= h($step['step_text']) ?></li>
-                            <?php endforeach; ?>
-                        </ol>
-                    </div>
-                </div>
             <?php endif; ?>
 
             <div class="reviews-section">
@@ -474,6 +518,8 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
     var servings = baseServings;
     var valueEl = document.getElementById('servings-value');
     var items = document.querySelectorAll('#ingredient-list li');
+    // No scaler when the list is locked or empty (see the Ingredients folder).
+    if (!valueEl || baseServings < 1) return;
 
     function render() {
         valueEl.textContent = servings;
@@ -498,6 +544,11 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 })();
 
 </script>
-<script src="assets/js/recipe-share.js?v=19" defer></script>
+<script src="assets/js/recipe-folders.js?v=23" defer></script>
+<?php /* qrcode-generator 1.4.4 (Kazuhiko Arase, MIT), vendored unmodified.
+         Loaded before recipe-share.js, which calls into it (and fetches it
+         itself if this tag is ever lost again - a merge dropped it once). */ ?>
+<script src="assets/js/vendor/qrcode-generator.min.js?v=23" defer></script>
+<script src="assets/js/recipe-share.js?v=23" defer></script>
 </body>
 </html>

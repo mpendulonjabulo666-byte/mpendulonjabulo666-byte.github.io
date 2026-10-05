@@ -12,7 +12,7 @@
 // CACHE_VERSION is bumped whenever this file's caching behavior changes, so
 // activate() below tears down every previous version's caches — an old
 // service worker's stale content can never outlive an update to this file.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const STATIC_CACHE = 'nutritale-static-' + CACHE_VERSION;
 const PAGE_CACHE = 'nutritale-pages-' + CACHE_VERSION;
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE];
@@ -60,17 +60,35 @@ self.addEventListener('fetch', function (event) {
         return; // let the browser handle it normally (network, no caching)
     }
 
+    // The cache is an optimisation, never a dependency. CacheStorage can
+    // fail outright - caches.open() rejects with "Unexpected internal
+    // error" when the browser profile's storage is unusable (seen for real
+    // with a Chrome profile under C:\Windows\Temp; storage pressure, some
+    // private-browsing modes and corrupted profiles do the same). Before
+    // this catch, that rejection went straight to respondWith() and every
+    // CSS, JS and image request failed while the network itself was fine,
+    // so a returning visitor got the whole site unstyled. Now a broken
+    // cache just means "go to the network", same as having no worker.
     event.respondWith(
         caches.open(STATIC_CACHE).then(function (cache) {
             return cache.match(request).then(function (cached) {
                 const fetchPromise = fetch(request).then(function (response) {
                     if (response && response.ok) {
-                        cache.put(request, response.clone());
+                        cache.put(request, response.clone()).catch(function () {});
                     }
                     return response;
-                }).catch(function () { return cached; });
-                return cached || fetchPromise;
+                });
+                if (cached) {
+                    // Serve the cached copy now; the fetch above only
+                    // refreshes it in the background, so its failure (say,
+                    // offline) is no one's problem.
+                    fetchPromise.catch(function () {});
+                    return cached;
+                }
+                return fetchPromise;
             });
+        }).catch(function () {
+            return fetch(request);
         })
     );
 });

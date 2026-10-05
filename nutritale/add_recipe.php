@@ -182,8 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=23"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=23">
 <script src="assets/js/theme-toggle.js?v=21" defer></script>
 </head>
 <body>
@@ -297,17 +297,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h3>Ingredients</h3>
             <div class="dynamic-rows" id="ingredient-rows">
                 <?php foreach ($ingredients as $ing): ?>
-                    <div class="dynamic-row">
-                        <input type="text" name="ing_name[]" placeholder="Name" value="<?= h($ing[0]) ?>">
-                        <input type="text" name="ing_qty[]" placeholder="Qty" value="<?= h($ing[1]) ?>" style="max-width:70px;">
-                        <input type="text" name="ing_unit[]" placeholder="Unit" value="<?= h($ing[2]) ?>" style="max-width:80px;">
-                        <input type="text" name="ing_display[]" placeholder="Display (e.g. 1/2 cup)" value="<?= h($ing[3]) ?>">
-                        <select name="ing_category[]" style="max-width:110px;">
+                    <div class="dynamic-row ingredient-row">
+                        <input type="text" name="ing_name[]" class="row-name" placeholder="Ingredient" aria-label="Ingredient" value="<?= h($ing[0]) ?>">
+                        <input type="text" name="ing_qty[]" class="row-qty" placeholder="Qty" aria-label="Quantity" inputmode="decimal" value="<?= h($ing[1]) ?>">
+                        <input type="text" name="ing_unit[]" class="row-unit" placeholder="Unit" aria-label="Unit" value="<?= h($ing[2]) ?>">
+                        <input type="text" name="ing_display[]" class="row-display" placeholder="Shown as (e.g. 1/2 cup)" aria-label="Shown as" value="<?= h($ing[3]) ?>">
+                        <select name="ing_category[]" class="row-cat" aria-label="Shopping list aisle">
                             <?php foreach ($categories as $c): ?>
                                 <option value="<?= h($c) ?>" <?= ($ing[4] ?? 'other') === $c ? 'selected' : '' ?>><?= ucfirst($c) ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" class="remove-row"><?= icon('x', 14) ?></button>
+                        <button type="button" class="remove-row" aria-label="Remove"><?= icon('x', 14) ?></button>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -318,9 +318,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h3>Instructions</h3>
             <div class="dynamic-rows" id="step-rows">
                 <?php foreach ($steps as $step): ?>
-                    <div class="dynamic-row">
-                        <input type="text" name="step_text[]" placeholder="Step" value="<?= h($step) ?>">
-                        <button type="button" class="remove-row"><?= icon('x', 14) ?></button>
+                    <div class="dynamic-row step-row">
+                        <textarea name="step_text[]" rows="2" placeholder="Describe this step" aria-label="Step"><?= h($step) ?></textarea>
+                        <button type="button" class="remove-row" aria-label="Remove"><?= icon('x', 14) ?></button>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -332,23 +332,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main>
 
 <template id="ingredient-row-template">
-    <div class="dynamic-row">
-        <input type="text" name="ing_name[]" placeholder="Name">
-        <input type="text" name="ing_qty[]" placeholder="Qty" style="max-width:70px;">
-        <input type="text" name="ing_unit[]" placeholder="Unit" style="max-width:80px;">
-        <input type="text" name="ing_display[]" placeholder="Display (e.g. 1/2 cup)">
-        <select name="ing_category[]" style="max-width:110px;">
+    <div class="dynamic-row ingredient-row">
+        <input type="text" name="ing_name[]" class="row-name" placeholder="Ingredient" aria-label="Ingredient">
+        <input type="text" name="ing_qty[]" class="row-qty" placeholder="Qty" aria-label="Quantity" inputmode="decimal">
+        <input type="text" name="ing_unit[]" class="row-unit" placeholder="Unit" aria-label="Unit">
+        <input type="text" name="ing_display[]" class="row-display" placeholder="Shown as (e.g. 1/2 cup)" aria-label="Shown as">
+        <select name="ing_category[]" class="row-cat" aria-label="Shopping list aisle">
             <?php foreach ($categories as $c): ?>
                 <option value="<?= h($c) ?>"><?= ucfirst($c) ?></option>
             <?php endforeach; ?>
         </select>
-        <button type="button" class="remove-row"><?= icon('x', 14) ?></button>
+        <button type="button" class="remove-row" aria-label="Remove"><?= icon('x', 14) ?></button>
     </div>
 </template>
 <template id="step-row-template">
-    <div class="dynamic-row">
-        <input type="text" name="step_text[]" placeholder="Step">
-        <button type="button" class="remove-row"><?= icon('x', 14) ?></button>
+    <div class="dynamic-row step-row">
+        <textarea name="step_text[]" rows="2" placeholder="Describe this step" aria-label="Step"></textarea>
+        <button type="button" class="remove-row" aria-label="Remove"><?= icon('x', 14) ?></button>
     </div>
 </template>
 
@@ -365,16 +365,15 @@ var stepRows = document.getElementById('step-rows');
 wireRemoveButtons(ingredientRows);
 wireRemoveButtons(stepRows);
 
-document.getElementById('add-ingredient').onclick = function () {
-    var tpl = document.getElementById('ingredient-row-template');
-    ingredientRows.appendChild(tpl.content.cloneNode(true));
-    wireRemoveButtons(ingredientRows);
-};
-document.getElementById('add-step').onclick = function () {
-    var tpl = document.getElementById('step-row-template');
-    stepRows.appendChild(tpl.content.cloneNode(true));
-    wireRemoveButtons(stepRows);
-};
+// A new row lands with the cursor already in it, so adding several
+// ingredients in a row is type, tap "Add", type - no hunting for the field.
+function addRow(container, templateId) {
+    container.appendChild(document.getElementById(templateId).content.cloneNode(true));
+    wireRemoveButtons(container);
+    container.lastElementChild.querySelector('input, textarea').focus();
+}
+document.getElementById('add-ingredient').onclick = function () { addRow(ingredientRows, 'ingredient-row-template'); };
+document.getElementById('add-step').onclick = function () { addRow(stepRows, 'step-row-template'); };
 </script>
 </body>
 </html>

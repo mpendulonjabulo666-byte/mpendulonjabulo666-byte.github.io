@@ -1,4 +1,213 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+/* Playfair Display and DM Sans, served from this site (assets/fonts/, SIL
+   Open Font License - OFL-*.txt beside them) instead of @import-ed from
+   fonts.googleapis.com. The @import made Google part of every page load:
+   the stylesheet could not finish until Google answered, and the page
+   waited on the stylesheet - measured here, a Google request that hung
+   held the whole page until it timed out 33s later, and every page-to-page
+   transition waits on the new page being ready to draw. Self-hosted, the
+   fonts come from the same server as everything else, are cached by the
+   service worker with the other assets, and no visitor's IP goes to Google
+   just to draw text. The rules are Google's own, unchanged apart from the
+   URLs, so the text renders exactly as before; each subset file is only
+   downloaded when a page actually uses its characters. */
+/* latin-ext */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/playfair-display-cyrillic.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/playfair-display-vietnamese.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/playfair-display-cyrillic.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/playfair-display-vietnamese.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/playfair-display-cyrillic.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/playfair-display-vietnamese.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../fonts/playfair-display-cyrillic.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../fonts/playfair-display-vietnamese.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin-ext.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../fonts/playfair-display-latin.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
     color-scheme: light;
@@ -932,9 +1141,34 @@ a { color: inherit; text-decoration: none; }
     box-shadow: 0 14px 26px -8px rgba(47, 174, 102, 0.65);
 }
 .share-copy-btn:active { transform: translateY(0) scale(0.97); }
+/* Copy link, plus - where the browser has one - the device's own share
+   sheet as a round button beside it. */
+.share-menu-actions { display: flex; align-items: center; gap: 8px; }
+.share-menu-actions .share-copy-btn { flex: 1; width: auto; }
+.share-native-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, color 0.15s ease;
+}
+.share-native-btn:hover, .share-native-btn:focus-visible { transform: translateY(-1px); border-color: var(--green); color: var(--green-dark); outline: none; }
+/* Menu and QR card grow out of the share button rather than blinking in. */
+.share-menu, .share-qr-panel { transform-origin: top right; animation: share-pop-in 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes share-pop-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+}
 @media (prefers-reduced-motion: reduce) {
     .share-menu::before { animation: none; }
-    .share-icon-btn, .share-copy-btn { transition: none; }
+    .share-icon-btn, .share-copy-btn, .share-native-btn { transition: none; }
+    .share-menu, .share-qr-panel { animation: none; }
 }
 
 .share-toast {
@@ -953,6 +1187,14 @@ a { color: inherit; text-decoration: none; }
 /* Same specificity tie for the share menu: .share-menu's display:flex was
    beating [hidden], so the menu showed permanently on every recipe page. */
 .share-menu[hidden] { display: none; }
+/* ...and a third time with .share-qr-panel: an empty white QR square sat
+   open under the share button on every recipe. The two rules above patch
+   one class each; this ends the whole class of bug. The browser's own
+   [hidden] rule loses to ANY author display value, so every element this
+   app hides with the attribute (menus, panels, toasts, empty-state lines,
+   combobox lists) now stays hidden whatever its class sets. until-found
+   is excluded because that value is meant to render (find-in-page). */
+[hidden]:not([hidden="until-found"]) { display: none !important; }
 
 .premium-tag {
     display: inline-flex;
@@ -2364,6 +2606,15 @@ a { color: inherit; text-decoration: none; }
     flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink);
 }
 .pantry-scan-result { margin-top: 12px; }
+/* Name, expiry date and Add as one row that wraps. As a plain no-wrap row
+   on a 390px phone it measured 479px inside a 278px panel: the date input
+   and the Add button sat past the panel's edge and widened the whole page
+   to 535px. Now the name takes its own line when the three don't fit, and
+   the date and Add share the next one. */
+.pantry-scan-result .pantry-scan-result-row { flex-wrap: wrap; }
+.pantry-scan-result-row input[type="text"] { flex: 1 1 220px; min-width: 0; }
+.pantry-scan-result-row .pantry-date-input { flex: 1 1 140px; min-width: 0; }
+.pantry-scan-result-row .btn { flex: 0 0 auto; }
 
 /* ---------- Ring pill: Log in / Create account / Log out ----------
    Icon disc wearing an iridescent ring: a conic gradient masked down to its
@@ -2554,12 +2805,24 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 .app-nav-identity-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 .app-nav-identity-plan { font-size: 11.5px; color: var(--muted); }
 
-/* ---------- Recipe page: folder-card rail ----------
-   Stack, back to front: iridescent sheen, a cut-out object (mostly hidden
-   below), the SVG-masked folder face, a mono label. Hovering/focusing one
-   lifts it, slides its face off to reveal the sheen, raises the object,
-   and pushes the other two back. */
-.folder-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 22px 0 30px; padding-top: 10px; }
+/* ---------- Recipe page: the folders ----------
+   Ingredients, Method and Nutrition are three folder cards over one sheet
+   (assets/js/recipe-folders.js): the recipe's contents live inside them,
+   not loose on the page. Card stack, back to front: iridescent sheen, a
+   cut-out object, the folder's front (SVG-masked face, title, count).
+   Opening a folder slides its front down to show the object inside, and
+   the sheet below takes that folder's colour and points up at it.
+   Without JS the cards are links to three stacked sections, which is also
+   how the page prints. */
+@property --folder-a { syntax: '<color>'; inherits: true; initial-value: #2fae66; }
+@property --folder-b { syntax: '<color>'; inherits: true; initial-value: #1a6b3e; }
+@property --folder-index { syntax: '<number>'; inherits: true; initial-value: 0; }
+.folders {
+    --folder-gap: 16px;
+    --folder-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    margin: 24px 0 28px;
+}
+.folder-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--folder-gap); padding-top: 10px; }
 .folder-card {
     position: relative;
     z-index: 1;
@@ -2568,9 +2831,14 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
     border-radius: 16px;
     overflow: hidden;
     isolation: isolate;
+    /* Lets the title and count size themselves to the card (cqi below), so
+       they read the same on a 104px phone card and a 340px desktop one -
+       the old SVG <text> title scaled with the card and shrank to 8px. */
+    container-type: inline-size;
     text-decoration: none;
     color: #fff;
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.5s var(--folder-ease), opacity 0.5s var(--folder-ease), filter 0.5s var(--folder-ease), box-shadow 0.5s var(--folder-ease);
 }
 .folder-sheen {
     position: absolute;
@@ -2595,43 +2863,180 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
     background: linear-gradient(145deg, #34423b, var(--obj-a, #1c2521));
     box-shadow: 0 14px 26px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28);
     transform: translate(-50%, 40%) rotate(-7deg);
-    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.6s var(--folder-ease);
 }
-.folder-face { position: absolute; inset: 0; z-index: 3; display: block; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
-.folder-face-title { fill: #fff; font: 700 19px var(--font-display); }
+.folder-object svg { width: 46%; height: 46%; }
+.folder-front { position: absolute; inset: 0; z-index: 3; transition: transform 0.55s var(--folder-ease); }
+.folder-face { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.folder-title {
+    position: absolute;
+    left: 8.5%;
+    top: 22%;
+    font: 700 clamp(13px, 8.6cqi, 22px)/1.1 var(--font-display);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+}
 .folder-label {
     position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 12px;
-    z-index: 4;
-    font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    left: 8.5%;
+    right: 8.5%;
+    bottom: 10%;
+    font: 600 clamp(9px, 4.6cqi, 11px)/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.92);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.4s var(--folder-ease);
 }
-.folder-rail:hover .folder-card,
-.folder-rail:focus-within .folder-card { transform: scale(0.93); opacity: 0.6; filter: saturate(0.6); }
-.folder-rail .folder-card:hover,
-.folder-rail .folder-card:focus { transform: translateY(-7%) scale(1.07); opacity: 1; filter: none; z-index: 5; }
-.folder-rail .folder-card:hover .folder-face,
-.folder-rail .folder-card:focus .folder-face { transform: translateY(52%); }
-.folder-rail .folder-card:hover .folder-object,
-.folder-rail .folder-card:focus .folder-object { transform: translate(-50%, -4%) rotate(3deg); }
-.folder-rail .folder-card:hover .folder-label,
-.folder-rail .folder-card:focus .folder-label { opacity: 0; }
+/* Phone-width cards are too narrow for "12 INGREDIENTS"; the open sheet
+   says it anyway. */
+@container (max-width: 170px) {
+    .folder-label { display: none; }
+}
 .folder-card:focus-visible { outline: 2px solid var(--green-dark); outline-offset: 4px; }
+
+/* Without JS: the old hover lift, as plain links. */
+.folders:not(.is-enhanced) .folder-card:hover { transform: translateY(-4px); }
+
+/* With JS: one folder open, the other two closed and set back a little. */
+.folders.is-enhanced .folder-card[aria-selected="false"] { opacity: 0.8; filter: saturate(0.8); transform: scale(0.96); }
+.folders.is-enhanced .folder-card[aria-selected="false"]:hover,
+.folders.is-enhanced .folder-card[aria-selected="false"]:focus-visible { opacity: 1; filter: none; transform: translateY(-3px) scale(0.98); }
+.folders.is-enhanced .folder-card[aria-selected="true"] { transform: translateY(-4px); box-shadow: 0 18px 30px -18px var(--folder-b); }
+.folders.is-enhanced .folder-card[aria-selected="true"] .folder-front { transform: translateY(34%); }
+.folders.is-enhanced .folder-card[aria-selected="true"] .folder-object { transform: translate(-50%, -2%) rotate(3deg); }
+.folders.is-enhanced .folder-card[aria-selected="true"] .folder-label { opacity: 0; }
+
+/* The sheet: tinted with the open folder's colour, a strip of its
+   gradient along the top, and a pointer up at its card. The registered
+   properties above are what let those colours and the pointer glide from
+   folder to folder instead of jumping. */
+.folder-sheet {
+    position: relative;
+    margin-top: 16px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: linear-gradient(90deg, var(--folder-a), var(--folder-b)) top / 100% 4px no-repeat, var(--white);
+    background: linear-gradient(90deg, var(--folder-a), var(--folder-b)) top / 100% 4px no-repeat, color-mix(in srgb, var(--folder-a) 6%, var(--white));
+    box-shadow: 0 24px 44px -34px rgba(20, 40, 28, 0.55);
+    transition: --folder-a 0.45s var(--folder-ease), --folder-b 0.45s var(--folder-ease), --folder-index 0.5s var(--folder-ease);
+}
+.folders.is-enhanced .folder-sheet::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: calc((100% - 2 * var(--folder-gap)) / 6 + var(--folder-index) * ((100% - 2 * var(--folder-gap)) / 3 + var(--folder-gap)));
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    border-radius: 3px 0 0 0;
+    background: var(--folder-a);
+    transform: rotate(45deg);
+}
+.folder-sheet-inner { padding: 24px 26px 26px; }
+.folder-sheet-inner.is-resizing { overflow: hidden; }
+.folders:not(.is-enhanced) .folder-panel + .folder-panel { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
+.folder-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 16px; }
+.folder-panel-head h2 { margin: 0; font-size: 21px; }
+.folder-panel-meta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.folder-panel-head .servings-scaler { font-size: 14px; color: var(--muted); }
+.folder-panel-head .servings-scaler button { width: 30px; height: 30px; }
 #ingredients, #method, #nutrition { scroll-margin-top: 24px; }
+
+/* Ingredients: rows with a dot in the folder's colour; two columns where
+   there is room for them. */
+.folder-panel .ingredient-list { list-style: none; padding: 0; }
+.folder-panel .ingredient-list li {
+    position: relative;
+    margin: 0;
+    padding: 9px 0 9px 20px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 15px;
+    line-height: 1.4;
+    break-inside: avoid;
+}
+.folder-panel .ingredient-list li::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: calc(9px + 0.7em - 3.5px);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--folder-a);
+}
+.folder-panel .ing-qty { font-weight: 700; }
+@media (min-width: 760px) {
+    .folder-panel .ingredient-list { columns: 2; column-gap: 40px; }
+}
+
+/* Method: numbered discs. Darkened toward black so white numerals stay
+   readable on the orange folder too (its own colours give 2-3:1). */
+.folder-panel .step-list { list-style: none; padding: 0; counter-reset: step; }
+.folder-panel .step-list li {
+    counter-increment: step;
+    position: relative;
+    margin: 0 0 18px;
+    padding-left: 44px;
+    min-height: 30px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+.folder-panel .step-list li:last-child { margin-bottom: 0; }
+.folder-panel .step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: -1px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font: 700 13px/1 var(--font-body);
+    color: #fff;
+    background: var(--folder-b);
+    background: color-mix(in srgb, var(--folder-b) 78%, #000);
+}
+
+/* Nutrition: calories as the lead tile, the four macros beside it. */
+.nutrition-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.nutrition-tile { padding: 14px 6px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--white); text-align: center; }
+.nutrition-tile strong { display: block; font: 700 21px/1.1 var(--font-display); color: var(--ink); }
+.nutrition-tile span { display: block; margin-top: 5px; font-size: 12px; color: var(--muted); }
+.nutrition-tile-calories { border-color: transparent; background: var(--folder-b); background: linear-gradient(145deg, var(--folder-b), color-mix(in srgb, var(--folder-b) 72%, #000)); }
+.nutrition-tile-calories strong, .nutrition-tile-calories span { color: #fff; }
+.folder-subhead { margin: 22px 0 8px; font: 700 12px/1.2 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.folder-allergens { margin: 0; font-size: 15px; }
+.folder-allergens::first-letter { text-transform: uppercase; }
+
+/* Locked folders reuse the purchase paywall / Premium overlay. */
+.folder-panel .paywall { padding: 18px 12px 8px; }
+.folder-panel .paywall h3, .folder-panel .recipe-tier-lock-overlay h3 { margin: 10px 0 4px; font-size: 19px; }
+.folder-panel .paywall p, .folder-panel .recipe-tier-lock-overlay p { margin: 0 0 16px; }
+
 @media (max-width: 640px) {
-    .folder-rail { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 210px; overflow-x: auto; padding: 16px 4px 12px; scroll-snap-type: x mandatory; }
-    .folder-card { scroll-snap-align: start; }
+    .folders { --folder-gap: 10px; margin-top: 18px; }
+    .folder-card { aspect-ratio: 240 / 168; border-radius: 13px; }
+    .folder-sheet { border-radius: 16px; }
+    .folder-sheet-inner { padding: 20px 16px 22px; }
+    .folder-panel-head h2 { font-size: 19px; }
+    .nutrition-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .nutrition-tile-calories { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 12px; }
+    .nutrition-tile-calories span { margin: 0; font-size: 13px; }
+    .nutrition-tile strong { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .folder-card, .folder-face, .folder-object, .folder-label { transition: none; }
+    .folder-card, .folder-front, .folder-object, .folder-label, .folder-sheet { transition: none; }
+}
+@media print {
+    .folder-rail { display: none; }
+    .folders .folder-panel[hidden] { display: block !important; }
+    .folders .folder-panel + .folder-panel { margin-top: 20px; }
+    .folder-sheet { border: none; box-shadow: none; background: none; }
+    .folders.is-enhanced .folder-sheet::after { display: none; }
 }
 /* Photo credit is revealed by clicking/tapping the recipe photo
    (assets/js/photo-credit.js). Without JS it simply stays visible. */
@@ -2801,4 +3206,199 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 }
 @media (prefers-reduced-motion: reduce) {
     .landing-hero-photo { animation: none; }
+}
+
+/* ==========================================================================
+   v23 - moving between pages, the green "you are here", add-recipe fit.
+   Appended after everything above so it refines rather than rewrites.
+   ========================================================================== */
+
+/* -- Page to page: cross-document View Transitions. Every page loads this
+      file, so every same-site navigation opts in: the old page cross-fades
+      into the new one instead of cutting, while the chrome that is the
+      same on both pages (phone tab bar, desktop sidebar) holds still, and
+      the green "you are here" marker glides from the old page's tab to the
+      new one's. Chrome/Edge 126+ and Safari 18.2+ (iOS included); older
+      browsers simply navigate as before, with nothing broken.
+      Deliberately NOT named: .app-main. A named element animates from its
+      old box to its new one, and a page scrolled 1000px down would send
+      the content flying in from above. The page fades as a whole. -- */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+}
+/* Fade-through, not a cross-fade: the old page is mostly gone before the
+   new one arrives (rising 8px into place), so two pages' text is never
+   on screen at once - a plain cross-fade left both legible, ghosted over
+   each other, at the halfway point. What shows in the gap is the new
+   page's own background (checked: dark stays dark, no flash), and the
+   8px the rising snapshot uncovers is that same colour. */
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes vt-rise-in { from { opacity: 0; transform: translateY(8px); } }
+::view-transition-old(root) { animation: vt-fade-out 0.12s linear both; }
+::view-transition-new(root) { animation: vt-rise-in 0.28s cubic-bezier(0, 0, 0.2, 1) 0.1s both; }
+/* Held still: everything that is the same on both pages. A fade-through
+   would otherwise blink it out and back. The phone's logo bar is made
+   sticky for the same reason (and because a native app's top bar stays
+   put): if it scrolled away with the page, a transition from halfway
+   down a page would have to fly it in from above. */
+.app-tabbar { view-transition-name: app-tabbar; }
+@media (max-width: 900px) {
+    .app-nav:not(.landing-nav) { position: sticky; top: 0; z-index: 40; view-transition-name: app-header; }
+    /* Anchor jumps (#method etc.) land below the sticky bar, not under it. */
+    html { scroll-padding-top: 76px; }
+}
+@media (min-width: 901px) {
+    .app-nav:not(.landing-nav) { view-transition-name: app-sidebar; }
+}
+.auth-split-shell .theme-toggle-btn { view-transition-name: auth-theme; }
+/* The marker's glide: a little overshoot, like a native tab bar. */
+::view-transition-group(tab-active),
+::view-transition-group(nav-active),
+::view-transition-group(auth-tab) {
+    animation-duration: 0.45s;
+    animation-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+/* The active tab's white icon + label ride on their own layer (named per
+   page in includes/nav.php), so the pill moves as a clean green shape: the
+   old label fades out as it leaves, the new one fades in as it lands.
+   :only-child = the label exists on just one side; when the same page
+   reloads, both sides match and the label simply stays. */
+.app-tabbar-content { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; max-width: 100%; }
+.app-tabbar-item.is-active .app-tabbar-content,
+.app-tabbar-fab.is-active .app-tabbar-fab-icon,
+.app-nav-links a.is-active .app-nav-link-main { view-transition-class: tab-label; }
+::view-transition-old(*.tab-label):only-child { animation: vt-fade-out 0.12s linear both; }
+::view-transition-new(*.tab-label):only-child { animation: vt-fade-in 0.2s cubic-bezier(0, 0, 0.2, 1) 0.22s both; }
+
+/* -- "You are here" in the same green as the Add Recipe button, so the
+      page you're on reads at a glance the way the + always does. Phone:
+      the active tab becomes a filled pill (replacing the 4px dot under its
+      icon). The gradient reaches solid --green-dark by 55% so the white
+      label, low in the pill, sits on 5.2:1 rather than the 2.85:1 white
+      gets on plain --green. Dark mode needs nothing extra: --green-dark is
+      light there and --white is near-black, the same pairing the + uses. -- */
+@media (max-width: 900px) {
+    .app-tabbar-item.is-active {
+        color: var(--white);
+        background: linear-gradient(150deg, var(--green) 0%, var(--green-dark) 55%);
+        box-shadow: 0 8px 18px -8px rgba(47, 174, 102, 0.7);
+        view-transition-name: tab-active;
+    }
+    .app-tabbar-item.is-active::after { display: none; }
+    /* On the Add Recipe page the + itself is the active tab: it takes the
+       marker (so the pill flows into it) and gets a ring. */
+    .app-tabbar-fab.is-active {
+        view-transition-name: tab-active;
+        box-shadow: 0 10px 22px -6px rgba(47, 174, 102, 0.55), 0 0 0 6px var(--white), 0 0 0 8px rgba(47, 174, 102, 0.5);
+    }
+}
+/* Desktop sidebar: the active row is filled the same way and glides
+   between rows. Solid --green-dark rather than the gradient - in a wide
+   pill a gradient puts the start of the label on the light end. */
+@media (min-width: 901px) {
+    .app-nav-links a.is-active {
+        background: var(--green-dark);
+        color: var(--white);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 22px -12px rgba(47, 174, 102, 0.75);
+        view-transition-name: nav-active;
+    }
+    .app-nav-links a.is-active .nav-icon-badge { background: rgba(255, 255, 255, 0.2); color: inherit; }
+    .app-nav-links a.is-active svg:last-child { opacity: 0.85; }
+}
+
+/* -- Log in <-> Create account. The card is one object that changes shape
+      rather than a page that is swapped out: the brand panel holds still,
+      the card grows or shrinks to the new form (clipped to its rounded
+      corners, with its shadow redrawn on the moving box), the form
+      contents cross-fade in place, and the dark Login/Sign Up pill slides
+      across to the other tab. -- */
+.auth-split { view-transition-name: auth-card; }
+.auth-brand-panel { view-transition-name: auth-brand; }
+.auth-form-card { view-transition-name: auth-form; }
+.auth-tab.is-active { view-transition-name: auth-tab; }
+::view-transition-group(auth-card),
+::view-transition-group(auth-form) {
+    animation-duration: 0.45s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* The form fades through too, over the card (its own layer behind it),
+   so the two forms' fields never overlap mid-way. */
+::view-transition-old(auth-form) { animation: vt-fade-out 0.16s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(auth-form) { animation: vt-fade-in 0.28s cubic-bezier(0, 0, 0.2, 1) 0.1s both; }
+::view-transition-image-pair(auth-card) {
+    overflow: clip;
+    border-radius: 24px;
+    box-shadow: 0 30px 60px -30px rgba(20, 40, 28, 0.35);
+}
+@media (max-width: 520px) {
+    ::view-transition-image-pair(auth-card) { border-radius: 20px; }
+}
+
+/* -- Add / edit recipe on a phone. -- */
+/* The row inputs had no styling of their own - raw browser fields next to
+   the styled ones above them. Same look as .field inputs now. */
+.dynamic-row input,
+.dynamic-row select,
+.dynamic-row textarea {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+}
+.dynamic-row input:focus,
+.dynamic-row select:focus,
+.dynamic-row textarea:focus { outline: none; border-color: var(--green); }
+@media (pointer: coarse) {
+    .dynamic-row input, .dynamic-row select, .dynamic-row textarea { font-size: 16px; }
+}
+.dynamic-row .remove-row { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; }
+.ingredient-row .row-name { flex: 2 1 150px; }
+.ingredient-row .row-qty { flex: 0 1 72px; }
+.ingredient-row .row-unit { flex: 0 1 84px; }
+.ingredient-row .row-display { flex: 1.4 1 140px; }
+.ingredient-row .row-cat { flex: 0 1 116px; }
+/* Steps are sentences, not one-word fields: a textarea that grows with
+   what's typed (field-sizing where supported; two rows otherwise). */
+.step-row { align-items: flex-start; }
+.step-row textarea { flex: 1; min-height: 64px; resize: vertical; line-height: 1.45; field-sizing: content; }
+/* On a phone the five ingredient fields could not fit one row - the
+   fourth was cut off at the screen edge. Each ingredient becomes a small
+   card instead: name and remove on top, quantity / unit / aisle, then
+   how the amount is shown. */
+@media (max-width: 640px) {
+    .ingredient-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) 36px;
+        grid-template-areas:
+            "name name name remove"
+            "qty unit cat cat"
+            "display display display display";
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg);
+    }
+    .ingredient-row .row-name { grid-area: name; }
+    .ingredient-row .row-qty { grid-area: qty; }
+    .ingredient-row .row-unit { grid-area: unit; }
+    .ingredient-row .row-cat { grid-area: cat; }
+    .ingredient-row .row-display { grid-area: display; }
+    .ingredient-row .remove-row { grid-area: remove; align-self: center; }
+    #recipe-form { padding: 18px 16px; }
+    #recipe-form > .btn-primary { width: 100%; }
+}
+/* Room under the last thing on every phone page for the floating tab bar
+   (14px gap + 64px bar) and the + raised above it (to 96px), plus space
+   to breathe, plus the home-indicator inset where the browser reports
+   one - so a page's final button ("Create recipe") is never under it. */
+@media (max-width: 900px) {
+    .app-tabbar { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+    .app-main { padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
 }

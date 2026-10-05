@@ -143,6 +143,18 @@ function payfast_api_signature(array $data, string $passphrase): string
     return md5(implode('&', $pairs));
 }
 
+// The readable reason from a PayFast API error body. PayFast sends
+// {"code":401,"status":"failed","data":{"response":"Merchant authorization
+// failed.","message":false}} - the reason is data.response, and there is no
+// top-level "message". Reading only "message" meant every error fell through
+// to a bare HTTP code and the actual reason was thrown away. $data is
+// whatever json_decode() produced, so it may be null for a non-JSON body.
+function payfast_api_error_reason($data, int $httpCode): string
+{
+    $reason = $data['data']['response'] ?? $data['message'] ?? null;
+    return is_string($reason) && $reason !== '' ? $reason : "PayFast returned HTTP $httpCode.";
+}
+
 // One authenticated call to PayFast's subscriptions API. $path is appended
 // to https://api.payfast.co.za/ (e.g. "subscriptions/$token/cancel");
 // $body, if given, is sent as the JSON body and also folded into the
@@ -187,7 +199,7 @@ function payfast_api_request(string $method, string $path, array $body = []): ar
     }
     $data = json_decode($response, true);
     if ($httpCode < 200 || $httpCode >= 300) {
-        return ['ok' => false, 'error' => $data['message'] ?? "PayFast returned HTTP $httpCode.", 'http_code' => $httpCode];
+        return ['ok' => false, 'error' => payfast_api_error_reason($data, $httpCode), 'http_code' => $httpCode];
     }
     return ['ok' => true, 'data' => $data];
 }

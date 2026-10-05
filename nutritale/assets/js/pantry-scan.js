@@ -137,7 +137,12 @@
             },
             function () { /* no code in this frame - keep scanning */ }
         ).then(function () {
-            setStatus('Hold the barcode inside the box.');
+            // "Fill", not "inside": the library shrinks the box's region of
+            // each frame down to the box's on-screen size before decoding,
+            // so a barcode that is merely inside the box can be too small to
+            // read. Measured with a real EAN-13: decodes at ~70% of the box
+            // width and up, never at ~50%.
+            setStatus('Move closer until the barcode fills the box.');
         }).catch(function (err) {
             readerEl.classList.remove('is-live');
             var why = err && (err.message || err.name || String(err));
