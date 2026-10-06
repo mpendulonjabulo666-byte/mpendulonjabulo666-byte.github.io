@@ -1,16 +1,26 @@
 <?php
 /** @var array $user Expects $user to be set by the including page. */
 $navCurrent = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+// Page-to-page transitions (style.css, v23): the active tab/row's green
+// pill glides to the new page's tab, while its white icon + label are a
+// separate layer that fades out as the pill leaves and in as it arrives -
+// so two labels never sit on top of each other inside the moving pill.
+// The layer's name has to be unique to the page (the same name on both
+// pages pairs them up and keeps them still, e.g. after a form on the same
+// page reloads it), hence one name per destination.
+$vtLabel = function (string $prefix, string $page): string {
+    return ' style="view-transition-name: ' . $prefix . preg_replace('/[^a-z0-9_-]/', '', basename($page, '.php')) . '"';
+};
 // The active row gets its icon lifted into a solid circle badge (matching
 // the sidebar mockup's one use of that treatment - every other row's icon
 // stays bare) plus a trailing chevron every row gets, active or not.
-$navLink = function (string $page, string $iconName, string $label) use ($navCurrent) {
+$navLink = function (string $page, string $iconName, string $label) use ($navCurrent, $vtLabel) {
     $active = $navCurrent === $page;
     $iconHtml = $active
         ? '<span class="nav-icon-badge">' . icon($iconName, 15) . '</span>'
         : icon($iconName, 18);
     echo '<a href="' . h($page) . '"' . ($active ? ' class="is-active" aria-current="page"' : '') . '>'
-        . '<span class="app-nav-link-main">' . $iconHtml . ' ' . h($label) . '</span>'
+        . '<span class="app-nav-link-main"' . ($active ? $vtLabel('nav-label-', $page) : '') . '>' . $iconHtml . ' ' . h($label) . '</span>'
         . icon('chevron-right', 14)
         . '</a>';
 };
@@ -94,22 +104,33 @@ $tabsAfterFab = [
         ['profile.php', 'admin_profile.php'],
     ],
 ];
-$renderTab = function (array $tab) use ($navCurrent) {
+$renderTab = function (array $tab) use ($navCurrent, $vtLabel) {
     [$page, $iconName, $label, $activeOn] = $tab;
     $isActive = in_array($navCurrent, $activeOn, true);
     echo '<a href="' . h($page) . '" class="app-tabbar-item' . ($isActive ? ' is-active' : '') . '"'
         . ($isActive ? ' aria-current="page"' : '') . '>'
+        . '<span class="app-tabbar-content"' . ($isActive ? $vtLabel('tab-label-', $page) : '') . '>'
         . '<span class="app-tabbar-icon">' . icon($iconName, 20) . '</span>'
         . '<span class="app-tabbar-label">' . h($label) . '</span>'
-        . '</a>';
+        . '</span></a>';
 };
 ?>
 <nav class="app-tabbar" aria-label="Main">
     <?php foreach ($tabsBeforeFab as $tab) { $renderTab($tab); } ?>
-    <a href="add_recipe.php" class="app-tabbar-fab" aria-label="Add recipe">
+    <?php $fabActive = $navCurrent === 'add_recipe.php'; ?>
+    <a href="add_recipe.php" class="app-tabbar-fab<?= $fabActive ? ' is-active' : '' ?>" aria-label="Add recipe"<?= $fabActive ? ' aria-current="page"' : '' ?>>
         <span class="app-tabbar-fab-glow" aria-hidden="true"></span>
-        <span class="app-tabbar-fab-icon"><?= icon('plus', 24) ?></span>
+        <span class="app-tabbar-fab-icon"<?= $fabActive ? $vtLabel('tab-label-', 'add_recipe.php') : '' ?>><?= icon('plus', 24) ?></span>
     </a>
     <?php foreach ($tabsAfterFab as $tab) { $renderTab($tab); } ?>
 </nav>
 <script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>
+<?php
+// First-visit tour (includes/app_tour.php): automatically on a new account's
+// first page in the app, or on request with ?tour=1 (from the profile page).
+// Never over onboarding or a checkout hand-off.
+if (!in_array($navCurrent, ['onboarding.php', 'checkout.php', 'premium_checkout.php', 'ingredient_checkout.php'], true)
+    && (!empty($_GET['tour']) || user_needs_tour($user))) {
+    include __DIR__ . '/app_tour.php';
+}
+?>

@@ -3,7 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/allergens.php';
-require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/payfast_gateway.php';
 require_once __DIR__ . '/includes/avatars.php';
 
 $user = require_admin();
@@ -161,9 +161,9 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
-<script src="assets/js/theme-toggle.js?v=21" defer></script>
+<script src="assets/js/theme-init.js?v=24"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=24">
+<script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -191,6 +191,7 @@ $goals = $goalStmt->fetch() ?: [];
             <p class="profile-hero-email muted">Administrator since <?= h((new DateTime($user['created_at']))->format('j F Y')) ?></p>
             <div class="profile-hero-actions">
                 <span class="tag">Full access</span>
+                <a href="index.php?tour=1" class="btn btn-text btn-small profile-tour-link">Take the app tour</a>
                 <?php if (!empty($user['avatar_path'])): ?>
                     <form method="post" class="profile-hero-remove">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
-require_once __DIR__ . '/includes/payfast.php';
+require_once __DIR__ . '/includes/payfast_gateway.php';
 
 $user = require_login();
 
@@ -53,8 +53,8 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
+<script src="assets/js/theme-init.js?v=24"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=24">
 </head>
 <body>
 <div class="auth-shell">

@@ -28,29 +28,10 @@ try {
     // (an ALTER on a table that might already have it, say) live in
     // sql/db_migrations.php instead, tracked one-time here so a redeploy
     // never re-runs one that already succeeded. See CONTINUE.md step 4.
-    $migrations = require __DIR__ . '/sql/db_migrations.php';
-    $alreadyApplied = $pdo->query('SELECT version FROM schema_migrations')->fetchAll(PDO::FETCH_COLUMN);
-    $newlyApplied = 0;
-    foreach ($migrations as $version => $migration) {
-        if (in_array($version, $alreadyApplied, true)) {
-            continue;
-        }
-        // A migration is either a ';'-separated SQL string (the common
-        // case) or a callable taking the PDO connection, for the rarer
-        // case of seeding structured data with real parameter binding
-        // instead of hand-escaped SQL text - see the ingredient taxonomy
-        // migration below for why that's worth it.
-        if (is_callable($migration)) {
-            $migration($pdo);
-        } else {
-            foreach (array_filter(array_map('trim', explode(';', $migration))) as $statement) {
-                if ($statement === '') continue;
-                $pdo->exec($statement);
-            }
-        }
-        $pdo->prepare('INSERT INTO schema_migrations (version) VALUES (?)')->execute([$version]);
-        $newlyApplied++;
-    }
+    // Same runner db() uses to upgrade automatically on the first request
+    // after a deploy (includes/schema_upgrade.php) - kept here so running
+    // setup.php by hand still works and reports what it did.
+    $newlyApplied = nutritale_apply_pending_migrations($pdo);
     $log[] = $newlyApplied > 0
         ? "Applied $newlyApplied new schema migration" . ($newlyApplied === 1 ? '' : 's') . '.'
         : 'Schema migrations already up to date.';
@@ -105,9 +86,9 @@ try {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
-<script src="assets/js/theme-toggle.js?v=21" defer></script>
+<script src="assets/js/theme-init.js?v=24"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=24">
+<script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
 <div class="auth-shell">

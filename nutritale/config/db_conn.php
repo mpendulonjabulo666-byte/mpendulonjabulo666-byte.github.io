@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../includes/schema_upgrade.php';
 
 function db(): PDO
 {
@@ -10,6 +11,11 @@ function db(): PDO
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
+        // A deploy can bring code that expects newer tables/columns than the
+        // database has; this brings the database up first (see
+        // includes/schema_upgrade.php). Migrations get $pdo passed in, so
+        // they never call back into db().
+        nutritale_ensure_schema_current($pdo);
     }
     return $pdo;
 }

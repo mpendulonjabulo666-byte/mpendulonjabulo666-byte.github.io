@@ -219,6 +219,25 @@ function user_has_full_library(array $user): bool
     return !empty($user['is_premium_member']) || !empty($user['is_admin']);
 }
 
+// Whether this account still gets the first-visit tour (includes/app_tour.php,
+// assets/js/app-tour.js): only once onboarding is done, and only until it has
+// been shown (tour_done.php records that). Looked up on its own rather than
+// added to current_user()'s query, and any database error means "no tour" -
+// a missing column (schema not yet upgraded) must never take a page down.
+function user_needs_tour(array $user): bool
+{
+    if (empty($user['onboarded_at'])) {
+        return false;
+    }
+    try {
+        $stmt = db()->prepare('SELECT tour_seen_at FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        return $stmt->fetchColumn() === null;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
 // The FREE_RECIPE_LIMIT recipes a free account can open: published,
 // free-tier, platform catalog (a vendor's pay-per-recipe listing has its
 // own purchase gate instead). Oldest first, so the set is stable and new

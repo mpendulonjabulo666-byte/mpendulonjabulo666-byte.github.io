@@ -42,6 +42,23 @@ The included `.htaccess` already blocks direct browser access to
 `config/`, `sql/`, `scripts/`, `data/`, and dotfiles (`.git`, etc.) on
 Apache — nothing extra to configure for this on shared hosting.
 
+### Updating an existing install
+
+Upload the new files over the old ones (keep the server's own
+`config/config.local.php`). That's all:
+
+- **The database upgrades itself.** The first page request after the
+  upload applies any new schema migrations (`includes/schema_upgrade.php`),
+  so `setup.php` doesn't need to be run, or even present, for an update.
+  If a migration ever fails, it is written to the PHP error log and
+  retried on the next request; running `setup.php` by hand shows the error.
+- **Installed apps update themselves.** Phones and desktops that added
+  NutriTale to their home screen pick up the new version on their next
+  visit: the new service worker installs on the first page and is in
+  control by the next one, clearing the old caches. Stylesheets and scripts
+  are versioned in each page (`?v=`), so nobody is left on a stale copy.
+  An app icon change only appears on iOS if the app is re-added.
+
 ## Path B — VPS (DigitalOcean, Linode, Hetzner, etc.)
 
 More control, marginally more setup. Use this if you outgrow shared

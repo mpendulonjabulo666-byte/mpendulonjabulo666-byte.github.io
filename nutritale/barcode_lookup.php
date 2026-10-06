@@ -43,6 +43,15 @@ if ((int)($data['status'] ?? 0) !== 1 || !$p) {
 }
 
 $name = product_pantry_name((string)($p['product_name'] ?? ''), (string)($p['brands'] ?? ''), (string)($p['generic_name'] ?? ''));
+// A product whose name IS its brand (Nutella, Oreo) strips to nothing -
+// product_pantry_name() drops brands on purpose, for recipe matching. But
+// the product plainly has a name, so offer it in the confirm box (which
+// exists to be edited) instead of claiming none is listed. "No name"
+// is now only said when Open Food Facts genuinely has none.
+if ($name === '') {
+    $raw = trim((string)($p['product_name'] ?? '')) ?: trim((string)($p['generic_name'] ?? ''));
+    $name = mb_substr($raw, 0, 80);
+}
 echo json_encode([
     'ok' => $name !== '',
     'name' => $name,

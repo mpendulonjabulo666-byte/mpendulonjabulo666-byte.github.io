@@ -195,9 +195,9 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
-<script src="assets/js/theme-init.js?v=21"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=22">
-<script src="assets/js/theme-toggle.js?v=21" defer></script>
+<script src="assets/js/theme-init.js?v=24"></script>
+<link rel="stylesheet" href="assets/css/style.css?v=24">
+<script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
@@ -245,7 +245,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                     <input type="hidden" name="action" value="add">
                     <label for="scan-name" class="muted" style="font-size:12.5px;">Found it. Edit the name if needed, then add it:</label>
-                    <div style="display:flex;gap:8px;">
+                    <div class="pantry-scan-result-row">
                         <input type="text" name="ingredient_name" id="scan-name" required>
                         <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
                         <button type="submit" class="btn btn-primary btn-small"><?= icon('plus', 14) ?> Add</button>
@@ -416,7 +416,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 </main>
 <?php if ($isPremiumOrAdmin): ?>
 <script src="assets/js/vendor/html5-qrcode.min.js?v=18" defer></script>
-<script src="assets/js/pantry-scan.js?v=18" defer></script>
+<script src="assets/js/pantry-scan.js?v=23" defer></script>
 <script src="assets/js/world-recipes.js?v=18" defer></script>
 <?php endif; ?>
 </body>

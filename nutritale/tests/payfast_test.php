@@ -19,7 +19,7 @@
 // cancel flow was actually checked instead.
 
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../includes/payfast.php';
+require_once __DIR__ . '/../includes/payfast_gateway.php';
 
 $pass = 0;
 $fail = 0;
@@ -109,6 +109,26 @@ check(
 check(
     'an existing "signature" key in the input is excluded, not signed over',
     payfast_api_signature($fixture + ['signature' => 'whatever-was-here-before'], 'testpass') === payfast_api_signature($fixture, 'testpass')
+);
+
+// payfast_api_error_reason() - the fixture is the exact body PayFast's
+// sandbox API returned on 2026-10-04 for a cancel call it refused.
+$realPayfast401 = json_decode('{"code":401,"status":"failed","data":{"response":"Merchant authorization failed.","message":false}}', true);
+check(
+    "reads PayFast's real error body (data.response), not a bare HTTP code",
+    payfast_api_error_reason($realPayfast401, 401) === 'Merchant authorization failed.'
+);
+check(
+    'still reads a top-level "message" if one is ever sent',
+    payfast_api_error_reason(['message' => 'Subscription not found'], 404) === 'Subscription not found'
+);
+check(
+    'a non-JSON body (json_decode gave null) falls back to the HTTP code',
+    payfast_api_error_reason(null, 502) === 'PayFast returned HTTP 502.'
+);
+check(
+    'a non-string reason (PayFast sends "message": false) is not shown as text',
+    payfast_api_error_reason(['data' => ['response' => false], 'message' => false], 400) === 'PayFast returned HTTP 400.'
 );
 
 echo "\n$pass passed, $fail failed\n";

@@ -507,4 +507,20 @@ return [
             $pdo->exec('ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL');
         }
     },
+
+    // First-visit guided tour (assets/js/app-tour.js). NULL = hasn't seen
+    // it yet, so a new account gets it on its first page in the app. Every
+    // account that already exists when this runs is marked as seen - the
+    // tour is for newcomers, not a surprise for people already using the
+    // app (anyone can replay it from their profile).
+    '2026_10_06_user_tour_seen' => function (PDO $pdo): void {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'tour_seen_at'"
+        )->fetchColumn();
+        if (!$has) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN tour_seen_at DATETIME NULL');
+            $pdo->exec('UPDATE users SET tour_seen_at = COALESCE(onboarded_at, created_at, NOW())');
+        }
+    },
 ];
