@@ -196,3 +196,76 @@ function split_pantry_entry(string $raw): array
     $entries = array_filter($entries, fn($e) => $e !== '');
     return array_values(array_unique($entries));
 }
+
+// Deliberately NOT an AI/Gemini call, even though "fix my spelling" sounds
+// like one: this app's vocabulary of recipe-relevant ingredient words is
+// already sitting right here, fully seeded, in $aliasMap (ingredients +
+// ingredient_aliases, see canonical_ingredient_set() above) - a Levenshtein
+// lookup against a few hundred known words is free, instant, and exactly as
+// accurate as an LLM call would be for *this* job (matching a typo to a
+// known ingredient name), without spending AI_PANTRY_DAILY_CAP quota or
+// adding network latency to every pantry "Add". If a genuinely open-ended
+// spelling fixer is ever wanted (not just ingredient names - units, free
+// text) that's a real case for Gemini; correcting "chiken" to "chicken"
+// against a known vocabulary is not.
+//
+// Only fires when canonicalize_token() found NO seeded alias/canonical hit
+// at all (the token resolved to its own singularized form) - a real,
+// recognized spelling ("tomato", "rice") never gets second-guessed. Returns
+// null unless a single close, confident match exists.
+function suggest_ingredient_correction(string $raw, array $aliasMap): ?array
+{
+    $tokens = ingredient_tokens($raw);
+    if (!$tokens) {
+        return null;
+    }
+    // Candidate vocabulary: every seeded alias and canonical name,
+    // deduplicated - these are the only words worth correcting *to*.
+    $vocab = array_values(array_unique(array_keys($aliasMap)));
+
+    $fixes = []; // token => suggested replacement
+    foreach ($tokens as $token) {
+        if (mb_strlen($token) < 4) {
+            continue; // too short for edit-distance to mean anything ("og" -> "oz" is noise, not a fix)
+        }
+        $singular = singularize_token($token);
+        if (isset($aliasMap[$token]) || isset($aliasMap[$singular])) {
+            continue; // already a real, recognized word - nothing to suggest
+        }
+        $best = null;
+        $bestDist = PHP_INT_MAX;
+        $tied = false;
+        foreach ($vocab as $word) {
+            if (abs(mb_strlen($word) - mb_strlen($token)) > 2) {
+                continue; // cheap pre-filter before the real distance calc
+            }
+            $dist = levenshtein($token, $word);
+            if ($dist < $bestDist) {
+                $bestDist = $dist;
+                $best = $word;
+                $tied = false;
+            } elseif ($dist === $bestDist && $word !== $best) {
+                $tied = true; // two equally-close words - too ambiguous to guess
+            }
+        }
+        // Confident only: at most 2 edits, and the edit is a small fraction
+        // of the word's own length (so a 2-edit distance on a 4-letter word
+        // isn't treated the same as on a 12-letter word).
+        if ($best !== null && !$tied && $bestDist > 0 && $bestDist <= 2 && $bestDist <= (int)ceil(mb_strlen($token) / 3)) {
+            $fixes[$token] = $best;
+        }
+    }
+    if (!$fixes) {
+        return null;
+    }
+
+    // Rebuild the full phrase with just the misspelled word(s) swapped,
+    // so "chiken brest" -> "chicken breast" rather than losing the rest
+    // of what was typed.
+    $corrected = preg_replace_callback('/\S+/u', function ($m) use ($fixes) {
+        $bare = preg_replace('/[^\p{L}-]/u', '', mb_strtolower($m[0]));
+        return $fixes[$bare] ?? $m[0];
+    }, $raw);
+
+    return $corrected !== $raw ? ['original' => $raw, 'corrected' => $corrected] : null;
+}

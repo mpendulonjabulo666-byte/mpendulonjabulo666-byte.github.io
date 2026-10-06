@@ -18,10 +18,21 @@
     var result = document.getElementById('scan-result');
     var nameInput = document.getElementById('scan-name');
     var readerEl = document.getElementById('scan-reader');
+    var toggleBtn = document.getElementById('scan-toggle');
     var scanner = null;
     var busy = false;
 
     function setStatus(text) { statusEl.textContent = text; }
+
+    // One button does both jobs so there's always something obvious to tap
+    // right next to the camera preview, not buried below the manual-entry
+    // form - "Close" alone (bottom of the panel) meant stopping the camera
+    // mid-scan needed a scroll past the whole form to find it.
+    function setToggle(mode) {
+        if (!toggleBtn) return;
+        toggleBtn.textContent = mode === 'stop' ? '✕ Stop scanning' : '▶ Scan again';
+        toggleBtn.dataset.mode = mode === 'stop' ? 'stop' : 'start';
+    }
 
     function stopCamera() {
         if (scanner && scanner.isScanning) {
@@ -30,6 +41,7 @@
         } else {
             readerEl.classList.remove('is-live');
         }
+        setToggle('start');
     }
 
     // Port of product_pantry_name() in includes/external_recipes.php.
@@ -116,6 +128,7 @@
         // its width when it starts, and an empty hidden box measures 0px.
         readerEl.classList.add('is-live');
         setStatus('Starting camera...');
+        setToggle('stop');
         scanner.start(
             { facingMode: 'environment' },
             {
@@ -159,6 +172,16 @@
         stopCamera();
         panel.hidden = true;
     });
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            if (toggleBtn.dataset.mode === 'stop') {
+                stopCamera();
+                setStatus('Scanning stopped. Type the barcode number below, or tap "Scan again".');
+            } else {
+                startCamera();
+            }
+        });
+    }
     manual.addEventListener('submit', function (e) {
         e.preventDefault();
         var code = codeInput.value.replace(/\s+/g, '');
