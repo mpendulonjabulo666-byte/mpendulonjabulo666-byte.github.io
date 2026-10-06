@@ -41,12 +41,18 @@ function external_fetch_json(array $urls, array $headers = []): array
     $save = db()->prepare('INSERT INTO external_api_cache (cache_key, body) VALUES (?, ?)
         ON DUPLICATE KEY UPDATE body = VALUES(body), fetched_at = CURRENT_TIMESTAMP');
 
-    // Some shared hosts (InfinityFree confirmed) disable the whole
-    // curl_multi_* family - not just a config flag, the functions are
-    // literally undefined, so even calling curl_multi_init() is a fatal
-    // error. Detect that up front and fall back to one request at a time
+    // Some shared hosts (InfinityFree confirmed) disable curl_multi_*
+    // functions piecemeal, not as a clean all-or-nothing block - checking
+    // curl_multi_init() alone isn't enough, since curl_multi_exec() (or
+    // another one below) can still be missing even when curl_multi_init()
+    // exists. Check every curl_multi_* function this code actually calls
+    // and fall back to one request at a time if any of them are gone,
     // rather than letting this whole feature 500 the pantry page.
-    if (!function_exists('curl_multi_init')) {
+    $multiFns = ['curl_multi_init', 'curl_multi_setopt', 'curl_multi_add_handle',
+        'curl_multi_exec', 'curl_multi_select', 'curl_multi_getcontent',
+        'curl_multi_remove_handle', 'curl_multi_close'];
+    $multiAvailable = !array_filter($multiFns, fn($fn) => !function_exists($fn));
+    if (!$multiAvailable) {
         foreach ($keys as $key => $url) {
             $ch = curl_init($url);
             curl_setopt_array($ch, external_curl_base_opts($headers));
@@ -62,22 +68,19 @@ function external_fetch_json(array $urls, array $headers = []): array
         return $out;
     }
 
-    // A few connections per host, multiplexed over HTTP/2, instead of one
-    // TLS handshake per request - 20 lookups take ~2s this way; 20 separate
-    // connections timed out outright behind this dev machine's antivirus
-    // HTTPS scanner.
+    // Runs the requests concurrently (one connection per handle) instead of
+    // one at a time. HTTP/2 multiplexing (CURLOPT_PIPEWAIT /
+    // CURL_HTTP_VERSION_2TLS) used to be set here too, but curl_setopt_array()
+    // throws a ValueError on a curl build that doesn't support an option at
+    // all (confirmed: InfinityFree's) rather than just ignoring it - not
+    // worth that fragility for a speed optimization. Plain concurrent
+    // connections are still far faster than fetching one URL at a time.
     $mh = curl_multi_init();
     curl_multi_setopt($mh, CURLMOPT_MAX_HOST_CONNECTIONS, 3);
-    if (defined('CURLPIPE_MULTIPLEX')) {
-        curl_multi_setopt($mh, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
-    }
     $handles = [];
     foreach ($keys as $key => $url) {
         $ch = curl_init($url);
-        curl_setopt_array($ch, array_merge(external_curl_base_opts($headers), [
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
-            CURLOPT_PIPEWAIT => true,
-        ]));
+        curl_setopt_array($ch, external_curl_base_opts($headers));
         curl_multi_add_handle($mh, $ch);
         $handles[$key] = $ch;
     }
