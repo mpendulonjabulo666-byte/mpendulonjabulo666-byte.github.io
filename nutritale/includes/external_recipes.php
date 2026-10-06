@@ -38,6 +38,30 @@ function external_fetch_json(array $urls, array $headers = []): array
         return $out;
     }
 
+    $save = db()->prepare('INSERT INTO external_api_cache (cache_key, body) VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE body = VALUES(body), fetched_at = CURRENT_TIMESTAMP');
+
+    // Some shared hosts (InfinityFree confirmed) disable the whole
+    // curl_multi_* family - not just a config flag, the functions are
+    // literally undefined, so even calling curl_multi_init() is a fatal
+    // error. Detect that up front and fall back to one request at a time
+    // rather than letting this whole feature 500 the pantry page.
+    if (!function_exists('curl_multi_init')) {
+        foreach ($keys as $key => $url) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, external_curl_base_opts($headers));
+            $body = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $data = ($code === 200 && is_string($body)) ? json_decode($body, true) : null;
+            if (is_array($data)) {
+                $save->execute([$key, $body]);
+                $out[$keys[$key]] = $data;
+            }
+        }
+        return $out;
+    }
+
     // A few connections per host, multiplexed over HTTP/2, instead of one
     // TLS handshake per request - 20 lookups take ~2s this way; 20 separate
     // connections timed out outright behind this dev machine's antivirus
@@ -50,20 +74,10 @@ function external_fetch_json(array $urls, array $headers = []): array
     $handles = [];
     foreach ($keys as $key => $url) {
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 20,
+        curl_setopt_array($ch, array_merge(external_curl_base_opts($headers), [
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
             CURLOPT_PIPEWAIT => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            CURLOPT_USERAGENT => 'NutriTale/1.0',
-            CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $headers),
-            // OS certificate store: also trusts roots an antivirus HTTPS
-            // scanner installs (this dev machine). Verification stays on.
-            CURLOPT_SSL_OPTIONS => defined('CURLSSLOPT_NATIVE_CA') ? CURLSSLOPT_NATIVE_CA : 16,
-        ]);
+        ]));
         curl_multi_add_handle($mh, $ch);
         $handles[$key] = $ch;
     }
@@ -74,8 +88,6 @@ function external_fetch_json(array $urls, array $headers = []): array
         }
     } while ($running && $status === CURLM_OK);
 
-    $save = db()->prepare('INSERT INTO external_api_cache (cache_key, body) VALUES (?, ?)
-        ON DUPLICATE KEY UPDATE body = VALUES(body), fetched_at = CURRENT_TIMESTAMP');
     foreach ($handles as $key => $ch) {
         $body = curl_multi_getcontent($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -89,6 +101,25 @@ function external_fetch_json(array $urls, array $headers = []): array
     }
     curl_multi_close($mh);
     return $out;
+}
+
+// Shared curl options between the multi-handle path and the sequential
+// fallback (everything except the HTTP/2-pipelining-specific options,
+// which only make sense when several handles run concurrently).
+function external_curl_base_opts(array $headers): array
+{
+    return [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+        CURLOPT_USERAGENT => 'NutriTale/1.0',
+        CURLOPT_HTTPHEADER => array_merge(['Accept: application/json'], $headers),
+        // OS certificate store: also trusts roots an antivirus HTTPS
+        // scanner installs (this dev machine). Verification stays on.
+        CURLOPT_SSL_OPTIONS => defined('CURLSSLOPT_NATIVE_CA') ? CURLSSLOPT_NATIVE_CA : 16,
+    ];
 }
 
 function mealdb_enabled(): bool
