@@ -100,6 +100,7 @@ try {
             <a href="admin_payouts.php" class="btn btn-text btn-small"><?= icon('download', 14) ?> Vendor payouts</a>
             <a href="admin_meal_plans.php" class="btn btn-text btn-small"><?= icon('calendar', 14) ?> Meal plans</a>
             <a href="admin_analytics.php" class="btn btn-text btn-small"><?= icon('bar-chart', 14) ?> Analytics</a>
+            <a href="admin_import_images.php" class="btn btn-text btn-small"><?= icon('camera', 14) ?> Import recipe images</a>
         </div>
     </div>
 </main>
