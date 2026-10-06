@@ -34,6 +34,18 @@
     AddType font/woff2 .woff2
 </IfModule>
 
+# The service worker and manifest must never be served stale: the live host
+# was sending sw.js with "max-age=2592000" (30 days), and an installed app
+# only picks up a new version when the browser sees a changed sw.js.
+# (theme-toggle.js also registers with updateViaCache:'none' for browsers
+# that would otherwise honour that header.) Assets stay cacheable - they
+# are versioned by ?v= in every page.
+<FilesMatch "^(sw\.js|manifest\.json)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, must-revalidate"
+    </IfModule>
+</FilesMatch>
+
 # Dotfiles (.git, .env, .htaccess itself, etc.) — never serve these.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

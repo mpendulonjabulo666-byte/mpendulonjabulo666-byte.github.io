@@ -1915,6 +1915,94 @@ files: `style.css` and `theme-init.js` `?v=23` on every page,
 `recipe-share.js` / `recipe-folders.js` / `qrcode-generator.min.js` /
 `pantry-scan.js` `?v=23`.
 
+
+### 2.21 — Upgrading installed apps, iPhone/Android hardening, faster page changes, a first-visit tour (Step 23, 2026-10-06)
+
+**What production is running.** Checked in a real browser on 2026-10-05:
+`https://nutritale.freedev.app/nutritale/` serves `style.css?v=17`, unversioned
+scripts and service worker **v2** — several releases behind this branch.
+Nothing below reaches users until it is deployed.
+
+**The host's anti-bot check.** Every request without a valid `__test` cookie
+(it lasts 6 hours) gets a 200 HTML page that sets the cookie and reloads -
+including requests for stylesheets, scripts and `sw.js` itself. And the host
+sends `sw.js` with `Cache-Control: max-age=2592000` (30 days). Fixed for:
+- `sw.js` v7 never caches that page, or any HTML answering an asset URL
+  (v2–v6 cached any 200, so it could be stored as the stylesheet - an
+  unstyled app until the cache refreshed).
+- Update checks: `theme-toggle.js` registers with `updateViaCache: 'none'`
+  and calls `registration.update()` once the page has loaded (when the
+  cookie is known good); `.htaccess` sends `no-cache` for `sw.js` and
+  `manifest.json` where the host honours it.
+
+**Upgrade path, verified** from the exact live v2 worker: installed v2
+locally, planted a poisoned stylesheet in its cache, then deployed v7. The
+first visit after the deploy installs v7; by the next page v7 is in control
+and v2's caches (poisoned entry included) are gone. No reinstall needed.
+(The home-screen icon/name on iOS only change if the app is re-added.)
+
+**The database upgrades itself.** Schema migrations used to run only when
+someone visited `setup.php` - which DEPLOYMENT.md says to delete - and code
+already reads newer columns (`users.avatar_path` on every logged-in page),
+so deploying files without running it would have broken every logged-in
+page. `db()` now applies pending migrations on the first request after a
+deploy (`includes/schema_upgrade.php`: one small query when nothing is
+pending, a MySQL named lock so two visitors can't both run one, failures
+logged and retried). `setup.php` uses the same runner. Verified: the new
+`2026_10_06_user_tour_seen` migration applied itself on the first page load.
+
+**PWA checks.** Chrome reports no manifest or installability errors.
+Offline: a visited page opens from its saved copy; an unvisited one gets a
+built-in "You're offline" page (generated inside the worker) instead of a
+blank error. Logging out clears the saved pages (on a shared phone the next
+person offline would otherwise see them). All verified - note that
+headless Chrome's offline switch doesn't reach service workers, so the
+offline test made `fetch` fail inside the worker instead.
+
+**iPhone (WebKit) - page transitions are off there, on purpose.** Run in
+Playwright's WebKit 26.6 as an iPhone 13, cross-document view transitions
+crashed the page during navigation about every other time (5 of 8 runs),
+plain fade included; with them off, 0 of 8. Chrome/Edge/Android keep them.
+`style.css` wraps `@view-transition` in `@supports not
+(hanging-punctuation: first)` (a WebKit-only property). This is Playwright's
+Windows build of WebKit, not Apple's Safari - if a real iPhone proves stable
+it is one wrapper to delete. Also for older iPhones: no JavaScript that iOS
+15 can't parse (scanned), font fallbacks where container units are used,
+and empty date inputs sized like their neighbours.
+
+**Faster page changes.**
+- Transitions now ~0.25s (were ~0.5s; a page can't be tapped while one plays).
+- Chrome/Edge/Android start loading on touch (Speculation Rules, in
+  `theme-toggle.js`): tab bar, sidebar and Back links on touch/hover, other
+  app links when pressed; never logout, payment, download, toggle/delete or
+  OAuth links. Verified: page changes arrive as `navigational-prefetch`.
+- A tap shows at once: pressed states (iOS needs a touchstart listener for
+  `:active`) and a slim progress bar if the next page takes over 120ms.
+- Local dev only: OPcache was off in XAMPP's `php.ini` - turned on (JIT
+  explicitly disabled: on this Windows PHP build it logged `VirtualProtect()
+  failed [87]` on every request); backup at the session scratchpad. This
+  PC itself is the other cause of slow local testing: 2 cores at 100%
+  (Chrome, VS Code, OneDrive) with ~0.8 GB RAM free.
+
+**Phones couldn't reach the Meal Planner or Shopping list.** Neither was in
+the tab bar, and the Profile tab's menu that replaced the hamburger drawer
+never got them. Added to it (`includes/profile_more.php`).
+
+**First-visit tour.** New accounts get a short guided tour on their first
+page after onboarding: a dimmed screen with a spotlight on each real tab
+(phone) or sidebar link (desktop) and what it's for - Recipes, What can I
+make?, Add/My Recipes, Favorites, Meal Planner (desktop; on a phone it's
+under Profile), Profile - with Back / Next / Skip, arrow keys and Esc, focus
+kept in the card. It records itself as seen when it starts
+(`tour_done.php`, column `users.tour_seen_at`; existing accounts were marked
+seen by the migration), so it never nags; "Take the app tour" on the profile
+page (and in the phone Profile menu) replays it. Steps follow the screen
+order of their targets in each layout. Verified by signing up brand-new
+accounts on a phone and on desktop and walking every step.
+
+Asset versions: `style.css`, `theme-init.js`, `theme-toggle.js` and the new
+`app-tour.js` at `?v=24`.
+
 ---
 
 ## 3. The order to do it in
@@ -2276,6 +2364,15 @@ Each step is independently shippable. Don't batch them.
       recipes; recipe folders hold their contents; page-to-page
       transitions; green active marker; self-hosted fonts; add-recipe fits
       a phone. `includes/payfast.php` → `payfast_gateway.php` (§0.1).
+
+- [x] **Step 23 — Installed-app upgrades, iPhone/Android hardening, speed,
+      first-visit tour** (§2.21) — done
+      Service worker v7 (host anti-bot page never cached, offline page,
+      logout clears saved pages, reliable update checks); upgrade from the
+      live v2 worker verified; schema migrations apply themselves after a
+      deploy; page transitions off in WebKit after crashes there; prefetch
+      on touch, shorter transitions, tap feedback; Planner/Shopping list
+      reachable on phones; guided tour for new accounts.
 
 Steps 1–3 are roughly a session. Step 6 was the long one.
 

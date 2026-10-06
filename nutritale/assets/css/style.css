@@ -2872,6 +2872,8 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
     position: absolute;
     left: 8.5%;
     top: 22%;
+    /* First line for iOS 15 and other browsers without container units. */
+    font: 700 15px/1.1 var(--font-display);
     font: 700 clamp(13px, 8.6cqi, 22px)/1.1 var(--font-display);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
     white-space: nowrap;
@@ -2881,6 +2883,7 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
     left: 8.5%;
     right: 8.5%;
     bottom: 10%;
+    font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     font: 600 clamp(9px, 4.6cqi, 11px)/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -3223,7 +3226,16 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
       Deliberately NOT named: .app-main. A named element animates from its
       old box to its new one, and a page scrolled 1000px down would send
       the content flying in from above. The page fades as a whole. -- */
-@view-transition { navigation: auto; }
+/* Not in WebKit - Safari, and every browser on an iPhone or iPad. Tested in
+   WebKit 26.6, a cross-document transition crashed the page during
+   navigation about every other time (a plain fade included, so it isn't one
+   of the effects below), and never breaking on an iPhone outranks a 0.3s
+   fade. hanging-punctuation is supported by WebKit alone, so this is a
+   CSS-only WebKit test that applies before the first paint. If a real
+   iPhone proves stable, deleting the @supports wrapper turns it back on. */
+@supports not (hanging-punctuation: first) {
+    @view-transition { navigation: auto; }
+}
 @media (prefers-reduced-motion: reduce) {
     @view-transition { navigation: none; }
 }
@@ -3235,9 +3247,13 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
    8px the rising snapshot uncovers is that same colour. */
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
-@keyframes vt-rise-in { from { opacity: 0; transform: translateY(8px); } }
-::view-transition-old(root) { animation: vt-fade-out 0.12s linear both; }
-::view-transition-new(root) { animation: vt-rise-in 0.28s cubic-bezier(0, 0, 0.2, 1) 0.1s both; }
+@keyframes vt-rise-in { from { opacity: 0; transform: translateY(6px); } }
+/* Kept short on purpose: a page can't be tapped while its transition
+   plays, so every extra millisecond here is time the app ignores you. The
+   whole change is over in about a quarter of a second (it was ~0.5s). */
+::view-transition-group(*) { animation-duration: 0.22s; }
+::view-transition-old(root) { animation: vt-fade-out 0.09s linear both; }
+::view-transition-new(root) { animation: vt-rise-in 0.18s cubic-bezier(0, 0, 0.2, 1) 0.05s both; }
 /* Held still: everything that is the same on both pages. A fade-through
    would otherwise blink it out and back. The phone's logo bar is made
    sticky for the same reason (and because a native app's top bar stays
@@ -3257,8 +3273,8 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 ::view-transition-group(tab-active),
 ::view-transition-group(nav-active),
 ::view-transition-group(auth-tab) {
-    animation-duration: 0.45s;
-    animation-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.3, 1.25, 0.6, 1);
 }
 /* The active tab's white icon + label ride on their own layer (named per
    page in includes/nav.php), so the pill moves as a clean green shape: the
@@ -3269,8 +3285,8 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 .app-tabbar-item.is-active .app-tabbar-content,
 .app-tabbar-fab.is-active .app-tabbar-fab-icon,
 .app-nav-links a.is-active .app-nav-link-main { view-transition-class: tab-label; }
-::view-transition-old(*.tab-label):only-child { animation: vt-fade-out 0.12s linear both; }
-::view-transition-new(*.tab-label):only-child { animation: vt-fade-in 0.2s cubic-bezier(0, 0, 0.2, 1) 0.22s both; }
+::view-transition-old(*.tab-label):only-child { animation: vt-fade-out 0.08s linear both; }
+::view-transition-new(*.tab-label):only-child { animation: vt-fade-in 0.12s cubic-bezier(0, 0, 0.2, 1) 0.16s both; }
 
 /* -- "You are here" in the same green as the Add Recipe button, so the
       page you're on reads at a glance the way the + always does. Phone:
@@ -3320,13 +3336,13 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 .auth-tab.is-active { view-transition-name: auth-tab; }
 ::view-transition-group(auth-card),
 ::view-transition-group(auth-form) {
-    animation-duration: 0.45s;
+    animation-duration: 0.3s;
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* The form fades through too, over the card (its own layer behind it),
    so the two forms' fields never overlap mid-way. */
-::view-transition-old(auth-form) { animation: vt-fade-out 0.16s cubic-bezier(0.4, 0, 1, 1) both; }
-::view-transition-new(auth-form) { animation: vt-fade-in 0.28s cubic-bezier(0, 0, 0.2, 1) 0.1s both; }
+::view-transition-old(auth-form) { animation: vt-fade-out 0.1s linear both; }
+::view-transition-new(auth-form) { animation: vt-fade-in 0.18s cubic-bezier(0, 0, 0.2, 1) 0.07s both; }
 ::view-transition-image-pair(auth-card) {
     overflow: clip;
     border-radius: 24px;
@@ -3401,4 +3417,105 @@ button.ring-pill { appearance: none; -webkit-appearance: none; }
 @media (max-width: 900px) {
     .app-tabbar { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
     .app-main { padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* -- A tap registers at once. While the next page is on its way the old
+      one used to sit frozen with no sign anything was happening (and an
+      installed app has no browser progress bar). Now: a pressed state on
+      tab bar items and buttons the instant a finger lands, and a slim
+      green progress bar along the top (assets/js/theme-toggle.js adds
+      html.is-navigating on a same-site link tap or form submit). The bar
+      waits 120ms before showing, so a fast page change never flashes it. -- */
+html.is-navigating::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--green-dark));
+    box-shadow: 0 0 8px rgba(47, 174, 102, 0.6);
+    transform-origin: left center;
+    pointer-events: none;
+    animation: nav-progress 10s cubic-bezier(0.08, 0.82, 0.17, 1) 0.12s both;
+}
+@keyframes nav-progress {
+    0% { opacity: 0; transform: scaleX(0); }
+    1% { opacity: 1; }
+    100% { opacity: 1; transform: scaleX(0.94); }
+}
+.app-tabbar-content { transition: transform 0.12s ease; }
+.app-tabbar-item:active .app-tabbar-content { transform: scale(0.88); }
+.app-nav-links a:active { transform: scale(0.98); }
+@media (prefers-reduced-motion: reduce) {
+    html.is-navigating::before { animation: none; transform: scaleX(0.6); }
+    .app-tabbar-content { transition: none; }
+}
+
+/* -- iOS Safari: an empty <input type="date"> (the pantry expiry fields)
+      collapses shorter than the inputs beside it and centres its text. -- */
+input[type="date"] { min-height: 42px; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+
+/* -- First-visit guided tour (assets/js/app-tour.js, includes/app_tour.php).
+      The whole screen dims except a spotlight around the tab or sidebar
+      link being explained - one element whose enormous box-shadow is the
+      dim layer, so the cut-out moves smoothly from target to target - with
+      the step's card beside it. The overlay takes every tap while open, so
+      nothing underneath can be pressed by accident. -- */
+html.tour-open { overflow: hidden; }
+.tour {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    --tour-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tour-spot {
+    position: fixed;
+    border-radius: 16px;
+    box-shadow: 0 0 0 200vmax rgba(8, 16, 12, 0.66);
+    pointer-events: none;
+    transition: top 0.4s var(--tour-ease), left 0.4s var(--tour-ease), width 0.4s var(--tour-ease), height 0.4s var(--tour-ease), border-radius 0.4s var(--tour-ease);
+}
+.tour-spot.is-centered { top: 50%; left: 50%; width: 0; height: 0; }
+.tour-spot:not(.is-centered)::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    border: 2px solid rgba(110, 231, 165, 0.95);
+    animation: tour-ring 1.8s ease-in-out infinite;
+}
+@keyframes tour-ring {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(1.06); }
+}
+.tour-card {
+    position: fixed;
+    width: min(340px, calc(100vw - 32px));
+    padding: 20px 20px 16px;
+    border-radius: 20px;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 0 28px 60px -24px rgba(0, 0, 0, 0.6);
+    transition: top 0.4s var(--tour-ease), left 0.4s var(--tour-ease);
+}
+.tour-count { margin: 0 0 8px; font: 700 11px/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--green-dark); }
+.tour-title { margin: 0 0 8px; font-size: 21px; line-height: 1.2; }
+.tour-title:focus { outline: none; }
+.tour-text { margin: 0 0 16px; font-size: 14.5px; line-height: 1.55; color: var(--ink); opacity: 0.85; }
+.tour-dots { display: flex; gap: 6px; margin-bottom: 16px; }
+.tour-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--border); transition: width 0.3s var(--tour-ease), background-color 0.3s ease; }
+.tour-dot.is-on { width: 20px; background: var(--green); }
+.tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-nav { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.tour-actions button { font: 700 14px/1 var(--font-body); border: 0; cursor: pointer; border-radius: 999px; min-height: 44px; padding: 0 16px; }
+.tour-skip { background: none; color: var(--muted); padding-left: 4px; }
+.tour-back { background: none; color: var(--green-dark); }
+.tour-next { background: var(--green-dark); color: var(--white); padding: 0 22px; box-shadow: 0 10px 22px -10px rgba(47, 174, 102, 0.7); }
+.tour-actions button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .tour-spot, .tour-card, .tour-dot { transition: none; }
+    .tour-spot::after { animation: none; }
 }
