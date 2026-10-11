@@ -523,4 +523,24 @@ return [
             $pdo->exec('UPDATE users SET tour_seen_at = COALESCE(onboarded_at, created_at, NOW())');
         }
     },
+
+    // Sessions move off the host's local disk and into MySQL - see
+    // includes/db_session_handler.php's header for why (short version:
+    // InfinityFree and similar free hosts sweep session temp files on their
+    // own schedule, independent of this app's settings, which was silently
+    // logging users out). config.php's session_set_save_handler() wires
+    // this table up directly, and the handler also creates it itself via
+    // CREATE TABLE IF NOT EXISTS on every request (it has to run before
+    // this migrations file's normal apply-on-request path even loads) -
+    // this entry exists so schema.sql-reading humans and a fresh
+    // setup.php run see nutri_sessions as a normal, documented part of the
+    // schema rather than a table that appears from nowhere.
+    '2026_10_11_db_sessions' => "
+        CREATE TABLE IF NOT EXISTS nutri_sessions (
+            id VARCHAR(128) NOT NULL PRIMARY KEY,
+            data MEDIUMTEXT NOT NULL,
+            last_activity INT UNSIGNED NOT NULL,
+            INDEX idx_last_activity (last_activity)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
 ];

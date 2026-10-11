@@ -221,6 +221,40 @@ function is_https_request(): bool
     return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 }
 
+// How long a login should persist with no activity at all - used for both
+// the base session cookie below and the DB session handler's own cleanup
+// (session.gc_maxlifetime, set further down). Matches login.php's
+// REMEMBER_ME_DAYS: previously that 30-day figure only applied if someone
+// actually ticked "Remember me", and everyone else got a cookie that died
+// the moment their browser fully closed (lifetime => 0) - which on a phone,
+// especially a PWA added to the home screen, is effectively "every time you
+// reopen the app". Nobody expects a recipe app to need a checkbox ticked to
+// stay logged in, so that's now the default for everyone; the checkbox in
+// login.php still works, it just no longer does anything meaningfully
+// different from not checking it.
+define('SESSION_LIFETIME_DAYS', 30);
+
+// Store sessions in MySQL rather than the host's local disk - see
+// includes/db_session_handler.php's header comment for the full reasoning
+// (short version: InfinityFree and other free shared hosts sweep session
+// temp files on their own schedule regardless of what this app asks for,
+// which was the actual cause of users getting silently logged out - not a
+// multi-server/scaling problem, so no Redis or similar needed). Must happen
+// before session_start() below, and can't use db()/config/db_conn.php's
+// connection - that file requires this one, not the other way around, so
+// db() doesn't exist yet at this point in the request.
+require_once __DIR__ . '/../includes/db_session_handler.php';
+session_set_save_handler(
+    new DbSessionHandler(DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS),
+    true
+);
+// PHP's own garbage collector (not just our handler's gc() method, though
+// that reads this too) should only consider a session old enough to delete
+// on the same schedule the cookie itself is good for - otherwise a session
+// could be cleaned out of the database while the browser still presents a
+// cookie claiming it's valid for weeks longer.
+ini_set('session.gc_maxlifetime', (string)(SESSION_LIFETIME_DAYS * 86400));
+
 // Session cookie hardening: HttpOnly (JavaScript can never read it via
 // document.cookie - the whole point), Secure (never sent over plain HTTP,
 // skipped automatically on this local dev server since is_https_request()
@@ -238,8 +272,13 @@ function is_https_request(): bool
 // while allowing a top-level GET redirect to carry the cookie, which is
 // why it's the OWASP/browser-vendor-recommended default for a session
 // cookie specifically, not a weaker fallback.
+//
+// lifetime is now SESSION_LIFETIME_DAYS, not 0 (a true "dies when the
+// browser fully closes" session cookie) - see that constant's comment
+// above for why 0 was actually the bulk of this bug, independent of the
+// disk-storage issue the DB handler above fixes.
 session_set_cookie_params([
-    'lifetime' => 0,
+    'lifetime' => SESSION_LIFETIME_DAYS * 86400,
     'path' => '/',
     'domain' => '',
     'secure' => is_https_request(),
