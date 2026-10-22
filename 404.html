@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page not found</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  GitHub Pages only reads ONE 404 page: the one at the top of the site. This one sends
+  addresses under /vex/ (a refreshed page, a saved link) back to the Vex app, which opens the right screen.
+  Copy this file to the top of your username.github.io repo as 404.html.
+-->
+<script>
+  (function (l) {
+    if (l.pathname.indexOf('/vex/') === 0) {
+      l.replace(l.origin + '/vex/?/' + l.pathname.slice(5) + (l.search ? '&' + l.search.slice(1) : '') + l.hash);
+    }
+  })(window.location);
+</script>
+<style>body{font-family:system-ui,sans-serif;text-align:center;padding:4rem 1rem;color:#333}</style>
+</head>
+<body><h1>404</h1><p>That page was not found.</p></body>
+</html>
