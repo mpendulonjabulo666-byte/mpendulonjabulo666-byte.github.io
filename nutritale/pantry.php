@@ -48,6 +48,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             foreach ($names as $name) {
                 $stmt->execute([$user['id'], $name]);
             }
+            // Spelling hint, not a silent rewrite: the item is added exactly
+            // as typed above (so nothing is ever lost if the guess is wrong),
+            // and this only offers a one-click fix - see
+            // suggest_ingredient_correction() for why it's a local lookup,
+            // not an AI call.
+            if ($names) {
+                $spellAliasMap = load_ingredient_alias_map();
+                foreach ($names as $name) {
+                    $suggestion = suggest_ingredient_correction($name, $spellAliasMap);
+                    if ($suggestion) {
+                        $_SESSION['pantry_spell_hints'][] = $suggestion;
+                        break; // one hint per submission is plenty - avoid a wall of suggestions
+                    }
+                }
+            }
             // Optional expiry date; adding an item again with a new date updates it.
             $expires = pantry_parse_expiry($_POST['expires_on'] ?? '');
             if ($expires !== null && $names) {
@@ -64,6 +79,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     } elseif ($action === 'remove') {
         $name = $_POST['ingredient_name'] ?? '';
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $name]);
+    } elseif ($action === 'rename') {
+        // Backs the spelling-hint "Fix it" button: swaps the as-typed entry
+        // for the corrected one in place, rather than leaving a stray
+        // duplicate for the user to notice and remove themselves.
+        $old = trim($_POST['old_name'] ?? '');
+        $new = trim($_POST['new_name'] ?? '');
+        if ($old !== '' && $new !== '') {
+            db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $old]);
+            db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)')->execute([$user['id'], $new]);
+        }
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
     } elseif ($action === 'ai_suggest' && $pantry && empty($user['is_admin']) && !platform_setting('enable_ai_matching')) {
@@ -97,6 +122,8 @@ $expiryMap = pantry_expiry_map((int)$user['id']);
 $expiryAlerts = pantry_expiry_alerts($expiryMap);
 $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
+$spellHints = $_SESSION['pantry_spell_hints'] ?? [];
+unset($_SESSION['pantry_spell_hints']);
 
 $matches = [];
 $hiddenByAllergens = 0;
@@ -209,6 +236,19 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
         </div>
     </div>
 
+    <?php foreach ($spellHints as $hint): ?>
+        <div class="alert alert-success" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span>Added "<?= h($hint['original']) ?>" — did you mean "<strong><?= h($hint['corrected']) ?></strong>"?</span>
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="action" value="rename">
+                <input type="hidden" name="old_name" value="<?= h($hint['original']) ?>">
+                <input type="hidden" name="new_name" value="<?= h($hint['corrected']) ?>">
+                <button type="submit" class="btn btn-small">Fix it</button>
+            </form>
+        </div>
+    <?php endforeach; ?>
+
     <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
             <?= $aiCapReached ? "You've used your $aiDailyCap free AI idea generations ($aiPeriodLabel)." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left (' . $aiDailyCap . ' ' . $aiPeriodLabel . ').' ?>
@@ -236,6 +276,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
         <?php if ($isPremiumOrAdmin): ?>
             <div class="pantry-scan-panel" id="scan-panel" hidden>
                 <div id="scan-reader" class="pantry-scan-reader"></div>
+                <button type="button" class="btn btn-small pantry-scan-toggle" id="scan-toggle" data-mode="stop">&#10005; Stop scanning</button>
                 <p class="muted pantry-scan-status" id="scan-status" role="status">Point your camera at the barcode on the pack.</p>
                 <form class="pantry-scan-manual" id="scan-manual">
                     <input type="text" id="scan-code" inputmode="numeric" pattern="[0-9]{6,14}" placeholder="...or type the barcode number" aria-label="Barcode number">
