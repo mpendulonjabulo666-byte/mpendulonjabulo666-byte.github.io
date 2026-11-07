@@ -3,6 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/oauth.php';
+require_once __DIR__ . '/includes/turnstile.php';
 
 enforce_maintenance_mode();
 
@@ -17,6 +18,8 @@ $email = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
         $errors[] = 'Your session expired. Please try again.';
+    } elseif (!turnstile_verify($_POST['cf-turnstile-response'] ?? null, $_SERVER['REMOTE_ADDR'] ?? '')) {
+        $errors[] = 'Please complete the security check and try again.';
     } else {
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
@@ -138,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" name="confirm_password" placeholder="Confirm your password" aria-label="Confirm password" required minlength="8">
                     </label>
 
+                    <?= turnstile_widget() ?>
                     <button type="submit" class="ring-pill ring-pill-block ring-pill-strong mt-16"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Create account</span></button>
                     <p class="muted" style="font-size:12px;text-align:center;margin:10px 0 0;">By creating an account you agree to the <a href="terms.php">Terms of Service</a> and <a href="privacy.php">Privacy Policy</a>.</p>
                 </form>

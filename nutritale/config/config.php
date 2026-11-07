@@ -79,6 +79,12 @@ define('SUPPORT_EMAIL', nt_env('SUPPORT_EMAIL') ?: 'hello@nutritale.co.za');
 // physical address. Shown on the policy pages once it is set.
 define('LEGAL_ADDRESS', nt_env('LEGAL_ADDRESS') ?: '');
 
+// Cloudflare Turnstile (bot check on login/register). The site key is public
+// by design; the SECRET key must only ever live in config.local.php
+// (putenv('TURNSTILE_SECRET_KEY=...')). With no secret set, the check is off.
+define('TURNSTILE_SITE_KEY', nt_env('TURNSTILE_SITE_KEY') ?: '0x4AAAAAAF3xhS8iRnuAjDOe');
+define('TURNSTILE_SECRET_KEY', nt_env('TURNSTILE_SECRET_KEY') ?: '');
+
 // PayFast (https://www.payfast.co.za) payment settings for premium recipe
 // purchases. The values below are PayFast's published SANDBOX test
 // credentials — they only work against sandbox.payfast.co.za and never
