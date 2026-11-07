@@ -23,14 +23,21 @@ function nt_local_cfg(): array
     if ($cfg !== null) {
         return $cfg;
     }
-    $cfg = [];
     $file = __DIR__ . '/config.local.php';
-    if (is_readable($file)) {
-        $src = (string)file_get_contents($file);
-        if (preg_match_all("/^\\s*putenv\\(\\s*'([A-Z0-9_]+)=(.*)'\\s*\\)\\s*;/m", $src, $m, PREG_SET_ORDER)) {
-            foreach ($m as $row) {
-                $cfg[$row[1]] = stripslashes($row[2]);
-            }
+    $cfg = is_readable($file) ? nt_parse_local_cfg((string)file_get_contents($file)) : [];
+    return $cfg;
+}
+
+// Reads the putenv('KEY=value'); lines out of config.local.php's source.
+// /s and the lazy (.*?) let one value span several lines - the Apple
+// sign-in .p8 key is a multi-line PEM block, which the old single-line
+// pattern silently skipped. Tested in tests/config_local_test.php.
+function nt_parse_local_cfg(string $src): array
+{
+    $cfg = [];
+    if (preg_match_all("/^\\s*putenv\\(\\s*'([A-Z0-9_]+)=(.*?)'\\s*\\)\\s*;/ms", $src, $m, PREG_SET_ORDER)) {
+        foreach ($m as $row) {
+            $cfg[$row[1]] = stripslashes($row[2]);
         }
     }
     return $cfg;
@@ -61,6 +68,16 @@ define('DB_USER', nt_env('DB_USER') ?: (nt_env('MYSQLUSER') ?: 'root'));
 define('DB_PASS', nt_env('DB_PASS') ?: (nt_env('MYSQLPASSWORD') ?: ''));
 
 define('APP_NAME', 'NutriTale');
+
+// Who runs the service and how to reach them - shown on the Terms, Privacy
+// and Refund pages and in the account-deletion screen. Set the real
+// registered business name and a mailbox someone actually reads in
+// config.local.php (putenv('LEGAL_OPERATOR_NAME=...')), not here.
+define('LEGAL_OPERATOR_NAME', nt_env('LEGAL_OPERATOR_NAME') ?: APP_NAME);
+define('SUPPORT_EMAIL', nt_env('SUPPORT_EMAIL') ?: 'hello@nutritale.co.za');
+// South Africa's ECTA (section 43) requires an online seller to publish a
+// physical address. Shown on the policy pages once it is set.
+define('LEGAL_ADDRESS', nt_env('LEGAL_ADDRESS') ?: '');
 
 // PayFast (https://www.payfast.co.za) payment settings for premium recipe
 // purchases. The values below are PayFast's published SANDBOX test

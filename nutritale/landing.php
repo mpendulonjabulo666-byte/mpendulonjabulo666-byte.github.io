@@ -78,6 +78,9 @@ $testimonials = [];
 </header>
 
 <main class="landing-main">
+    <?php if (isset($_GET['account_deleted'])): ?>
+        <div class="alert alert-success" role="status" style="max-width:640px;margin:16px auto;">Your account has been deleted.</div>
+    <?php endif; ?>
     <div class="landing-glow-field">
         <div class="landing-blob landing-blob-1"></div>
         <div class="landing-blob landing-blob-2"></div>
@@ -247,22 +250,10 @@ $testimonials = [];
 <!-- 7. FOOTER — essential links only. -->
 <footer class="landing-footer muted">
     <div class="landing-footer-links">
-        <!--
-            Stub pages (privacy.php/terms.php/refund.php) - each just says
-            "not published yet" plus a contact email, noindex'd, so these
-            links don't 404 from the public landing page while the real
-            policies (Premium billing, marketplace terms, data collection -
-            legal/business content, not something to fabricate here) are
-            still being written.
-        -->
         <a href="privacy.php">Privacy Policy</a>
         <a href="terms.php">Terms of Service</a>
         <a href="refund.php">Refund Policy</a>
-        <!--
-            Placeholder - no real support inbox has been set up for this
-            app yet. Replace with a real, monitored address before launch.
-        -->
-        <a href="mailto:hello@nutritale.co.za">hello@nutritale.co.za</a>
+        <a href="mailto:<?= h(SUPPORT_EMAIL) ?>"><?= h(SUPPORT_EMAIL) ?></a>
     </div>
     <!-- Social follow icons go here once there are real NutriTale accounts
          to link - none exist yet, so nothing is shown rather than linking

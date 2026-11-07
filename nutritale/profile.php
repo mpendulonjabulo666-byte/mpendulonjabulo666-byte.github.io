@@ -377,6 +377,12 @@ $goals = $goalStmt->fetch() ?: [];
             <a class="btn btn-text btn-small mt-16" href="vendor.php"><?= icon('flame', 14) ?> Go to your vendor dashboard</a>
         <?php endif; ?>
     </div>
+
+    <div class="card mt-16">
+        <h2 style="font-size:16px;margin-top:0;">Delete account</h2>
+        <p class="muted" style="margin-top:0;font-size:13px;">Permanently remove your account and personal data from <?= APP_NAME ?>.</p>
+        <a class="btn btn-text btn-small" href="delete_account.php" style="color:#c0392b;">Delete my account</a>
+    </div>
 <?php include __DIR__ . '/includes/profile_more.php'; ?>
 </main>
 <script src="assets/js/avatar-upload.js?v=18" defer></script>

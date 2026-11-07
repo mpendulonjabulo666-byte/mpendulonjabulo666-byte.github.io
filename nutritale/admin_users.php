@@ -10,6 +10,15 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     $targetId = (int)($_POST['user_id'] ?? 0);
 
+    if (($_POST['action'] ?? '') === 'demo_account') {
+        require_once __DIR__ . '/includes/demo_account.php';
+        $demo = demo_account_upsert(db(), demo_account_email($_SERVER['HTTP_HOST'] ?? ''));
+        // Shown once, on this page only. Copy it into App Store Connect >
+        // App Review Information > Sign-in required.
+        flash_set('demo_account', $demo['email'] . "\n" . $demo['password']);
+        redirect('admin_users.php');
+    }
+
     if (($_POST['action'] ?? '') === 'unlock') {
         db()->prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?')->execute([$targetId]);
         flash_set('success', 'Account unlocked.');
@@ -46,9 +55,10 @@ $search = trim($_GET['q'] ?? '');
 $where = '';
 $params = [];
 if ($search !== '') {
-    $where = 'WHERE name LIKE ? OR email LIKE ?';
+    $where = 'AND (name LIKE ? OR email LIKE ?)';
     $params = ['%' . $search . '%', '%' . $search . '%'];
 }
+$where = 'WHERE deleted_at IS NULL ' . $where;
 $stmt = db()->prepare(
     "SELECT id, name, email, is_admin, is_premium_member, is_vendor, failed_attempts, locked_until, created_at FROM users $where ORDER BY created_at DESC LIMIT 200"
 );
@@ -90,6 +100,23 @@ $users = $stmt->fetchAll();
     <?php foreach ($errors as $error): ?>
         <div class="alert alert-error"><?= h($error) ?></div>
     <?php endforeach; ?>
+
+    <div class="card mb-16">
+        <h2 style="font-size:16px;margin-top:0;">App review demo account</h2>
+        <?php if ($demo = flash_get('demo_account')): [$demoEmail, $demoPassword] = explode("\n", $demo, 2); ?>
+            <div class="alert alert-success">
+                Demo login ready. Copy both now - the password is not shown again.<br>
+                Email: <strong><?= h($demoEmail) ?></strong><br>
+                Password: <strong><?= h($demoPassword) ?></strong>
+            </div>
+        <?php endif; ?>
+        <p class="muted" style="margin-top:0;font-size:13px;">Apple and Google need a working login to review the app. This creates a Premium demo account (or gives the existing one a new password). Put the email and password in App Store Connect under App Review Information.</p>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="demo_account">
+            <button type="submit" class="btn btn-text btn-small"><?= icon('user', 14) ?> Create or reset demo login</button>
+        </form>
+    </div>
 
     <form method="get" class="mb-16" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <input type="text" name="q" value="<?= h($search) ?>" placeholder="Search by name or email..." class="field" style="max-width:300px;">

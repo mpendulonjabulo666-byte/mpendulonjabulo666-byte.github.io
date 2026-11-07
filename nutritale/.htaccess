@@ -46,6 +46,23 @@
     </IfModule>
 </FilesMatch>
 
+# Browser safety headers for every response.
+#   nosniff         - a file is only ever treated as the type the server says
+#   SAMEORIGIN      - no other website can show NutriTale inside a frame
+#                     (stops "clickjacking": a fake page over a real button)
+#   Referrer-Policy - other sites see only "nutritale.freedev.app", never the
+#                     full address of the page someone came from
+#   HSTS            - once a browser has visited over HTTPS it refuses plain
+#                     HTTP for a year. Browsers ignore this header on an HTTP
+#                     response, so it can never lock anyone out of a non-HTTPS
+#                     site.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>
+
 # Dotfiles (.git, .env, .htaccess itself, etc.) — never serve these.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

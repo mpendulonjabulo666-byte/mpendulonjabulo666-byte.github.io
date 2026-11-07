@@ -139,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </label>
 
                     <button type="submit" class="ring-pill ring-pill-block ring-pill-strong mt-16"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Create account</span></button>
+                    <p class="muted" style="font-size:12px;text-align:center;margin:10px 0 0;">By creating an account you agree to the <a href="terms.php">Terms of Service</a> and <a href="privacy.php">Privacy Policy</a>.</p>
                 </form>
 
                 <div class="auth-divider">or continue with</div>

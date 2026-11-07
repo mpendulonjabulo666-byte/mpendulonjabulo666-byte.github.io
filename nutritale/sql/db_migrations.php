@@ -543,4 +543,19 @@ return [
             INDEX idx_last_activity (last_activity)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
+
+    // In-app account deletion (delete_account.php, includes/account_deletion.php).
+    // An account with payment history can't simply vanish - recipe sales
+    // and payouts belong to the other party too, and payment records have
+    // to be kept - so those accounts are anonymised instead and marked
+    // here. current_user() treats a deleted account as logged out.
+    '2026_11_07_user_deleted_at' => function (PDO $pdo): void {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deleted_at'"
+        )->fetchColumn();
+        if (!$has) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN deleted_at DATETIME NULL');
+        }
+    },
 ];

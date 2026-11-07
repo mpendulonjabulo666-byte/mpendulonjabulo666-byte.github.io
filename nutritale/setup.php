@@ -3,6 +3,24 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 
+// setup.php is for a brand-new install. Once anyone has signed up it is
+// admins-only: otherwise any visitor could run it on the live site and
+// see the database name and migration details. (On a fresh install the
+// users table doesn't exist yet, the query throws, and setup runs.)
+try {
+    require_once __DIR__ . '/config/db_conn.php';
+    $hasUsers = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn() > 0;
+} catch (Throwable $e) {
+    $hasUsers = false;
+}
+if ($hasUsers) {
+    $viewer = current_user();
+    if (!$viewer || empty($viewer['is_admin'])) {
+        http_response_code(403);
+        exit('Setup has already been run. Only an admin can run it again.');
+    }
+}
+
 $log = [];
 $error = null;
 

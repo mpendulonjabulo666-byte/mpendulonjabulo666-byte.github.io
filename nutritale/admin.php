@@ -8,8 +8,8 @@ $user = require_admin();
 
 // Real counts only - every number on this page comes straight from the
 // same tables the rest of the app reads and writes, never a placeholder.
-$totalUsers = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
-$newUsersWeek = (int)db()->query('SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
+$totalUsers = (int)db()->query('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL')->fetchColumn();
+$newUsersWeek = (int)db()->query('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
 $activeWeek = (int)db()->query('SELECT COUNT(*) FROM users WHERE last_login_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
 $totalRecipes = (int)db()->query('SELECT COUNT(*) FROM recipes')->fetchColumn();
 $newRecipesWeek = (int)db()->query('SELECT COUNT(*) FROM recipes WHERE created_at >= NOW() - INTERVAL 7 DAY')->fetchColumn();
