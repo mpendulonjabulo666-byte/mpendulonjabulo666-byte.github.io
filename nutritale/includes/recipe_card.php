@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/store_links.php';
 function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConflicts = []): void
 {
     $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
@@ -25,11 +26,13 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
                 <span><?= icon('clock', 14) ?> <?= (int)$recipe['cook_time_minutes'] ?> min</span>
                 <span><?= icon('flame', 14) ?> <?= $recipe['calories'] !== null ? (int)$recipe['calories'] . ' cal' : '— cal' ?></span>
             </div>
-            <?php if ($dietTags): ?>
+            <?php $uberTag = uber_eats_tag($recipe['title']); ?>
+            <?php if ($dietTags || $uberTag): ?>
                 <div class="tag-row">
                     <?php foreach ($dietTags as $tag): ?>
                         <span class="tag"><?= h($tag) ?></span>
                     <?php endforeach; ?>
+                    <?= $uberTag ?>
                 </div>
             <?php endif; ?>
             <?php if ($allergenConflicts): ?>

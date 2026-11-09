@@ -40,12 +40,51 @@ function pnp_link_html(string $ingredientName): string
 }
 
 /**
+ * Dishes commonly sold ready-made by restaurants, takeaways and bakeries on
+ * Uber Eats in South Africa. This is our own judgement from the dish name,
+ * not data from Uber: it decides whether the "Find this dish on Uber Eats"
+ * button and the "Often on Uber Eats" tag make sense. Home-cooking dishes
+ * (bredies, potjiekos, overnight oats...) don't get the button. Add or
+ * remove words here; matching is whole-word and case-insensitive.
+ */
+const UBER_EATS_DISH_WORDS = [
+    'bunny chow', 'kota', 'gatsby', 'burger', 'pizza', 'wings', 'fried chicken',
+    'grilled chicken', 'chicken', 'curry', 'wrap', 'shawarma', 'falafel', 'pita',
+    'sushi', 'samoosa', 'samosa', 'fish and chips', 'hake', 'chips', 'toast',
+    'pancakes', 'shakshuka', 'salad', 'bowl', 'smoothie', 'parfait', 'vetkoek',
+    'amagwinya', 'fat cakes', 'boerewors roll', 'boerewors rolls', 'pap, wors',
+    'koeksisters', 'melktert', 'milk tart', 'malva pudding', 'pasta', 'stir-fry',
+    'sandwich', 'chili', 'boerewors', 'sosaties', 'soup', 'peppermint crisp tart',
+];
+
+function dish_on_uber_eats(string $title): bool
+{
+    foreach (UBER_EATS_DISH_WORDS as $word) {
+        if (preg_match('/(?<![a-z])' . preg_quote($word, '/') . '(?![a-z])/i', $title)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Small tag for recipe cards and the recipe page. Empty when not a takeaway dish. */
+function uber_eats_tag(string $title): string
+{
+    return dish_on_uber_eats($title)
+        ? '<span class="tag uber-tag" title="Restaurants on Uber Eats often sell this dish">Often on Uber Eats</span>'
+        : '';
+}
+
+/**
  * Visible notice card with real buttons. $what = recipe title (recipe page)
  * or '' (shopping list: Pick n Pay only needs the ingredients, Uber Eats
  * gets a generic "restaurants near me" link because there is no dish).
  */
 function store_links_block(string $dishName = ''): string
 {
+    // On a recipe, the Uber button only appears for dishes restaurants
+    // actually sell (dish_on_uber_eats). The shopping list always offers it.
+    $showUber = $dishName === '' || dish_on_uber_eats($dishName);
     $uber = $dishName !== ''
         ? uber_eats_search_link($dishName)
         : 'https://www.ubereats.com/za/near-me';
@@ -56,9 +95,12 @@ function store_links_block(string $dishName = ''): string
     $pnpLabel = $dishName !== '' ? 'Shop at Pick n Pay' : 'Open Pick n Pay';
     return '<div class="store-notice" role="note">'
         . '<strong>Get it delivered</strong>'
-        . '<span>Order the ingredients or the dish from our partners\' sites. Links open in a new tab; prices and stock are theirs.</span>'
+        . '<span>' . ($showUber
+            ? 'Order the ingredients, or the ready-made dish, from these sites.'
+            : 'Order the ingredients from Pick n Pay.')
+            . ' Links open in a new tab; prices and stock are theirs.</span>'
         . '<span class="store-notice-buttons">'
         . '<a class="btn btn-small" href="' . h($pnp) . '" target="_blank" rel="noopener noreferrer">' . h($pnpLabel) . '</a>'
-        . '<a class="btn btn-small" href="' . h($uber) . '" target="_blank" rel="noopener noreferrer">' . h($uberLabel) . '</a>'
+        . ($showUber ? '<a class="btn btn-small" href="' . h($uber) . '" target="_blank" rel="noopener noreferrer">' . h($uberLabel) . '</a>' : '')
         . '</span></div>';
 }

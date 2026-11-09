@@ -174,7 +174,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=28">
+<link rel="stylesheet" href="assets/css/style.css?v=29">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
@@ -258,6 +258,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
             <div id="share-toast" class="share-toast" hidden>Link copied!</div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                 <?= render_stars($avgRating, $ratingCount, 16) ?>
+                <span class="print-hide"><?= uber_eats_tag($recipe['title']) ?></span>
                 <?php if ($recipe['is_premium']): ?>
                     <span class="tag premium-tag"><?= icon('wand', 12) ?> Premium · R<?= number_format((float)$recipe['price'], 2) ?></span>
                 <?php endif; ?>

@@ -3659,3 +3659,5 @@ html.tour-open { overflow: hidden; }
 
     .print-book-foot { display: block; text-align: center; font-style: italic; font-size: 8.5pt; margin-top: 3mm; padding-top: 2mm; border-top: 1px solid #8b6b3d; }
 }
+
+.tag.uber-tag { background: #06c167; color: #fff; border-color: #06c167; }
