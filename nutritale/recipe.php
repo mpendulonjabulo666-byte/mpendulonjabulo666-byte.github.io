@@ -174,7 +174,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=25">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
@@ -354,6 +354,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                     <span class="folder-panel-meta"><?= icon('users', 14) ?> Serves <?= (int)$recipe['servings'] ?></span>
                                 <?php endif; ?>
                             </div>
+                            <?= store_links_block($recipe['title']) ?>
                             <?php if ($isPurchaseLocked): ?>
                                 <?php $renderPaywall(); ?>
                             <?php elseif ($isTierLocked): ?>
@@ -378,7 +379,6 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                         ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?> <?= pnp_link_html($ing['name']) ?></li>
                                     <?php endforeach; ?>
                                 </ul>
-                                <?= store_links_block($recipe['title']) ?>
                             <?php endif; ?>
                         </div>
 

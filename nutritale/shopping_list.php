@@ -88,7 +88,7 @@ function format_qty(float $qty): string
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=25">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -103,6 +103,7 @@ function format_qty(float $qty): string
     </div>
     <h1 class="mb-16"><?= icon('shopping-cart', 20) ?> Shopping list — <?= $monday->format('M j') ?> to <?= $sunday->format('M j, Y') ?></h1>
 
+    <?= store_links_block() ?>
     <?php if (!$items): ?>
         <p class="muted">No recipes planned for this week yet. Add some from the <a href="planner.php?week=<?= h($monday->format('Y-m-d')) ?>">planner</a>.</p>
     <?php else: ?>

@@ -12,6 +12,8 @@ check('length capped', strlen(rawurldecode(substr(pnp_search_link(str_repeat('a'
 check('uber link has dish', strpos(uber_eats_search_link('Beef-Stuffed Pasta'), 'Beef-Stuffed%20Pasta') !== false);
 check('html link is new-tab + noopener', strpos(pnp_link_html('milk'), 'rel="noopener noreferrer"') !== false);
 check('html escapes injection', strpos(pnp_link_html('"><script>'), '<script>') === false);
-check('block says we do not sell', strpos(store_links_block('Pap'), 'does not sell') !== false);
+check('block has both buttons', strpos(store_links_block('Pap'), 'Uber Eats') !== false && strpos(store_links_block('Pap'), 'Pick n Pay') !== false);
+check('block says prices are theirs', strpos(store_links_block('Pap'), 'prices and stock are theirs') !== false);
+check('list version (no dish) still has links', strpos(store_links_block(), 'ubereats.com/za/near-me') !== false);
 echo "$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

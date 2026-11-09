@@ -37,10 +37,26 @@ function pnp_link_html(string $ingredientName): string
         . '" target="_blank" rel="noopener noreferrer" title="Opens Pick n Pay\'s own search in a new tab">Pick n Pay</a>';
 }
 
-/** Recipe-level block: find the dish on Uber Eats + a note that we only link. */
-function store_links_block(string $dishName): string
+/**
+ * Visible notice card with real buttons. $what = recipe title (recipe page)
+ * or '' (shopping list: Pick n Pay only needs the ingredients, Uber Eats
+ * gets a generic "restaurants near me" link because there is no dish).
+ */
+function store_links_block(string $dishName = ''): string
 {
-    return '<p class="store-links muted">Prefer to order it ready-made? '
-        . '<a href="' . h(uber_eats_search_link($dishName)) . '" target="_blank" rel="noopener noreferrer">Search “' . h(store_search_term($dishName)) . '” on Uber Eats</a>. '
-        . 'Links open Pick n Pay and Uber Eats in a new tab. NutriTale does not sell, price or stock these items.</p>';
+    $uber = $dishName !== ''
+        ? uber_eats_search_link($dishName)
+        : 'https://www.ubereats.com/za/near-me';
+    $uberLabel = $dishName !== '' ? 'Find this dish on Uber Eats' : 'Browse Uber Eats';
+    $pnp = $dishName !== ''
+        ? pnp_search_link($dishName)
+        : 'https://www.pnp.co.za/pnpstorefront/pnp/en/search/?text=';
+    $pnpLabel = $dishName !== '' ? 'Shop at Pick n Pay' : 'Open Pick n Pay';
+    return '<div class="store-notice" role="note">'
+        . '<strong>Get it delivered</strong>'
+        . '<span>Order the ingredients or the dish from our partners\' sites. Links open in a new tab; prices and stock are theirs.</span>'
+        . '<span class="store-notice-buttons">'
+        . '<a class="btn btn-small" href="' . h($pnp) . '" target="_blank" rel="noopener noreferrer">' . h($pnpLabel) . '</a>'
+        . '<a class="btn btn-small" href="' . h($uber) . '" target="_blank" rel="noopener noreferrer">' . h($uberLabel) . '</a>'
+        . '</span></div>';
 }
