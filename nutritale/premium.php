@@ -25,7 +25,7 @@ if ($user['is_premium_member']) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=29">
+<link rel="stylesheet" href="assets/css/style.css?v=30">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -42,6 +42,7 @@ if ($user['is_premium_member']) {
         <ul style="padding-left:20px;margin:0 0 20px;font-size:14px;line-height:1.9;">
             <li>Unlimited use of <strong>What Can I Make?</strong> — no trial limit</li>
             <li>Recommendations ranked to match your diet preferences first</li>
+            <li>One-tap links to buy a recipe's ingredients at <strong>Pick n Pay</strong>, or find takeaway dishes on <strong>Uber Eats</strong> (you order and pay on their sites)</li>
             <li>A premium badge on your profile</li>
         </ul>
 

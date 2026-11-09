@@ -62,7 +62,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=29">
+<link rel="stylesheet" href="assets/css/style.css?v=30">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/hero-photo-motion.js?v=18" defer></script>
 <script src="assets/js/recipe-ring.js?v=18" defer></script>
@@ -140,6 +140,12 @@ $testimonials = [];
             <h3>Recipes that respect your allergies</h3>
             <p class="muted">Every AI suggestion is checked twice — once when we ask it to avoid your allergens,
                 again after, when we scan the result and throw out anything that slipped through.</p>
+        </div>
+        <div class="feature-card landing-glass-card">
+            <?= icon('shopping-cart', 26) ?>
+            <h3>From recipe to doorstep <span class="tag premium-tag" style="vertical-align:middle;">Premium</span></h3>
+            <p class="muted">One tap takes you to the ingredients at Pick n Pay, or to the finished dish on
+                Uber Eats. You order and pay on their sites, so their prices and delivery apply.</p>
         </div>
     </section>
 
@@ -224,6 +230,7 @@ $testimonials = [];
             <summary>What does Premium actually add?<?= icon('chevron-right', 16) ?></summary>
             <p>Every recipe in the library (free accounts can open <?= FREE_RECIPE_LIMIT ?> to start), and a
                 higher AI pantry-idea cap — <?= AI_PANTRY_DAILY_CAP ?> a day instead of <?= AI_PANTRY_FREE_DAILY_CAP ?> —
+                one-tap links to Pick n Pay and Uber Eats,
                 for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month. Nothing you already have on the free
                 plan goes away or expires.</p>
         </details>

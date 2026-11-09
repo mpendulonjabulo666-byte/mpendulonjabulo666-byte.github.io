@@ -3661,3 +3661,40 @@ html.tour-open { overflow: hidden; }
 }
 
 .tag.uber-tag { background: #06c167; color: #fff; border-color: #06c167; }
+
+/* ---------------------------------------------------------------------
+   Frosted "glass" top bar and bottom tab bar (phones/tablets, <=900px).
+   The page shows through, blurred, as you scroll - the look of Apple's
+   glass, done in CSS so it works on iPhone Safari and Android Chrome.
+   The top bar's blur sits on a ::before layer, not on .app-nav itself:
+   backdrop-filter on an element traps position:fixed children inside it,
+   which would break the slide-out menu drawer that lives in .app-nav.
+   Browsers without backdrop-filter keep the old solid bars.
+   --------------------------------------------------------------------- */
+:root { --glass-bg: rgba(255, 255, 255, 0.62); --glass-edge: rgba(255, 255, 255, 0.7); }
+:root[data-theme="dark"] { --glass-bg: rgba(26, 33, 29, 0.6); --glass-edge: rgba(255, 255, 255, 0.08); }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --glass-bg: rgba(26, 33, 29, 0.6); --glass-edge: rgba(255, 255, 255, 0.08); }
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    @media (max-width: 900px) {
+        .app-nav {
+            position: sticky; top: 0; z-index: 40;
+            background: transparent;
+            border-bottom: 1px solid var(--glass-edge);
+        }
+        .app-nav::before {
+            content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px) saturate(1.6);
+            -webkit-backdrop-filter: blur(18px) saturate(1.6);
+        }
+        .app-tabbar {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-edge);
+            backdrop-filter: blur(18px) saturate(1.6);
+            -webkit-backdrop-filter: blur(18px) saturate(1.6);
+        }
+    }
+}
+@media print { .app-nav::before { display: none; } }

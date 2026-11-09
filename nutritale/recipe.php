@@ -174,7 +174,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=29">
+<link rel="stylesheet" href="assets/css/style.css?v=30">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
@@ -367,7 +367,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                     <span class="folder-panel-meta"><?= icon('users', 14) ?> Serves <?= (int)$recipe['servings'] ?></span>
                                 <?php endif; ?>
                             </div>
-                            <?= store_links_block($recipe['title']) ?>
+                            <?= store_links_block($recipe['title'], user_has_full_library($user)) ?>
                             <?php if ($isPurchaseLocked): ?>
                                 <?php $renderPaywall(); ?>
                             <?php elseif ($isTierLocked): ?>
@@ -389,7 +389,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                             data-unit="<?= h($ing['unit']) ?>"
                                             data-display="<?= h($ing['display_quantity']) ?>"
                                             data-name="<?= h($ing['name']) ?>"
-                                        ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?> <?= pnp_link_html($ing['name']) ?></li>
+                                        ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?><?= user_has_full_library($user) ? ' ' . pnp_link_html($ing['name']) : '' ?></li>
                                     <?php endforeach; ?>
                                 </ul>
                             <?php endif; ?>

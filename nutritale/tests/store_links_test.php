@@ -22,5 +22,8 @@ check('whole words only (no match inside a word)', !dish_on_uber_eats('Chipotle 
 check('home dish: no Uber button', strpos(store_links_block('Tomato Bredie'), 'Uber Eats') === false);
 check('takeaway dish: Uber button', strpos(store_links_block('Bunny Chow'), 'Find this dish on Uber Eats') !== false);
 check('tag only for takeaway dishes', uber_eats_tag('Bunny Chow') !== '' && uber_eats_tag('Tomato Bredie') === '');
+check('locked: no store links shown', strpos(store_links_block('Bunny Chow', false), 'pnp.co.za') === false && strpos(store_links_block('Bunny Chow', false), 'ubereats.com') === false);
+check('locked: points to premium', strpos(store_links_block('Bunny Chow', false), 'premium.php') !== false);
+check('locked home dish does not promise Uber', strpos(store_links_block('Tomato Bredie', false), 'Uber') === false);
 echo "$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

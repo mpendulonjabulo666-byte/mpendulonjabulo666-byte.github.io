@@ -80,8 +80,20 @@ function uber_eats_tag(string $title): string
  * or '' (shopping list: Pick n Pay only needs the ingredients, Uber Eats
  * gets a generic "restaurants near me" link because there is no dish).
  */
-function store_links_block(string $dishName = ''): string
+function store_links_block(string $dishName = '', bool $unlocked = true): string
 {
+    // Premium perk: free members see what they're missing and where to
+    // unlock it, never the links themselves (premium.php sells it).
+    if (!$unlocked) {
+        return '<div class="store-notice store-notice-locked" role="note">'
+            . '<strong>Get it delivered (Premium)</strong>'
+            . '<span>Premium members get one-tap links to buy these ingredients at Pick n Pay'
+            . ($dishName === '' ? ' or order from restaurants on Uber Eats'
+                : (dish_on_uber_eats($dishName) ? ' or find the dish on Uber Eats' : ''))
+            . '.</span>'
+            . '<span class="store-notice-buttons"><a class="btn btn-small" href="premium.php">Unlock with Premium</a></span>'
+            . '</div>';
+    }
     // On a recipe, the Uber button only appears for dishes restaurants
     // actually sell (dish_on_uber_eats). The shopping list always offers it.
     $showUber = $dishName === '' || dish_on_uber_eats($dishName);
