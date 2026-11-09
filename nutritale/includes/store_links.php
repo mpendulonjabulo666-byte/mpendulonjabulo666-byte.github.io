@@ -4,17 +4,14 @@
 // just opens their own search page for the ingredient/dish and they take it
 // from there. All URL patterns live in this file so a change is one edit.
 //
-// Pick n Pay pattern confirmed from live search results. The Uber Eats
+// The Uber Eats
 // search pattern is NOT confirmed - test it on a phone. If it lands on a
 // generic page, change UBER_EATS_SEARCH_URL to 'https://www.ubereats.com/za/near-me'
 // (verified) and drop the {q} placeholder.
 
-// INTERIM: Pick n Pay's own search URL could not be confirmed (the old
-// /pnpstorefront/.../search/?text= pattern just lands on their home page).
-// Until the real pattern is confirmed from the address bar after a search on
-// pnp.co.za, send people to a Google search limited to pnp.co.za, which does
-// land on the product. Replace this one line with the real pattern.
-const PNP_SEARCH_URL = 'https://www.google.com/search?q=site%3Apnp.co.za+{q}';
+// Confirmed 2026-11-09 on a real phone: /search/feta shows 'Results for "feta"'.
+// (The old /pnpstorefront/.../search/?text= pattern only lands on the home page.)
+const PNP_SEARCH_URL = 'https://www.pnp.co.za/search/{q}';
 const UBER_EATS_SEARCH_URL = 'https://www.ubereats.com/za/search?q={q}';
 
 function store_search_term(string $text): string

@@ -5,7 +5,7 @@ require_once __DIR__ . '/../includes/store_links.php';
 $pass = 0; $fail = 0;
 function check(string $l, bool $ok): void { global $pass, $fail; if ($ok) { $pass++; return; } $fail++; echo "FAIL  $l\n"; }
 
-check('pnp link encodes spaces', pnp_search_link('olive oil') === 'https://www.google.com/search?q=site%3Apnp.co.za+olive%20oil');
+check('pnp link encodes spaces', pnp_search_link('olive oil') === 'https://www.pnp.co.za/search/olive%20oil');
 check('pnp link encodes & and quotes', strpos(pnp_search_link('mac & "cheese"'), '&') === false || strpos(pnp_search_link('mac & "cheese"'), '%26') !== false);
 check('tags stripped', strpos(pnp_search_link('<script>x</script>flour'), '%3C') === false);
 check('length capped', strlen(rawurldecode(substr(pnp_search_link(str_repeat('a', 500)), strpos(pnp_search_link('a'), '=') + 0))) < 200);
