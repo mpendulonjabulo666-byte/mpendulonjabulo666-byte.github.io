@@ -174,14 +174,23 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=26">
+<link rel="stylesheet" href="assets/css/style.css?v=28">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/photo-credit.js?v=21" defer></script>
 </head>
 <body>
 <?php include __DIR__ . '/includes/nav.php'; ?>
 <main class="app-main">
-    <div class="mb-16" style="display:flex;justify-content:space-between;align-items:center;">
+    <?php /* Print-only masthead: the page prints as a page torn from an
+             old NutriTale recipe book (see the @media print "recipe book"
+             block at the end of style.css). Hidden on screen. */ ?>
+    <div class="print-book-head" aria-hidden="true">
+        <img src="assets/img/logo/book-mark.png" alt="" class="print-book-logo">
+        <div class="print-book-brand"><?= h(APP_NAME) ?></div>
+        <div class="print-book-sub">Nourish Your Story &middot; Recipe Collection</div>
+        <div class="print-book-ornament">&#10086;</div>
+    </div>
+    <div class="mb-16 print-hide" style="display:flex;justify-content:space-between;align-items:center;">
         <a href="index.php" class="btn-back"><span class="btn-back-disc"><?= icon('chevron-left', 18) ?></span><span class="btn-back-label">Back to recipes</span></a>
         <button type="button" class="btn btn-text btn-small" onclick="window.print()"><?= icon('printer', 16) ?> Print</button>
     </div>
@@ -189,6 +198,9 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
     <div class="recipe-detail">
         <div class="recipe-detail-image" title="Click the photo for its credit" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
         <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-photo-credit') ?>
+        <?php if (!empty($recipe['image_url'])): ?>
+            <figure class="print-book-photo" aria-hidden="true"><img src="<?= h($recipe['image_url']) ?>" alt=""></figure>
+        <?php endif; ?>
 
         <div class="recipe-detail-body">
             <div class="recipe-detail-header">
@@ -473,6 +485,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                 </details>
             <?php endif; ?>
 
+            <div class="print-book-foot" aria-hidden="true">&#10086; From the <?= h(APP_NAME) ?> recipe book &middot; nutritale.freedev.app &#10086;</div>
             <div class="reviews-section">
                 <h2>Ratings &amp; reviews</h2>
                 <form method="post" class="card mb-16 print-hide">
