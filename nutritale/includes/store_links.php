@@ -9,7 +9,12 @@
 // generic page, change UBER_EATS_SEARCH_URL to 'https://www.ubereats.com/za/near-me'
 // (verified) and drop the {q} placeholder.
 
-const PNP_SEARCH_URL = 'https://www.pnp.co.za/pnpstorefront/pnp/en/search/?text={q}';
+// INTERIM: Pick n Pay's own search URL could not be confirmed (the old
+// /pnpstorefront/.../search/?text= pattern just lands on their home page).
+// Until the real pattern is confirmed from the address bar after a search on
+// pnp.co.za, send people to a Google search limited to pnp.co.za, which does
+// land on the product. Replace this one line with the real pattern.
+const PNP_SEARCH_URL = 'https://www.google.com/search?q=site%3Apnp.co.za+{q}';
 const UBER_EATS_SEARCH_URL = 'https://www.ubereats.com/za/search?q={q}';
 
 function store_search_term(string $text): string
@@ -34,7 +39,7 @@ function uber_eats_search_link(string $text): string
 function pnp_link_html(string $ingredientName): string
 {
     return '<a class="store-link" href="' . h(pnp_search_link($ingredientName))
-        . '" target="_blank" rel="noopener noreferrer" title="Opens Pick n Pay\'s own search in a new tab">Pick n Pay</a>';
+        . '" target="_blank" rel="noopener noreferrer" title="Finds this item on Pick n Pay in a new tab">Pick n Pay</a>';
 }
 
 /**
@@ -50,7 +55,7 @@ function store_links_block(string $dishName = ''): string
     $uberLabel = $dishName !== '' ? 'Find this dish on Uber Eats' : 'Browse Uber Eats';
     $pnp = $dishName !== ''
         ? pnp_search_link($dishName)
-        : 'https://www.pnp.co.za/pnpstorefront/pnp/en/search/?text=';
+        : 'https://www.pnp.co.za/';
     $pnpLabel = $dishName !== '' ? 'Shop at Pick n Pay' : 'Open Pick n Pay';
     return '<div class="store-notice" role="note">'
         . '<strong>Get it delivered</strong>'
