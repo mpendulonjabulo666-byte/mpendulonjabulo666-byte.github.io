@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
+require_once __DIR__ . '/includes/store_links.php';
 require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
@@ -374,9 +375,10 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                                             data-unit="<?= h($ing['unit']) ?>"
                                             data-display="<?= h($ing['display_quantity']) ?>"
                                             data-name="<?= h($ing['name']) ?>"
-                                        ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?></li>
+                                        ><span class="ing-qty"><?= h($ing['display_quantity']) ?></span> <?= h($ing['name']) ?> <?= pnp_link_html($ing['name']) ?></li>
                                     <?php endforeach; ?>
                                 </ul>
+                                <?= store_links_block($recipe['title']) ?>
                             <?php endif; ?>
                         </div>
 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
+require_once __DIR__ . '/includes/store_links.php';
 require_once __DIR__ . '/includes/icons.php';
 
 $user = require_login();
@@ -125,6 +126,7 @@ function format_qty(float $qty): string
                                 <?php else: ?>
                                     <?= h(implode(' + ', array_unique($item['display_quantities']))) ?> <?= h($item['name']) ?>
                                 <?php endif; ?>
+                                <?= pnp_link_html($item['name']) ?>
                             </span>
                         </div>
                     <?php endforeach; ?>
