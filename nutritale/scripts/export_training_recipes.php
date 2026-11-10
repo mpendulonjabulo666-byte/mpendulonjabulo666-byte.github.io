@@ -7,13 +7,17 @@
 // image_url. Recipes written by a user account (created_by is set) are
 // skipped by default, because a member's own recipe is their content;
 // pass --include-user-recipes to export those too (still without the author).
-// Unpublished recipes are always skipped.
+// Unpublished (hidden) recipes are skipped by default; pass
+// --include-unpublished to export them too. Each line then carries
+// "published": true/false so they can be told apart.
 //
 // Usage (command line only):
 //   php scripts/export_training_recipes.php                  writes recipes.jsonl in the current folder
 //   php scripts/export_training_recipes.php path/to/out.jsonl
 //   php scripts/export_training_recipes.php -                writes to the screen (stdout)
 //   php scripts/export_training_recipes.php --include-user-recipes
+//   php scripts/export_training_recipes.php --include-unpublished
+//   php scripts/export_training_recipes.php --only-unpublished hidden.jsonl
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     exit('Command line only.');
@@ -21,7 +25,9 @@ if (PHP_SAPI !== 'cli') {
 
 $args = array_slice($argv, 1);
 $includeUser = in_array('--include-user-recipes', $args, true);
-$args = array_values(array_filter($args, fn($a) => $a !== '--include-user-recipes'));
+$onlyHidden = in_array('--only-unpublished', $args, true);
+$includeHidden = $onlyHidden || in_array('--include-unpublished', $args, true);
+$args = array_values(array_filter($args, fn($a) => !str_starts_with($a, '--')));
 $cwd = getcwd();
 $outPath = $args[0] ?? 'recipes.jsonl';
 if ($outPath !== '-' && $outPath[0] !== '/' && !preg_match('/^[A-Za-z]:[\\\\\/]/', $outPath)) {
@@ -66,8 +72,8 @@ $allergens = $group('SELECT recipe_id, allergen FROM recipe_allergens ORDER BY r
 
 $recipes = $pdo->query(
     'SELECT id, title, description, meal_type, cuisine, difficulty, cook_time_minutes, servings,
-            calories, protein_g, carbs_g, fat_g, fiber_g, created_by
-       FROM recipes WHERE is_published = 1 ORDER BY id'
+            calories, protein_g, carbs_g, fat_g, fiber_g, created_by, is_published
+       FROM recipes WHERE ' . ($onlyHidden ? 'is_published = 0' : ($includeHidden ? '1 = 1' : 'is_published = 1')) . ' ORDER BY id'
 )->fetchAll();
 
 $out = $outPath === '-' ? fopen('php://stdout', 'w') : fopen($outPath, 'w');
@@ -110,6 +116,9 @@ foreach ($recipes as $r) {
             'fibre_g' => $num($r['fiber_g']),
         ],
     ];
+    if ($includeHidden) {
+        $line['published'] = (bool)$r['is_published'];
+    }
     fwrite($out, json_encode($line, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
     $written++;
 }
