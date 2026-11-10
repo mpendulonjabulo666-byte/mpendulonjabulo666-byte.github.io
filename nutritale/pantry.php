@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
+require_once __DIR__ . '/includes/idea_photo.php';
 require_once __DIR__ . '/includes/ingredient_matching.php';
 require_once __DIR__ . '/includes/external_recipes.php';
 require_once __DIR__ . '/includes/pantry_expiry.php';
@@ -223,7 +224,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=31">
+<link rel="stylesheet" href="assets/css/style.css?v=32">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -362,6 +363,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                 <div class="mt-16" style="display:grid;gap:14px;">
                     <?php foreach ($aiResult['meals'] as $meal): ?>
                         <div class="shopping-list card" style="box-shadow:none;border:1px solid var(--border);margin:0;">
+                            <?= idea_photo_html((string)($meal['title'] ?? '')) ?>
                             <h3 style="margin-top:0;font-size:15px;"><?= h($meal['title'] ?? '') ?></h3>
                             <p class="muted" style="font-size:13px;margin:0 0 8px;"><?= h($meal['description'] ?? '') ?></p>
                             <?php if (!empty($meal['uses_from_pantry'])): ?>

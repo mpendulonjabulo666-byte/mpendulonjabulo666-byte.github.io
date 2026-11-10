@@ -3651,3 +3651,13 @@ html.tour-open { overflow: hidden; }
     0%, 100% { opacity: 0.55; transform: scale(1); }
     50% { opacity: 0.95; transform: scale(1.14); }
 }
+
+/* AI pantry idea photos (includes/idea_photo.php) */
+.idea-photo { position: relative; height: 140px; margin: -4px -4px 12px; border-radius: 12px; overflow: hidden;
+    background: #f4f1e6 center / cover no-repeat; }
+.idea-photo-plain { background: #f4f1e6 url('../img/logo/book-mark.png') center / auto 60% no-repeat; }
+:root[data-theme="dark"] .idea-photo-plain { background-color: #26302b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .idea-photo-plain { background-color: #26302b; } }
+.idea-photo-credit { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 8px; font-size: 10.5px; color: #fff;
+    background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+.idea-photo-credit a { color: #fff; text-decoration: underline; }
