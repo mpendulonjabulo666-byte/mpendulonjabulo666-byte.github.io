@@ -117,11 +117,7 @@ $renderTab = function (array $tab) use ($navCurrent, $vtLabel) {
 ?>
 <nav class="app-tabbar" aria-label="Main">
     <?php foreach ($tabsBeforeFab as $tab) { $renderTab($tab); } ?>
-    <?php $fabActive = $navCurrent === 'add_recipe.php'; ?>
-    <a href="add_recipe.php" class="app-tabbar-fab<?= $fabActive ? ' is-active' : '' ?>" aria-label="Add recipe"<?= $fabActive ? ' aria-current="page"' : '' ?>>
-        <span class="app-tabbar-fab-glow" aria-hidden="true"></span>
-        <span class="app-tabbar-fab-icon"<?= $fabActive ? $vtLabel('tab-label-', 'add_recipe.php') : '' ?>><?= icon('plus', 24) ?></span>
-    </a>
+    <?php $renderTab(['add_recipe.php', 'plus', 'Add', ['add_recipe.php']]); ?>
     <?php foreach ($tabsAfterFab as $tab) { $renderTab($tab); } ?>
 </nav>
 <script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>

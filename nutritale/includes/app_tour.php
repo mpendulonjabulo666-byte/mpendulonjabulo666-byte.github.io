@@ -38,7 +38,7 @@ $tourSteps = [
         'text' => 'Tap + to save a recipe of your own, with its ingredients, steps and nutrition. Everything you add is kept under My Recipes.',
         'titleDesktop' => 'My Recipes',
         'textDesktop' => 'Save recipes of your own, with their ingredients, steps and nutrition, and find everything you have added here.',
-        'phone' => '.app-tabbar-fab',
+        'phone' => '.app-tabbar a[href="add_recipe.php"]',
         'desktop' => '.app-nav-links a[href="my_recipes.php"]',
     ],
     [
