@@ -121,7 +121,7 @@ $renderTab = function (array $tab) use ($navCurrent, $vtLabel) {
     <?php foreach ($tabsAfterFab as $tab) { $renderTab($tab); } ?>
 </nav>
 <script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>
-<script src="assets/js/nutritale-ui.js?v=1" defer></script>
+<script src="assets/js/nutritale-ui.js?v=2" defer></script>
 <?php
 // First-visit tour (includes/app_tour.php): automatically on a new account's
 // first page in the app, or on request with ?tour=1 (from the profile page).

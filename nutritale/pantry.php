@@ -224,7 +224,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=33">
+<link rel="stylesheet" href="assets/css/style.css?v=34">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -338,7 +338,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <?php endif; ?>
                 </div>
                 <?php if (!$aiCapReached): ?>
-                    <form method="post" data-nt-loading data-nt-page-loader="true" data-nt-loader-message="Finding meal ideas for your pantry. This can take up to 20 seconds.">
+                    <form method="post" data-nt-loading data-nt-page-loader="true" data-nt-loader-message="Reading your pantry...|Checking your diet and allergens...|Writing three meal ideas. This can take up to 20 seconds.">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="ai_suggest">
                         <button type="submit" class="btn btn-primary btn-small" data-loading-text="Thinking..."><?= icon('wand', 14) ?> Get AI ideas</button>

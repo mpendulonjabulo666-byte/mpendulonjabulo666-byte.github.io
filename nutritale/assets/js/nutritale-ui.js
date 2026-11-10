@@ -34,9 +34,21 @@
         document.body.appendChild(loader);
     }
 
+    var stepTimer = null;
+    // message may be one line, or several separated by "|" which are shown
+    // in turn (the last one stays). Used for the slower AI request.
     function showPageLoader(message) {
         if (!loader) buildLoader();
-        loader.querySelector('.nt-loader-message').textContent = message || 'Loading...';
+        var steps = String(message || 'Loading...').split('|'), i = 0;
+        var line = loader.querySelector('.nt-loader-message');
+        line.textContent = steps[0];
+        clearInterval(stepTimer);
+        if (steps.length > 1) {
+            stepTimer = setInterval(function () {
+                if (++i >= steps.length - 1) clearInterval(stepTimer);
+                line.textContent = steps[Math.min(i, steps.length - 1)];
+            }, 4000);
+        }
         loader.classList.add('is-visible');
         // Never leave the screen covered: if the page has not changed after
         // 45 seconds something went wrong, so give the page back.
@@ -46,6 +58,7 @@
 
     function hidePageLoader() {
         clearTimeout(loaderTimer);
+        clearInterval(stepTimer);
         if (loader) loader.classList.remove('is-visible');
     }
 
@@ -142,6 +155,43 @@
         hidePageLoader();
         document.querySelectorAll('.is-nt-loading').forEach(function (b) { setButtonLoading(b, false); });
     });
+
+    // ---- Motion -------------------------------------------------------
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Favourite heart: a short pop on tap, before the page reloads.
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('.fav-btn');
+        if (b && !calm) { b.classList.remove('nt-pop'); void b.offsetWidth; b.classList.add('nt-pop'); }
+    });
+
+    // Scroll reveal: cards below the fold fade up once as they come into
+    // view. The hiding class is only ever added here, so with JavaScript
+    // off, or reduced motion on, everything is simply visible. Each element
+    // is unobserved after it shows, so nothing keeps running off-screen.
+    function setupReveal() {
+        if (calm || !('IntersectionObserver' in window)) return;
+        var items = document.querySelectorAll('.app-main .recipe-card, .app-main .card, .landing-glass-card, .nutrition-tile');
+        if (!items.length) return;
+        var fold = window.innerHeight, n = 0;
+        var io = new IntersectionObserver(function (entries) {
+            var k = 0;
+            entries.forEach(function (en) {
+                if (!en.isIntersecting) return;
+                en.target.style.transitionDelay = Math.min(k++, 5) * 60 + 'ms';
+                en.target.classList.add('is-in');
+                io.unobserve(en.target);
+            });
+        }, { rootMargin: '0px 0px -8% 0px' });
+        items.forEach(function (it) {
+            if (it.getBoundingClientRect().top < fold || n >= 60) return; // already on screen: leave alone
+            n++;
+            it.classList.add('nt-reveal');
+            io.observe(it);
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupReveal);
+    else setupReveal();
 
     window.addEventListener('offline', function () {
         toast("You're offline. Changes won't save until you're connected again.", 'error');
