@@ -1,102 +1,123 @@
 <?php
 // Exports the recipe library as JSON Lines: one recipe per line.
 //
-// Read-only: SELECT statements only, inside a read-only transaction, so it
-// cannot change the database even by mistake.
-//
-// No user data: only NutriTale's own published recipes are exported
-// (created_by IS NULL). Recipes written by users or vendors are skipped,
-// and no user ids, names, emails, ratings, favourites, views, prices or
-// purchases are read at all. Photo URLs are left out too (third-party
-// photos with their own licences).
+// Read-only: SELECT statements only, nothing in the database is changed.
+// No user data: the export never reads the users table, favourites, ratings,
+// views, pantries or purchases, and it leaves out created_by, price and
+// image_url. Recipes written by a user account (created_by is set) are
+// skipped by default, because a member's own recipe is their content;
+// pass --include-user-recipes to export those too (still without the author).
+// Unpublished recipes are always skipped.
 //
 // Usage (command line only):
-//   php scripts/export_training_recipes.php              -> writes recipes.jsonl
-//   php scripts/export_training_recipes.php out/r.jsonl  -> writes that file
-//   php scripts/export_training_recipes.php -            -> prints to the screen
-//
-// Do not write the file inside the web root on a live server.
+//   php scripts/export_training_recipes.php                  writes recipes.jsonl in the current folder
+//   php scripts/export_training_recipes.php path/to/out.jsonl
+//   php scripts/export_training_recipes.php -                writes to the screen (stdout)
+//   php scripts/export_training_recipes.php --include-user-recipes
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     exit('Command line only.');
 }
 
+$args = array_slice($argv, 1);
+$includeUser = in_array('--include-user-recipes', $args, true);
+$args = array_values(array_filter($args, fn($a) => $a !== '--include-user-recipes'));
+$cwd = getcwd();
+$outPath = $args[0] ?? 'recipes.jsonl';
+if ($outPath !== '-' && $outPath[0] !== '/' && !preg_match('/^[A-Za-z]:[\\\\\/]/', $outPath)) {
+    $outPath = $cwd . '/' . $outPath; // relative to where the command was run, not to the app folder
+}
+
 chdir(__DIR__ . '/..');
 require 'config/config.php';
-require 'config/db_conn.php';
-
-$target = $argv[1] ?? 'recipes.jsonl';
-$pdo = db();
+// config.php opens a session (stored in the database). Drop it unsaved, so
+// this script does not even leave a session row behind.
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_abort();
+}
+// Own connection instead of db(): db() applies pending schema migrations,
+// and an export must never change the database.
+$pdo = new PDO(
+    'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+    DB_USER,
+    DB_PASS,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+);
 $pdo->exec('SET SESSION TRANSACTION READ ONLY');
-$pdo->beginTransaction();
+$pdo->beginTransaction(); // one consistent snapshot; the server rejects any write in it
+
+$num = fn($v) => $v === null ? null : (int)$v;
+
+// Children are loaded once each and grouped in memory (4 queries total,
+// rather than 4 per recipe).
+$group = function (string $sql) use ($pdo): array {
+    $out = [];
+    foreach ($pdo->query($sql) as $row) {
+        $id = $row['recipe_id'];
+        unset($row['recipe_id']);
+        $out[$id][] = $row;
+    }
+    return $out;
+};
+$ingredients = $group('SELECT recipe_id, name, quantity, unit, display_quantity FROM recipe_ingredients ORDER BY recipe_id, order_index, id');
+$steps = $group('SELECT recipe_id, step_text FROM recipe_instructions ORDER BY recipe_id, step_number, id');
+$diets = $group('SELECT recipe_id, diet_type FROM recipe_diet_tags ORDER BY recipe_id, diet_type');
+$allergens = $group('SELECT recipe_id, allergen FROM recipe_allergens ORDER BY recipe_id, allergen');
 
 $recipes = $pdo->query(
     'SELECT id, title, description, meal_type, cuisine, difficulty, cook_time_minutes, servings,
-            calories, protein_g, carbs_g, fat_g, fiber_g
-       FROM recipes
-      WHERE is_published = 1 AND created_by IS NULL
-      ORDER BY id'
+            calories, protein_g, carbs_g, fat_g, fiber_g, created_by
+       FROM recipes WHERE is_published = 1 ORDER BY id'
 )->fetchAll();
-$skipped = (int)$pdo->query('SELECT COUNT(*) FROM recipes WHERE is_published = 1 AND created_by IS NOT NULL')->fetchColumn();
 
-$ingQ = $pdo->prepare('SELECT name, quantity, unit, display_quantity FROM recipe_ingredients WHERE recipe_id = ? ORDER BY order_index, id');
-$stepQ = $pdo->prepare('SELECT step_text FROM recipe_instructions WHERE recipe_id = ? ORDER BY step_number, id');
-$dietQ = $pdo->prepare('SELECT diet_type FROM recipe_diet_tags WHERE recipe_id = ? ORDER BY diet_type');
-$algQ = $pdo->prepare('SELECT allergen FROM recipe_allergens WHERE recipe_id = ? ORDER BY allergen');
-
-$out = $target === '-' ? fopen('php://stdout', 'w') : fopen($target . '.tmp', 'w');
+$out = $outPath === '-' ? fopen('php://stdout', 'w') : fopen($outPath, 'w');
 if (!$out) {
-    fwrite(STDERR, "Cannot write to $target\n");
+    fwrite(STDERR, "Could not open $outPath for writing.\n");
     exit(1);
 }
 
-$int = fn($v) => $v === null ? null : (int)$v;
-$count = 0;
+$written = 0;
+$skippedUser = 0;
 foreach ($recipes as $r) {
-    $ingQ->execute([$r['id']]);
-    $ingredients = array_map(fn($i) => [
-        'name' => $i['name'],
-        'quantity' => (float)$i['quantity'],
-        'unit' => $i['unit'],
-        'display_quantity' => $i['display_quantity'],
-    ], $ingQ->fetchAll());
-    $stepQ->execute([$r['id']]);
-    $dietQ->execute([$r['id']]);
-    $algQ->execute([$r['id']]);
-
-    $line = json_encode([
-        'id' => $r['id'],
+    if ($r['created_by'] !== null && !$includeUser) {
+        $skippedUser++;
+        continue;
+    }
+    $id = $r['id'];
+    $line = [
+        'id' => $id,
         'title' => $r['title'],
         'description' => $r['description'],
         'meal_type' => $r['meal_type'],
         'cuisine' => $r['cuisine'],
         'difficulty' => $r['difficulty'],
-        'time_minutes' => $int($r['cook_time_minutes']),
-        'servings' => $int($r['servings']),
-        'ingredients' => $ingredients,
-        'steps' => $stepQ->fetchAll(PDO::FETCH_COLUMN),
-        'diet_tags' => $dietQ->fetchAll(PDO::FETCH_COLUMN),
-        'allergens' => $algQ->fetchAll(PDO::FETCH_COLUMN),
-        'nutrition_per_serving' => [
-            'calories' => $int($r['calories']),
-            'protein_g' => $int($r['protein_g']),
-            'carbs_g' => $int($r['carbs_g']),
-            'fat_g' => $int($r['fat_g']),
-            'fibre_g' => $int($r['fiber_g']),
+        'time_minutes' => (int)$r['cook_time_minutes'],
+        'servings' => (int)$r['servings'],
+        'ingredients' => array_map(fn($i) => [
+            'name' => $i['name'],
+            'quantity' => (float)$i['quantity'],
+            'unit' => $i['unit'],
+            'display_quantity' => $i['display_quantity'],
+        ], $ingredients[$id] ?? []),
+        'steps' => array_column($steps[$id] ?? [], 'step_text'),
+        'diet_tags' => array_column($diets[$id] ?? [], 'diet_type'),
+        'allergens' => array_column($allergens[$id] ?? [], 'allergen'),
+        'nutrition' => [
+            'calories' => $num($r['calories']),
+            'protein_g' => $num($r['protein_g']),
+            'carbs_g' => $num($r['carbs_g']),
+            'fat_g' => $num($r['fat_g']),
+            'fibre_g' => $num($r['fiber_g']),
         ],
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if ($line === false) {
-        fwrite(STDERR, "Skipped {$r['id']}: " . json_last_error_msg() . "\n");
-        continue;
-    }
-    fwrite($out, $line . "\n");
-    $count++;
+    ];
+    fwrite($out, json_encode($line, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    $written++;
 }
-fclose($out);
-$pdo->rollBack();
+if ($outPath !== '-') {
+    fclose($out);
+}
 
-if ($target !== '-') {
-    rename($target . '.tmp', $target);
+fwrite(STDERR, "Wrote $written recipes to " . ($outPath === '-' ? 'stdout' : $outPath) . ".\n");
+if ($skippedUser) {
+    fwrite(STDERR, "Skipped $skippedUser recipes written by user accounts (use --include-user-recipes to export them).\n");
 }
-fwrite(STDERR, "Exported $count recipes" . ($target === '-' ? '' : " to $target")
-    . ($skipped ? "; skipped $skipped user-submitted recipe" . ($skipped === 1 ? '' : 's') : '') . ".\n");
