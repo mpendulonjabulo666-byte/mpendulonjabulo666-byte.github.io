@@ -224,7 +224,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=32">
+<link rel="stylesheet" href="assets/css/style.css?v=33">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -260,12 +260,12 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
     <?= render_pantry_expiry_banner($expiryAlerts) ?>
 
     <div class="card mb-16">
-        <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="post" data-nt-loading style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="add">
             <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
             <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
-            <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
+            <button type="submit" class="btn btn-primary" data-loading-text="Adding..."><?= icon('plus', 16) ?> Add</button>
         </form>
         <div class="pantry-scan-row">
             <?php if ($isPremiumOrAdmin): ?>
@@ -316,7 +316,11 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                 <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Clear all</button>
             </form>
         <?php else: ?>
-            <p class="muted mt-16" style="font-size:13px;">Your pantry is empty — add a few ingredients to get recipe ideas.</p>
+            <div class="nt-empty-state mt-16">
+                <div class="nt-empty-state__icon" aria-hidden="true"><?= icon('wand', 26) ?></div>
+                <h3>Your pantry is empty</h3>
+                <p>Add what's in your fridge and cupboards above, and NutriTale will show what you can cook with it.</p>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -334,10 +338,10 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <?php endif; ?>
                 </div>
                 <?php if (!$aiCapReached): ?>
-                    <form method="post">
+                    <form method="post" data-nt-loading data-nt-page-loader="true" data-nt-loader-message="Finding meal ideas for your pantry. This can take up to 20 seconds.">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="ai_suggest">
-                        <button type="submit" class="btn btn-primary btn-small"><?= icon('wand', 14) ?> Get AI ideas</button>
+                        <button type="submit" class="btn btn-primary btn-small" data-loading-text="Thinking..."><?= icon('wand', 14) ?> Get AI ideas</button>
                     </form>
                 <?php else: ?>
                     <p class="muted" style="font-size:12.5px;margin:0;">Today's limit reached<?= $isPremiumOrAdmin ? '' : ' — ' ?><?= $isPremiumOrAdmin ? '.' : '<a href="premium.php" style="color:var(--green-dark);font-weight:600;">go Premium</a> for more.' ?></p>
