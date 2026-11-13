@@ -458,3 +458,33 @@ function send_notification_email(string $to, string $subject, string $body): voi
         error_log('send_notification_email: SMTP send to ' . $to . ' failed: ' . $mail->ErrorInfo);
     }
 }
+
+/**
+ * Where a "Back" button should go: the page the person came from (same site
+ * only), else $default. Returns [url, label]. Pages that only redirect or
+ * handle forms, and the current page itself, are skipped so Back never loops.
+ */
+function back_target(string $default, string $defaultLabel): array
+{
+    $ref = $_SERVER['HTTP_REFERER'] ?? '';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $p = $ref !== '' ? parse_url($ref) : false;
+    if (!$p || empty($p['host']) || strcasecmp($p['host'] . (isset($p['port']) ? ':' . $p['port'] : ''), $host) !== 0) {
+        return [$default, $defaultLabel];
+    }
+    $file = basename($p['path'] ?? '');
+    $current = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $labels = [
+        'index.php' => 'Back to recipes', 'admin_recipes.php' => 'Back to admin recipes',
+        'favorites.php' => 'Back to favourites', 'planner.php' => 'Back to planner',
+        'pantry.php' => 'Back to What Can I Make?', 'marketplace.php' => 'Back to marketplace',
+        'my_recipes.php' => 'Back to my recipes', 'shopping_list.php' => 'Back to shopping list',
+        'hormone_guide.php' => 'Back to hormone eating', 'admin.php' => 'Back to admin',
+        'vendor.php' => 'Back to vendor', 'listing.php' => 'Back to listing',
+    ];
+    if ($file === $current || !isset($labels[$file])) {
+        return [$default, $defaultLabel];
+    }
+    $url = $file . (isset($p['query']) ? '?' . $p['query'] : '');
+    return [$url, $labels[$file]];
+}
