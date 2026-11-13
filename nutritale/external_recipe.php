@@ -47,7 +47,7 @@ $youtube = (string)($meal['strYoutube'] ?? '');
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=36">
+<link rel="stylesheet" href="assets/css/style.css?v=37">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>

@@ -3835,31 +3835,35 @@ html.tour-open { overflow: hidden; }
 @media print { .nt-reveal { opacity: 1 !important; transform: none !important; } }
 
 
-/* ===== Landing hero v2: photo as the hero itself (style-video tips) =====
-   Oversized rounded photo that overlaps the copy with a cream fade, serif
-   lettering with one italic word, pill buttons matching the badges. */
-.landing-hero-photo-wrap { aspect-ratio: auto; max-width: 100%; order: -1; }
+/* ===== Landing hero v2: the photo IS the hero background =====
+   Phone: photo band on top fading into the page colour, text below it.
+   Wide screens: photo fills the right side behind the copy, with a fade to
+   the page colour on the left so the headline always sits on a plain
+   background (contrast does not depend on the photo). */
+.landing-hero-photo-wrap { aspect-ratio: auto; max-width: 100%; order: -1; margin: 0 -12px; }
 .landing-hero-photo-disc { display: none; }
 .landing-hero-photo {
-    position: relative; inset: auto; animation: none !important;
-    width: 100%; aspect-ratio: 4 / 3;
-    background-size: cover; background-position: 60% 50%;
-    border-radius: 32px 32px 32px 90px; box-shadow: 0 30px 60px -30px rgba(20, 50, 32, 0.45);
+    position: relative; inset: auto; animation: none !important; box-shadow: none; border-radius: 0 0 40px 40px;
+    width: 100%; aspect-ratio: 16 / 10;
+    background-size: cover; background-position: 55% 50%;
 }
-.landing-float-badge-cal { left: 12px; bottom: 16px; }
-.landing-float-badge-match { right: 12px; top: 14px; }
+.landing-hero-photo::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; display: block;
+    background: linear-gradient(to bottom, transparent 60%, var(--bg) 100%);
+}
+.landing-float-badge { z-index: 2; border-radius: 999px; }
+.landing-float-badge-cal { left: 16px; bottom: 28px; }
+.landing-float-badge-match { right: 16px; top: 16px; }
 .landing-hero h1 { font-family: Georgia, "Times New Roman", serif; letter-spacing: -0.01em; line-height: 1.08; }
 .landing-hero h1 em { font-style: italic; color: var(--accent, #c2552b); }
 .landing-hero .btn.btn-primary { border-radius: 999px; padding-left: 28px; padding-right: 28px; }
-.landing-float-badge { border-radius: 999px; }
 @media (min-width: 900px) {
-    .landing-hero-photo-wrap { order: 0; flex: 0 0 56%; max-width: 56%; margin: 0 0 0 -8%; z-index: 0; }
-    .landing-hero-photo { aspect-ratio: 5 / 4; }
-    .landing-hero-copy { position: relative; z-index: 1; }
-    .landing-hero-photo-wrap::before {
-        content: ""; position: absolute; inset: 0 auto 0 0; width: 34%; z-index: 1; pointer-events: none;
-        border-radius: 32px 0 0 90px;
-        background: linear-gradient(90deg, rgba(243, 248, 244, 0.95), rgba(243, 248, 244, 0));
-    }
+    .landing-hero { position: relative; min-height: 520px; display: flex; align-items: center; }
+    .landing-hero-grid { position: static; width: 100%; }
+    .landing-hero-photo-wrap { position: absolute; inset: 0 0 0 auto; width: 68%; max-width: none; margin: 0; order: 0; z-index: 0; }
+    .landing-hero-photo { height: 100%; aspect-ratio: auto; border-radius: 0 0 0 80px; background-position: 60% 50%; }
+    .landing-hero-photo::after { background: linear-gradient(to right, var(--bg) 0%, transparent 45%); }
+    .landing-hero-copy { position: relative; z-index: 1; max-width: 440px; flex: none; }
+    .landing-float-badge-cal { left: auto; right: 40px; bottom: 36px; }
+    .landing-float-badge-match { right: 40px; top: 36px; }
 }
-.landing-float-badge { z-index: 2; }
