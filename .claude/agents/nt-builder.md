@@ -19,6 +19,8 @@ How to work:
 5. Run `php -l <file>` on every file you changed.
 6. Commit on the current work branch with the contextual-commit format. One commit per job.
 
+Skills: only if the brief is about phone layout, CSS or motion and it explicitly allows a visual change, open the skills index (`.claude/skills/INDEX.md` in the project, or `~/.claude/skills/INDEX.md` if the project has none) and Read the SKILL.md of the one skill that matches. For any other job, load no skills. Larger UI jobs belong to `nt-designer`.
+
 Never:
 - push, merge, or switch to `claude/app-continuation-s4hyzj` (that branch deploys to the live site);
 - touch `config/config.local.php`, secrets, or `.github/workflows/`;

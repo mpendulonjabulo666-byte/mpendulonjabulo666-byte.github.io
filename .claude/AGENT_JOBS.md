@@ -15,6 +15,7 @@ Work branch: `claude/agent-work`. Never push to `claude/app-continuation-s4hyzj`
 | O5 | Approve the consent wording and name the Information Officer | owner |
 | O6 | Have a cook or dietitian check the 13 recipes with no allergen tags and the safety replies | owner |
 | O7 | Decide how Premium is sold in the store apps | owner |
+| O8 | Open the FTP deploy workflow yourself and check it does not upload `.claude/`, `CLAUDE.md` or the `.md` docs to the live site (agents may not read workflows) | owner |
 
 ## Agent jobs
 

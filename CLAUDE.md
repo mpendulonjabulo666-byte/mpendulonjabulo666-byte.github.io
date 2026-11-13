@@ -22,6 +22,7 @@ The main session is the **orchestrator**. It plans, hands out one job at a time,
 |---|---|---|
 | `nt-researcher` | haiku | Read-only. Finds where the logic lives and reports files and line numbers. |
 | `nt-builder` | haiku | Makes the change for one job and commits it. |
+| `nt-designer` | sonnet | Makes the change for jobs marked UI (layout, CSS, motion, phone feel), only when the job allows a visual change. Commits it. |
 | `nt-tester` | haiku | Writes or extends the test, runs all tests, reports the raw output. |
 | `nt-reviewer` | same as main session | Read-only. Checks the diff against the job and the hard rules. Says PASS or FAIL. |
 
@@ -30,7 +31,7 @@ The main session is the **orchestrator**. It plans, hands out one job at a time,
 1. Orchestrator picks the next job whose status is `todo` and that is not `blocked` or `owner`.
 2. `nt-researcher` reports the current code for that job.
 3. Orchestrator writes a short brief: goal, files, done-when, what not to touch.
-4. `nt-builder` makes the change.
+4. `nt-builder` makes the change, or `nt-designer` if the job is marked UI.
 5. `nt-tester` adds the test and runs every test.
 6. `nt-reviewer` reviews the diff. FAIL sends it back to step 4 with the reasons (max 3 rounds, then stop and report to the owner).
 7. Orchestrator re-runs the tests itself, sets the job to `done` in `.claude/AGENT_JOBS.md`, and ticks the matching line in `nutritale/TASKS.md`.

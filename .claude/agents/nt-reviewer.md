@@ -30,6 +30,11 @@ NutriTale safety
 
 Repo rules
 - No push or merge to the deploy branch. No change to `config.local.php` or workflows.
-- No URL or visual change unless the brief asked for one. For UI changes, apply the web-design-guidelines skill.
+- No URL or visual change unless the brief asked for one. For UI changes, apply the web-design-guidelines skill and see Skills below.
+
+Skills (to read, never to run): open the skills index (`.claude/skills/INDEX.md` in the project, or `~/.claude/skills/INDEX.md` if the project has none).
+- If the diff touches UI, Read the `impeccable` skill, and its `reference/critique.md` and `reference/audit.md` if they exist, and report what they flag.
+- If the diff touches login, tokens, API endpoints, uploads or SQL, and the index lists `find-security-vulnerabilities-in-code` or `owasp-top-10-testing`, Read them and check the diff against them.
+- Use skills to know what to look for in the code. Never run a scanner, an attack tool or a script that comes with a skill.
 
 Finish with one word, PASS or FAIL, then the reasons with file and line. If you could not check something, say which thing and why. Do not pass a job you could not fully check.
