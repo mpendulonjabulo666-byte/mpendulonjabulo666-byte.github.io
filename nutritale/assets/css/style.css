@@ -3868,3 +3868,13 @@ html.tour-open { overflow: hidden; }
     .landing-float-badge-cal { top: auto; bottom: 28px; left: auto; right: 28px; }
     .landing-float-badge-match { top: 28px; right: 28px; }
 }
+
+/* Fix: the blurred glow blobs were clipped by the narrow glow field, leaving
+   a hard-edged tinted rectangle behind the rounded hero (visible as odd
+   shades in the corners, most of all in dark mode and on phones). Let the
+   blobs fade out freely and clip only at the edge of the page instead. */
+.landing-glow-field { overflow: visible; }
+.landing-main { overflow-x: clip; }
+
+.landing-illustrative { position: absolute; left: 14px; bottom: 10px; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 0.02em; }
+@media (min-width: 900px) { .landing-illustrative { left: auto; right: 28px; bottom: 8px; } }

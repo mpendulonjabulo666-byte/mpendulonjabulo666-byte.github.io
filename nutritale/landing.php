@@ -66,6 +66,17 @@ $testimonials = [];
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= APP_NAME ?> — Cook what you have, plan what you need</title>
 <meta name="description" content="Turn what's already in your kitchen into real meals. NutriTale gives you AI-powered recipe ideas from your pantry, allergy-safe filtering, meal planning, and shopping lists that build themselves.">
+<link rel="canonical" href="<?= htmlspecialchars(app_base_url() . '/landing.php', ENT_QUOTES) ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NutriTale">
+<meta property="og:title" content="NutriTale: cook what you have, plan what you need">
+<meta property="og:description" content="Recipes matched to your pantry, checked against your allergies, with a shopping list for what is missing.">
+<meta property="og:url" content="<?= htmlspecialchars(app_base_url() . '/landing.php', ENT_QUOTES) ?>">
+<meta property="og:image" content="<?= htmlspecialchars(app_base_url() . '/assets/img/og/nutritale-preview.jpg', ENT_QUOTES) ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A bowl of pesto pasta with peas and basil (illustrative image)">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
@@ -75,7 +86,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=40">
+<link rel="stylesheet" href="assets/css/style.css?v=42">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/hero-photo-motion.js?v=18" defer></script>
 <script src="assets/js/recipe-ring.js?v=18" defer></script>
@@ -117,6 +128,7 @@ $testimonials = [];
                 <div class="landing-hero-photo-wrap">
                     <div class="landing-hero-photo" style="background-image:url('<?= htmlspecialchars($heroImage, ENT_QUOTES) ?>');" role="img" aria-label="<?= htmlspecialchars($heroAlt, ENT_QUOTES) ?>"></div>
                     <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> <?= htmlspecialchars($heroBadge, ENT_QUOTES) ?></span>
+                    <span class="landing-illustrative">Illustrative image</span>
                     <span class="landing-float-badge landing-float-badge-match"><?= icon('wand', 14) ?> Pantry-matched</span>
                 </div>
             </div>

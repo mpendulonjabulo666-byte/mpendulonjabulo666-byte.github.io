@@ -44,7 +44,7 @@ try {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=40">
+<link rel="stylesheet" href="assets/css/style.css?v=42">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -101,6 +101,7 @@ try {
             <a href="admin_meal_plans.php" class="btn btn-text btn-small"><?= icon('calendar', 14) ?> Meal plans</a>
             <a href="admin_analytics.php" class="btn btn-text btn-small"><?= icon('bar-chart', 14) ?> Analytics</a>
             <a href="admin_import_images.php" class="btn btn-text btn-small"><?= icon('camera', 14) ?> Import recipe images</a>
+            <a href="admin_fill_drafts.php" class="btn btn-text btn-small"><?= icon('leaf', 14) ?> Fill draft recipes</a>
         </div>
     </div>
 </main>
