@@ -21,5 +21,12 @@ foreach (['cure', 'fix ', 'treat ', 'boost testosterone', 'balance your hormones
     check("copy avoids '$bad'", stripos($copy, $bad) === false);
 }
 check('doctor note mentions doctor and pregnancy', stripos(hormone_doctor_note(), 'doctor') !== false && stripos(hormone_doctor_note(), 'pregnant') !== false);
+require_once __DIR__ . '/../includes/ingredient_matching.php';
+check('group key validated', hormone_group_key('zinc', 'men') === 'zinc' && hormone_group_key('iron', 'men') === '' && hormone_group_key('<x>', 'women') === '');
+check('have list splits and caps', hormone_have_list('chicken, spinach and rice') === ['chicken', 'spinach', 'rice'] && count(hormone_have_list(str_repeat('a,', 40))) <= 12);
+check('have list strips tags', strpos(implode(',', hormone_have_list('<b>beef</b>')), '<') === false);
+$pk = hormone_pickup_foods('men', '', ['beef', 'eggs']);
+check('pickup leaves out what you have', !in_array('beef', $pk) && !in_array('egg', $pk) && count($pk) > 0 && count($pk) <= 10);
+check('pickup respects group', hormone_pickup_foods('women', 'cruciferous', []) === array_slice(hormone_food_groups()['cruciferous']['keywords'], 0, 10));
 echo "$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

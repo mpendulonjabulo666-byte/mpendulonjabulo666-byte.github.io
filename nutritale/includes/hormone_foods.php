@@ -125,3 +125,52 @@ function hormone_doctor_note(): string
         . 'If you have PCOS, thyroid problems, very irregular or painful periods, low energy that will not lift, are pregnant or breastfeeding, '
         . 'or take hormone medication, speak to your doctor or clinic before changing your diet.';
 }
+
+/** "Men" / "Women" / "Everyone" labels for the two big options + the filter. */
+function hormone_focus_short_labels(): array
+{
+    return ['men' => 'Men', 'women' => 'Women', 'both' => 'Neither / everyone'];
+}
+
+/** A group key valid for this focus, else '' (= show all groups). */
+function hormone_group_key(?string $raw, string $focus): string
+{
+    $raw = strtolower(trim((string)$raw));
+    return in_array($raw, hormone_focuses()[hormone_focus_key($focus)]['groups'], true) ? $raw : '';
+}
+
+/**
+ * Split what the person typed ("chicken, spinach and rice") into at most 12
+ * short entries. Needs includes/ingredient_matching.php (split_pantry_entry).
+ * @return string[]
+ */
+function hormone_have_list(string $raw): array
+{
+    $raw = mb_substr(strip_tags($raw), 0, 200);
+    $list = array_map(fn($e) => mb_substr($e, 0, 40), split_pantry_entry($raw));
+    return array_slice($list, 0, 12);
+}
+
+/**
+ * Foods from the chosen groups (all of the focus's groups when $group is '')
+ * that the person did NOT say they have: the "what to get" list.
+ * @param string[] $have
+ * @return string[] keywords, in group order, unique, at most $limit
+ */
+function hormone_pickup_foods(string $focus, string $group, array $have, int $limit = 10): array
+{
+    $groups = hormone_food_groups();
+    $use = $group !== '' ? [$group] : hormone_focuses()[hormone_focus_key($focus)]['groups'];
+    $out = [];
+    foreach ($use as $g) {
+        foreach ($groups[$g]['keywords'] as $kw) {
+            foreach ($have as $h) {
+                if (hormone_keyword_in($h, $kw) || hormone_keyword_in($kw, $h)) {
+                    continue 2;
+                }
+            }
+            $out[$kw] = true;
+        }
+    }
+    return array_slice(array_keys($out), 0, $limit);
+}
