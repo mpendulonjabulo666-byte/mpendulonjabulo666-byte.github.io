@@ -108,43 +108,50 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
 <link rel="stylesheet" href="assets/css/style.css?v=42">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <style>
+    /* Palette: #0F2A1D #375534 #6B9071 #AEC3B0 #E3EED4 */
     .hg-hero { border-radius: 28px; padding: 24px 20px 20px; margin-bottom: 20px;
-        background: radial-gradient(circle at 70% 0%, #ead7ff 0%, #f6eefe 45%, #fdfaff 100%); color: #2a2233; }
-    [data-theme="dark"] .hg-hero { background: radial-gradient(circle at 70% 0%, #3b2a55 0%, #241c33 55%, #191522 100%); color: #f0e9fa; }
-    .hg-hello { font-size: 14px; opacity: .75; margin: 0 0 6px; }
+        background: linear-gradient(180deg, #E3EED4 0%, #AEC3B0 100%); color: #0F2A1D; }
+    [data-theme="dark"] .hg-hero { background: linear-gradient(180deg, #375534 0%, #0F2A1D 100%); color: #E3EED4; }
+    .hg-hello { font-size: 14px; opacity: .8; margin: 0 0 6px; }
     .hg-title { font-size: clamp(28px, 7vw, 40px); line-height: 1.1; margin: 0 0 18px; font-weight: 500; }
     .hg-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    .hg-opt { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 10px; border-radius: 999px;
-        background: rgba(255,255,255,.85); color: inherit; text-decoration: none; font-weight: 600; border: 2px solid transparent; }
-    [data-theme="dark"] .hg-opt { background: rgba(255,255,255,.1); }
-    .hg-opt.is-active { border-color: #b86fe0; background: #fff; color: #2a2233; }
-    [data-theme="dark"] .hg-opt.is-active { background: #b86fe0; color: #fff; }
+    .hg-opt { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-radius: 999px;
+        background: rgba(255,255,255,.7); color: #375534; text-decoration: none; font-weight: 700; border: 2px solid transparent; }
+    [data-theme="dark"] .hg-opt { background: rgba(227,238,212,.1); color: #E3EED4; }
+    .hg-opt.is-active { border-color: #375534; background: #fff; color: #0F2A1D; }
+    [data-theme="dark"] .hg-opt.is-active { border-color: #AEC3B0; background: #AEC3B0; color: #0F2A1D; }
+    .hg-sym { width: 34px; height: 34px; flex: none; background-color: currentColor;
+        -webkit-mask: var(--sym) center / contain no-repeat; mask: var(--sym) center / contain no-repeat; }
+    .hg-sym-woman { --sym: url('assets/img/hormone/woman.png'); }
+    .hg-sym-man { --sym: url('assets/img/hormone/man.png'); }
     .hg-other { display: inline-block; font-size: 13px; padding: 6px 14px; border-radius: 999px; text-decoration: none; color: inherit;
-        background: rgba(255,255,255,.55); border: 1px solid transparent; }
-    [data-theme="dark"] .hg-other { background: rgba(255,255,255,.08); }
-    .hg-other.is-active { border-color: #b86fe0; font-weight: 700; }
+        background: rgba(255,255,255,.5); border: 1px solid transparent; }
+    [data-theme="dark"] .hg-other { background: rgba(227,238,212,.08); }
+    .hg-other.is-active { border-color: #375534; font-weight: 700; }
+    [data-theme="dark"] .hg-other.is-active { border-color: #AEC3B0; }
     .hg-search { display: flex; gap: 8px; margin: 16px 0 0; }
-    .hg-search input[type=search] { flex: 1; min-width: 0; padding: 13px 16px; border-radius: 999px; border: 1px solid rgba(0,0,0,.12);
-        font-size: 16px; background: rgba(255,255,255,.9); color: #2a2233; }
-    .hg-search button { padding: 0 20px; border-radius: 999px; border: 0; background: #b86fe0; color: #fff; font-weight: 700; cursor: pointer; }
+    .hg-search input[type=search] { flex: 1; min-width: 0; padding: 13px 16px; border-radius: 999px; border: 1px solid rgba(15,42,29,.18);
+        font-size: 16px; background: rgba(255,255,255,.92); color: #0F2A1D; }
+    .hg-search button { padding: 0 20px; border-radius: 999px; border: 0; background: #375534; color: #fff; font-weight: 700; cursor: pointer; }
+    [data-theme="dark"] .hg-search button { background: #AEC3B0; color: #0F2A1D; }
     .hg-row { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 10px; }
     .hg-row h2 { margin: 0; font-size: 18px; }
-    .hg-see { font-size: 13px; padding: 5px 14px; border-radius: 999px; text-decoration: none; color: inherit; background: rgba(184,111,224,.14); }
+    .hg-see { font-size: 13px; padding: 5px 14px; border-radius: 999px; text-decoration: none; color: inherit; background: rgba(107,144,113,.2); }
     .hg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (min-width: 700px) { .hg-grid { grid-template-columns: repeat(3, 1fr); } }
     .hg-card { display: flex; flex-direction: column; border-radius: 22px; padding: 16px 12px 12px; text-align: center; background: var(--white, #fff);
-        border: 2px solid transparent; box-shadow: 0 2px 10px rgba(80,40,110,.07); }
-    .hg-card.is-active { border-color: #b86fe0; }
+        border: 2px solid transparent; box-shadow: 0 2px 10px rgba(15,42,29,.08); }
+    .hg-card.is-active { border-color: #6B9071; }
     .hg-card h3 { margin: 8px 0 4px; font-size: 15px; }
     .hg-card p { margin: 0 0 10px; font-size: 12px; opacity: .75; flex: 1; }
     .hg-ico { width: 54px; height: 54px; margin: 0 auto; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, #f3c9ff, #c9a7ff); color: #4a2b6b; }
+        background: linear-gradient(135deg, #E3EED4, #AEC3B0); color: #0F2A1D; }
     .hg-view { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
-        background: rgba(184,111,224,.14); color: inherit; text-decoration: none; font-weight: 600; font-size: 14px; }
-    .hg-play { width: 26px; height: 26px; border-radius: 50%; background: #d98be8; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
+        background: rgba(107,144,113,.18); color: inherit; text-decoration: none; font-weight: 600; font-size: 14px; }
+    .hg-play { width: 26px; height: 26px; border-radius: 50%; background: #375534; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
     .hg-pick { display: flex; flex-wrap: wrap; gap: 8px; }
-    .hg-pick a { padding: 7px 14px; border-radius: 999px; background: rgba(184,111,224,.14); color: inherit; text-decoration: none; font-size: 14px; }
-    .hg-pick span.hg-chip { padding: 7px 14px; border-radius: 999px; background: rgba(184,111,224,.08); font-size: 14px; }
+    .hg-pick a { padding: 7px 14px; border-radius: 999px; background: rgba(107,144,113,.2); color: inherit; text-decoration: none; font-size: 14px; }
+    .hg-pick span.hg-chip { padding: 7px 14px; border-radius: 999px; background: rgba(107,144,113,.12); font-size: 14px; }
     .hg-need { font-size: 12px; margin: 6px 4px 0; }
     .hg-note { font-size: 12px; opacity: .8; margin-top: 24px; }
 </style>
@@ -158,9 +165,9 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
 
         <div class="hg-options" role="tablist" aria-label="Choose a focus">
             <a class="hg-opt <?= $focus === 'men' ? 'is-active' : '' ?>" role="tab" aria-selected="<?= $focus === 'men' ? 'true' : 'false' ?>"
-               href="<?= h(hg_url(['focus' => 'men', 'group' => ''])) ?>"><?= icon('flame', 18) ?> Men</a>
+               href="<?= h(hg_url(['focus' => 'men', 'group' => ''])) ?>"><span class="hg-sym hg-sym-man" aria-hidden="true"></span> Men</a>
             <a class="hg-opt <?= $focus === 'women' ? 'is-active' : '' ?>" role="tab" aria-selected="<?= $focus === 'women' ? 'true' : 'false' ?>"
-               href="<?= h(hg_url(['focus' => 'women', 'group' => ''])) ?>"><?= icon('heart', 18) ?> Women</a>
+               href="<?= h(hg_url(['focus' => 'women', 'group' => ''])) ?>"><span class="hg-sym hg-sym-woman" aria-hidden="true"></span> Women</a>
         </div>
         <a class="hg-other <?= $focus === 'both' ? 'is-active' : '' ?>" href="<?= h(hg_url(['focus' => 'both', 'group' => ''])) ?>"
            aria-current="<?= $focus === 'both' ? 'true' : 'false' ?>">Neither of these? Show everyone's guide</a>
