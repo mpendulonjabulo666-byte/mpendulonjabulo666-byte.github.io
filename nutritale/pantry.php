@@ -407,7 +407,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
             <div class="recipe-grid">
                 <?php foreach ($matches as $m): $recipe = $m['recipe']; ?>
                     <div class="recipe-card">
-                        <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
+                        <div class="recipe-card-image" style="<?= recipe_photo_bg($recipe['image_url'] ?? '') ?>">
                             <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
                             <span class="pantry-match-badge <?= $m['pct'] >= 1 ? 'is-full' : '' ?>"><?= $m['have'] ?>/<?= $m['total'] ?> ingredients</span>
                             <?php if ($m['diet_match']): ?>

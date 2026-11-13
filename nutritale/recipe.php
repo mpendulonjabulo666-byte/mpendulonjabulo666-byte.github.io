@@ -197,7 +197,7 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
     </div>
 
     <div class="recipe-detail">
-        <div class="recipe-detail-image" title="Click the photo for its credit" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
+        <div class="recipe-detail-image" title="Click the photo for its credit" style="<?= recipe_photo_bg($recipe['image_url'] ?? '') ?>"></div>
         <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-photo-credit') ?>
         <?php if (!empty($recipe['image_url'])): ?>
             <figure class="print-book-photo" aria-hidden="true"><img src="<?= h($recipe['image_url']) ?>" alt=""></figure>

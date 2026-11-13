@@ -488,3 +488,18 @@ function back_target(string $default, string $defaultLabel): array
     $url = $file . (isset($p['query']) ? '?' . $p['query'] : '');
     return [$url, $labels[$file]];
 }
+
+/**
+ * Inline background for a recipe photo box. A recipe with no photo gets a soft
+ * green gradient (never a blank box); a recipe with one gets the photo over
+ * the same gradient, so a photo that fails to load still shows green.
+ */
+function recipe_photo_bg(?string $url): string
+{
+    $grad = 'linear-gradient(135deg,#1f4d36,#2fae66)';
+    $url = trim((string)$url);
+    if ($url === '') {
+        return 'background-image:' . $grad;
+    }
+    return "background-image:url('" . h($url) . "'),$grad";
+}

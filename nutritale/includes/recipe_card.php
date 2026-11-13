@@ -5,7 +5,7 @@ function render_recipe_card(array $recipe, bool $isFavorite, array $allergenConf
     $dietTags = array_filter(explode(',', $recipe['diet_tags'] ?? ''));
     ?>
     <div class="recipe-card" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
-        <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
+        <div class="recipe-card-image" style="<?= recipe_photo_bg($recipe['image_url'] ?? '') ?>">
             <form method="post" action="favorite_toggle.php" class="recipe-card-fav" onclick="event.stopPropagation()">
                 <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                 <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">

@@ -191,6 +191,11 @@ function render_goal_progress(string $label, int $value, ?int $goal): string
         <div class="alert alert-error"><?= h($error) ?></div>
     <?php endif; ?>
 
+    <a href="hormone_guide.php" class="card mb-16" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
+        <span><?= icon('leaf', 22) ?></span>
+        <span><strong>Hormone-supportive eating</strong><br><span class="muted">Everyday foods that support healthy hormones, with matching recipes.</span></span>
+    </a>
+
     <?= render_pantry_expiry_banner(pantry_expiry_alerts(pantry_expiry_map((int)$user['id'])), true) ?>
 
     <?php if ($todayMeals): ?>
