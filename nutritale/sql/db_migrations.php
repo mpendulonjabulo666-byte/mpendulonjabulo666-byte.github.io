@@ -558,19 +558,4 @@ return [
             $pdo->exec('ALTER TABLE users ADD COLUMN deleted_at DATETIME NULL');
         }
     },
-
-    // Fills the 45 hidden catalogue recipes (the ones with no steps and no
-    // pictures) with written ingredients, steps, diet tags and derived
-    // allergens, as HIDDEN drafts for the owner to review. Nothing is
-    // published and nothing visible changes. Recipes that already have both
-    // ingredients and steps are left alone. See includes/draft_recipes.php.
-    '2026_11_13_fill_draft_recipes' => function (PDO $pdo): void {
-        require_once __DIR__ . '/../includes/draft_recipes.php';
-        $res = nutritale_apply_draft_recipes($pdo);
-        error_log(sprintf(
-            'draft recipes: %d inserted, %d filled, %d skipped (already complete)%s',
-            count($res['inserted']), count($res['filled']), count($res['skipped']),
-            $res['skipped'] ? ': ' . implode(', ', $res['skipped']) : ''
-        ));
-    },
 ];
