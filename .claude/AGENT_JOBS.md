@@ -16,6 +16,9 @@ Work branch: `claude/agent-work`. Never push to `claude/app-continuation-s4hyzj`
 | O6 | Have a cook or dietitian check the 13 recipes with no allergen tags and the safety replies | owner |
 | O7 | Decide how Premium is sold in the store apps | owner |
 | O8 | Open the FTP deploy workflow yourself and check it does not upload `.claude/`, `CLAUDE.md` or the `.md` docs to the live site (agents may not read workflows) | owner |
+| O9 | Make a Brevo or Resend account and put its key in `config.local.php` yourself (agents never read that file). Free tiers checked 2026-11-13: Brevo 300 emails a day, Resend 3,000 a month and 100 a day. Both want a verifiable sender, so a domain may be needed | owner |
+| O10 | Approve the wording of the notification permission prompt, the profile switch and the privacy-page change for stored push subscriptions; name who checks it against POPIA | owner |
+| O11 | Run `NutriTale_Train.ipynb` on a Colab T4 and send back the before and after scores and the safety answers | owner |
 
 ## Agent jobs
 
@@ -41,9 +44,16 @@ Work branch: `claude/agent-work`. Never push to `claude/app-continuation-s4hyzj`
 | J18 | USDA FoodData Central lookup service; key read with `nt_env()`, never sent to the browser; cached | Test with a stubbed HTTP response | J03 | todo |
 | J19 | Consent screen with four separate, unticked boxes; nothing stored before consent | Blocked until O5 | O5 | blocked |
 | J20 | Cycle and mood features | Blocked until J19 and O6 | J19, O6 | blocked |
+| J21 | UI + logic: "Use it up tonight" — one tap from the expiry banner shows recipes that use the soonest-expiring pantry items; allergen filter in code; button only, no other visual change | Works from pantry and home banners; test covers expired, today and soon items, and an allergen exclusion | — | todo |
+| J22 | Admin-only email test page: sends one test email through the configured SMTP (existing `send_notification_email()`) to the admin's own address and shows success or the error; no keys shown | 403 for non-admins, test for the access check, result recorded in `CURRENT_ARCHITECTURE.md` section 5 | O9 | blocked |
+| J23 | Reminder opt-in: `push_subscriptions` migration, profile switch, subscriptions removed by account deletion | Migration runs locally; test proves deletion removes the rows and the switch off stops storing | O10, J22 | blocked |
+| J24 | UI: permission prompt shown only after the first dated pantry item is saved; plain-words reason; "not now" remembered | Never shown on first visit; test for the show/hide rule | J23, O10 | blocked |
+| J25 | Free-host reminder email: first page load each day sends one email per user who opted in and has items expiring tomorrow; at most once per user per day; failures logged, never shown | Test with a stub mailer: one send, not two; none for users who opted out | J22 shows email works, O10 | blocked |
+| J26 | VPS reminders: `push` handler in `sw.js` (bump `CACHE_VERSION`), key pair read with `nt_env()`, sender run by cron, email fallback | Test with a stubbed push service; cron line documented | O4, TASKS.md Phase 3 | blocked |
 
 ## Not for agents yet
 
 - VPS setup, migration and cut-over (TASKS.md phases 3–4): needs O4.
 - Mobile app (phase 5): needs the API live on a VPS.
 - Swapping Gemini for the self-trained model: only after it passes the agreed test.
+- More training examples and Colab runs: the generator and data are on the owner's device, not in this public repo (O11).

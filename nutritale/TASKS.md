@@ -1,4 +1,4 @@
-# NutriTale — Tasks (updated 2026-11-10)
+# NutriTale — Tasks (updated 2026-11-13)
 
 Phased plan for a shared backend serving the website and future Android/iOS
 apps. Rule for every phase: the live website and its data keep working, and
@@ -65,6 +65,35 @@ One feature per commit; add or extend a test each time; no URL or visual change.
 - [ ] Sign in, recipes, pantry, AI ideas, favourites, planner, shopping list, account deletion
 - [ ] Retailer links open in the system browser
 - [ ] Store listings, privacy details, review account
+
+## Retention: "use it up" and expiry reminders (added 2026-11-13; agent jobs J21–J26)
+
+Why: people come back daily when the app saves them food and money. The expiry dates already exist (`includes/pantry_expiry.php`); nothing reaches the person when the app is closed.
+
+Host facts that decide the order (`CURRENT_ARCHITECTURE.md` section 5, plus InfinityFree's own forum): free hosting has no cron and an outside scheduler such as cron-job.org cannot run PHP there; PHP `mail()` is heavily restricted, external SMTP is said to work but is unproven for this app; outbound calls are partly blocked. Web push needs the server to send a request to the browser's push service on a schedule, so it needs a scheduler.
+
+Stage A — free host, no new website
+- [ ] "Use it up tonight": one tap from the expiry banner shows recipes that use the soonest-expiring items (reuse `ingredient_matching.php` and `allergens.php`; allergen check stays in code)
+- [ ] Admin-only email test page: sends one test email through an SMTP service (Brevo or Resend free tier) to the admin's own address and shows the result. Owner puts the key in `config.local.php`. Decides which Stage B route is possible
+
+Stage B — reminders as a notification people allow
+- [ ] Permission prompt: ask only after the person saves their first dated pantry item (never on first visit); plain-words reason; a switch in the profile to turn it off; subscriptions deleted with the account
+- [ ] Privacy page and account deletion updated for stored push subscriptions; owner approves the wording
+- [ ] Free-host route: the first page load each day sends reminders for items expiring tomorrow (works only if someone opens the app that day). Email is the fallback for people who decline notifications
+- [ ] VPS route (needs Phase 3): real cron sends push and email at a set hour; `push` handler in `sw.js` (bump `CACHE_VERSION`), key pair in `config.local.php`, subscriptions table (migration), sender, test with a stubbed push service
+
+## Own model: training and testing (added 2026-11-13)
+
+The app keeps using Gemini until the model passes the agreed test. Training and testing only; nothing here changes the live app.
+The generator, `train.jsonl`, `test.jsonl` and the Colab notebook are on the owner's device, not in git (this repo is public). Put them in a private repo before they are shared.
+
+- [ ] Run `NutriTale_Train.ipynb` on a Colab T4 GPU and record the before and after scores and the safety answers (owner)
+- [ ] Record the numbers in `AI_ARCHITECTURE.md`
+- [ ] Shrink to Q4_K_M (last cells of the notebook) and save to Google Drive
+- [ ] Test the file on the VPS with llama.cpp: speed in tokens per second and memory used
+- [ ] More training examples: halal, diabetic-friendly, low-salt, gluten-free, keto; cycle examples only after the consent wording is approved
+- [ ] Cook or dietitian reads the safety replies and the recipes with no allergen tags (O6)
+- [ ] Owner agrees the pass bar against Gemini; real numbers go into the proposal to Miss Mvula
 
 ## Not to be built yet
 
