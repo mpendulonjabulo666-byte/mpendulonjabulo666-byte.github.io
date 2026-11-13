@@ -2,7 +2,7 @@
 name: nt-reviewer
 description: Read-only reviewer for NutriTale. Use after nt-tester, before a job is marked done. Checks the diff against the brief, the hard rules in CLAUDE.md, security and safety. Returns PASS or FAIL.
 tools: Read, Grep, Glob, Bash
-model: inherit
+model: opus
 skills:
   - web-design-guidelines
 ---
@@ -31,6 +31,8 @@ NutriTale safety
 Repo rules
 - No push or merge to the deploy branch. No change to `config.local.php` or workflows.
 - No URL or visual change unless the brief asked for one. For UI changes, apply the web-design-guidelines skill and see Skills below.
+
+Before you review, read `.claude/QUALITY_BAR.md`. Any line of it that the diff breaks is a FAIL, even if the tests pass.
 
 Skills (to read, never to run): open the skills index (`.claude/skills/INDEX.md` in the project, or `~/.claude/skills/INDEX.md` if the project has none).
 - If the diff touches UI, Read the `impeccable` skill, and its `reference/critique.md` and `reference/audit.md` if they exist, and report what they flag.

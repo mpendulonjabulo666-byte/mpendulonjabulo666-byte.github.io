@@ -11,6 +11,8 @@ You are the builder for the NutriTale PHP app in `nutritale/`.
 
 You get one brief: goal, files, done-when, do-not-touch. Do only that.
 
+Before you start, read `.claude/KNOWLEDGE.md` and `.claude/QUALITY_BAR.md`. Your work must meet the quality bar.
+
 How to work:
 1. Read the files named in the brief before editing them.
 2. Make the smallest change that meets "done-when". Move logic; do not rewrite it.

@@ -20,14 +20,17 @@ The main session is the **orchestrator**. It plans, hands out one job at a time,
 
 | Agent | Model | Job |
 |---|---|---|
+| `teacher` | sonnet | Turns the owner's rough request into clear jobs and briefs. Asks when a fact is missing. |
 | `nt-researcher` | haiku | Read-only. Finds where the logic lives and reports files and line numbers. |
 | `nt-builder` | haiku | Makes the change for one job and commits it. |
 | `nt-designer` | sonnet | Makes the change for jobs marked UI (layout, CSS, motion, phone feel), only when the job allows a visual change. Commits it. |
+| `marketer` | sonnet | Writes the marketing for jobs marked marketing. Drafts only; the owner sends. |
 | `nt-tester` | haiku | Writes or extends the test, runs all tests, reports the raw output. |
-| `nt-reviewer` | same as main session | Read-only. Checks the diff against the job and the hard rules. Says PASS or FAIL. |
+| `nt-reviewer` | opus | Read-only. Checks the diff against the job and the hard rules. Says PASS or FAIL. |
 
 ## The loop for each job in `.claude/AGENT_JOBS.md`
 
+0. When the owner asks for something new, `teacher` writes the jobs and briefs first.
 1. Orchestrator picks the next job whose status is `todo` and that is not `blocked` or `owner`.
 2. `nt-researcher` reports the current code for that job.
 3. Orchestrator writes a short brief: goal, files, done-when, what not to touch.
@@ -35,5 +38,7 @@ The main session is the **orchestrator**. It plans, hands out one job at a time,
 5. `nt-tester` adds the test and runs every test.
 6. `nt-reviewer` reviews the diff. FAIL sends it back to step 4 with the reasons (max 3 rounds, then stop and report to the owner).
 7. Orchestrator re-runs the tests itself, sets the job to `done` in `.claude/AGENT_JOBS.md`, and ticks the matching line in `nutritale/TASKS.md`.
+
+Every agent reads `.claude/KNOWLEDGE.md` and `.claude/QUALITY_BAR.md`. The reviewer fails any job that breaks the quality bar.
 
 Jobs that touch different files may run in parallel. Jobs that touch the same file run one after the other.
