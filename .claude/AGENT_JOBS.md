@@ -18,7 +18,7 @@ Work branch: `claude/agent-work`. Never push to `claude/app-continuation-s4hyzj`
 | O8 | Open the FTP deploy workflow yourself and check it does not upload `.claude/`, `CLAUDE.md` or the `.md` docs to the live site (agents may not read workflows) | owner |
 | O9 | Make a Brevo or Resend account and put its key in `config.local.php` yourself (agents never read that file). Free tiers checked 2026-11-13: Brevo 300 emails a day, Resend 3,000 a month and 100 a day. Both want a verifiable sender, so a domain may be needed | owner |
 | O10 | Approve the wording of the notification permission prompt, the profile switch and the privacy-page change for stored push subscriptions; name who checks it against POPIA | owner |
-| O11 | Run `NutriTale_Train.ipynb` on a Colab T4 and send back the before and after scores and the safety answers | owner |
+| O11 | Run `NutriTale_Train.ipynb` on a Colab T4 and send back the before and after scores and the safety answers (run 1 done 2026-11-14, see `AI_ARCHITECTURE.md` section 6) | done |
 
 ## Agent jobs
 

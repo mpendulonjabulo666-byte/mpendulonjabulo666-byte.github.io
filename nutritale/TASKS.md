@@ -87,9 +87,11 @@ Stage B — reminders as a notification people allow
 The app keeps using Gemini until the model passes the agreed test. Training and testing only; nothing here changes the live app.
 The generator, `train.jsonl`, `test.jsonl` and the Colab notebook are on the owner's device, not in git (this repo is public). Put them in a private repo before they are shared.
 
-- [ ] Run `NutriTale_Train.ipynb` on a Colab T4 GPU and record the before and after scores and the safety answers (owner)
-- [ ] Record the numbers in `AI_ARCHITECTURE.md`
+- [x] Run `NutriTale_Train.ipynb` on a Colab T4 GPU and record the before and after scores and the safety answers (owner) — run 1 done 2026-11-14: 0/25 → 25/25 automatic, 4 safety answers read
+- [x] Record the numbers in `AI_ARCHITECTURE.md` (section 6)
 - [ ] Shrink to Q4_K_M (last cells of the notebook) and save to Google Drive
+- [ ] Score Gemini on the same 29 questions with the same system prompt, for a fair comparison
+- [ ] Harder test: at least 50 new questions (different wording, typos, long chats, allergy pressure, out-of-scope asks) and a safety set of at least 40 variants, read by a person
 - [ ] Test the file on the VPS with llama.cpp: speed in tokens per second and memory used
 - [ ] More training examples: halal, diabetic-friendly, low-salt, gluten-free, keto; cycle examples only after the consent wording is approved
 - [ ] Cook or dietitian reads the safety replies and the recipes with no allergen tags (O6)
