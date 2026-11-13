@@ -31,19 +31,6 @@ function ring_thumb(string $url): string
     return preg_replace('#/thumb/(.+)/\d+px-#', '/thumb/$1/500px-', $url);
 }
 
-// Hero photo: use the pasta photo when it has been added, else the oats bowl.
-// Illustrative only - the badge says what the photo shows.
-$heroPasta = __DIR__ . '/assets/img/hero/pasta-pesto-hero.jpg';
-if (is_file($heroPasta)) {
-    $heroImage = 'assets/img/hero/pasta-pesto-hero.jpg';
-    $heroAlt = 'A bowl of pesto pasta with peas and basil';
-    $heroBadge = 'Pesto pasta';
-} else {
-    $heroImage = 'assets/img/hero/overnight-oats-bowl.jpg';
-    $heroAlt = 'A bowl of overnight oats';
-    $heroBadge = 'Overnight oats';
-}
-
 // The one CTA label/style repeated down the page (hero, after benefits,
 // final CTA) - kept as one constant specifically so it can never drift
 // into three slightly different asks ("Get started free" / "Try it free" /
@@ -75,7 +62,7 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=36">
+<link rel="stylesheet" href="assets/css/style.css?v=34">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/hero-photo-motion.js?v=18" defer></script>
 <script src="assets/js/recipe-ring.js?v=18" defer></script>
@@ -104,7 +91,7 @@ $testimonials = [];
         <section class="landing-hero">
             <div class="landing-hero-grid">
                 <div class="landing-hero-copy">
-                    <h1>Never wonder what<br>to <em>cook</em> again</h1>
+                    <h1>Never Wonder What<br>to Cook Again</h1>
                     <p class="muted landing-hero-sub">
                         Tell <?= APP_NAME ?> what's in your kitchen and get real recipes back — matched to your
                         diet and checked against your allergies, with a shopping list for whatever's still missing.
@@ -115,8 +102,9 @@ $testimonials = [];
                     <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
                 </div>
                 <div class="landing-hero-photo-wrap">
-                    <div class="landing-hero-photo" style="background-image:url('<?= htmlspecialchars($heroImage, ENT_QUOTES) ?>');" role="img" aria-label="<?= htmlspecialchars($heroAlt, ENT_QUOTES) ?>"></div>
-                    <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> <?= htmlspecialchars($heroBadge, ENT_QUOTES) ?></span>
+                    <div class="landing-hero-photo-disc"></div>
+                    <div class="landing-hero-photo" style="background-image:url('assets/img/hero/overnight-oats-bowl.jpg');"></div>
+                    <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> 340 cal <span class="muted" style="font-weight:400;">Overnight oats</span></span>
                     <span class="landing-float-badge landing-float-badge-match"><?= icon('wand', 14) ?> Pantry-matched</span>
                 </div>
             </div>
