@@ -3835,35 +3835,36 @@ html.tour-open { overflow: hidden; }
 @media print { .nt-reveal { opacity: 1 !important; transform: none !important; } }
 
 
-/* ===== Landing hero v2: the photo IS the hero background =====
-   Phone: photo band on top fading into the page colour, text below it.
-   Wide screens: photo fills the right side behind the copy, with a fade to
-   the page colour on the left so the headline always sits on a plain
-   background (contrast does not depend on the photo). */
-.landing-hero-photo-wrap { aspect-ratio: auto; max-width: 100%; order: -1; margin: 0 -12px; }
+/* ===== Landing hero v3: text sits ON the photo =====
+   The photo fills the hero; a dark scrim underneath the text keeps white
+   text above 4.5:1 contrast whatever part of the photo is behind it, in
+   both themes. Phone: scrim rises from the bottom, text at the bottom.
+   Wide: scrim runs from the left, text on the left. */
+.landing-hero { position: relative; border-radius: 28px; overflow: hidden; min-height: 560px; display: flex; align-items: flex-end; isolation: isolate; margin: 0 12px; }
+.landing-hero-grid { position: static; display: block; width: 100%; }
+.landing-hero-photo-wrap { position: absolute; inset: 0; z-index: -1; margin: 0; max-width: none; width: auto; aspect-ratio: auto; order: 0; perspective: none; }
 .landing-hero-photo-disc { display: none; }
 .landing-hero-photo {
-    position: relative; inset: auto; animation: none !important; box-shadow: none; border-radius: 0 0 40px 40px;
-    width: 100%; aspect-ratio: 16 / 10;
-    background-size: cover; background-position: 55% 50%;
+    position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; animation: none !important;
+    border-radius: 0; box-shadow: none; background-size: cover; background-position: 62% 30%;
 }
 .landing-hero-photo::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; display: block;
-    background: linear-gradient(to bottom, transparent 60%, var(--bg) 100%);
+    content: ""; position: absolute; inset: 0; display: block; pointer-events: none; border-radius: 0; filter: none; opacity: 1; transform: none; animation: none;
+    background: linear-gradient(to top, rgba(8, 18, 12, 0.92) 0%, rgba(8, 18, 12, 0.8) 50%, rgba(8, 18, 12, 0.62) 80%, rgba(8, 18, 12, 0.5) 100%);
 }
-.landing-float-badge { z-index: 2; border-radius: 999px; }
-.landing-float-badge-cal { left: 16px; bottom: 28px; }
-.landing-float-badge-match { right: 16px; top: 16px; }
-.landing-hero h1 { font-family: Georgia, "Times New Roman", serif; letter-spacing: -0.01em; line-height: 1.08; }
-.landing-hero h1 em { font-style: italic; color: var(--accent, #c2552b); }
+.landing-hero-copy { position: relative; padding: 24px 22px 28px; text-align: center; }
+.landing-hero h1 { font-family: Georgia, "Times New Roman", serif; letter-spacing: -0.01em; line-height: 1.08; color: #fff; }
+.landing-hero h1 em { font-style: italic; color: #ffb48a; }
+.landing-hero .landing-hero-sub, .landing-hero .landing-hero-copy .muted { color: rgba(255, 255, 255, 0.88); }
 .landing-hero .btn.btn-primary { border-radius: 999px; padding-left: 28px; padding-right: 28px; }
+.landing-float-badge { z-index: 2; border-radius: 999px; }
+.landing-float-badge-match { right: 14px; top: 14px; }
+.landing-float-badge-cal { left: 14px; top: 14px; bottom: auto; }
 @media (min-width: 900px) {
-    .landing-hero { position: relative; min-height: 520px; display: flex; align-items: center; }
-    .landing-hero-grid { position: static; width: 100%; }
-    .landing-hero-photo-wrap { position: absolute; inset: 0 0 0 auto; width: 68%; max-width: none; margin: 0; order: 0; z-index: 0; }
-    .landing-hero-photo { height: 100%; aspect-ratio: auto; border-radius: 0 0 0 80px; background-position: 60% 50%; }
-    .landing-hero-photo::after { background: linear-gradient(to right, var(--bg) 0%, transparent 45%); }
-    .landing-hero-copy { position: relative; z-index: 1; max-width: 440px; flex: none; }
-    .landing-float-badge-cal { left: auto; right: 40px; bottom: 36px; }
-    .landing-float-badge-match { right: 40px; top: 36px; }
+    .landing-hero { min-height: 560px; align-items: center; margin: 0; }
+    .landing-hero-photo { background-position: 60% 50%; }
+    .landing-hero-photo::after { background: linear-gradient(to right, rgba(8, 18, 12, 0.9) 0%, rgba(8, 18, 12, 0.7) 35%, rgba(8, 18, 12, 0.08) 68%, transparent 100%); }
+    .landing-hero-copy { max-width: 520px; text-align: left; padding: 48px; }
+    .landing-float-badge-cal { top: auto; bottom: 28px; left: auto; right: 28px; }
+    .landing-float-badge-match { top: 28px; right: 28px; }
 }
