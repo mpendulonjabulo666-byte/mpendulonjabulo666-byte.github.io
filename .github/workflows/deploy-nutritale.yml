@@ -1,0 +1,91 @@
+# Uploads nutritale/ to the live InfinityFree site over FTP on every push.
+#
+# Why FTP and not a git deploy: InfinityFree has no SSH, no git and no
+# deploy hooks - FTP is the only write access it offers, so "push to
+# deploy" has to be driven from here rather than by the host pulling. The
+# action keeps a small state file on the server
+# (.ftp-deploy-sync-state.json, hidden from the web by nutritale/.htaccess's
+# dotfile rule) listing what it last uploaded, so after the first run it
+# only transfers files whose contents actually changed.
+#
+# Setup (one time), in GitHub > Settings > Secrets and variables > Actions:
+#   FTP_SERVER    - "FTP Hostname" from InfinityFree vPanel > FTP Accounts
+#   FTP_USERNAME  - "FTP Username" from the same page
+#   FTP_PASSWORD  - that FTP account's password
+#
+# Nothing here reads the database or PayFast credentials: those live only
+# in nutritale/config/config.local.php on the server, which is untracked
+# (see .gitignore) and excluded below, so a deploy can never overwrite it.
+#
+# What the exclude list at the bottom covers, in order:
+#   - the action's own default ignores, which have to be repeated because
+#     supplying this input replaces the defaults rather than adding to them
+#   - config/config.local.php: server-only secrets (real DB password,
+#     PayFast live keys, Gemini API key)
+#   - assets/img/avatars/ and data/image_attribution.json: written on the
+#     server by users and by admin_import_images.php. Uploading over them
+#     would wipe what is already there. avatar_ensure_dir() in
+#     includes/avatars.php recreates the directory and its .htaccess on
+#     demand, so leaving the folder out entirely is safe.
+#   - everything after that: development files with no job on a live web
+#     server. Most are already denied by .htaccess, but not sending them
+#     at all is better than relying on it.
+
+name: Deploy NutriTale
+
+on:
+  push:
+    branches:
+      - claude/app-continuation-s4hyzj
+    paths:
+      - 'nutritale/**'
+      - '.github/workflows/deploy-nutritale.yml'
+  # Lets the deploy be run by hand from the Actions tab - the way to push
+  # the current branch live without making a commit just to trigger it.
+  workflow_dispatch:
+
+# Two deploys writing to the same FTP account at once would interleave
+# uploads and corrupt the shared state file, so queue them instead.
+concurrency:
+  group: deploy-nutritale
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Upload nutritale/ to InfinityFree htdocs/
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # InfinityFree's free plan serves plain FTP on port 21 and has no
+          # FTPS listener, so requesting ftps here just fails to connect.
+          protocol: ftp
+          port: 21
+          # Trailing slashes are required by the action. The app lives at
+          # the document root, not in a subfolder - index.php has to be
+          # directly inside htdocs/.
+          local-dir: ./nutritale/
+          server-dir: /htdocs/
+          # Free-host FTP is slow and drops connections; the 30s default
+          # per file is not always enough.
+          timeout: 60000
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            config/config.local.php
+            assets/img/avatars/**
+            data/image_attribution.json
+            scripts/image_review/**
+            tests/**
+            **/*.md
+            Dockerfile
+            .dockerignore
+            **/*.patch
+            **/*.bundle

@@ -3,6 +3,7 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/oauth.php';
+require_once __DIR__ . '/includes/turnstile.php';
 
 if (current_user()) {
     redirect('index.php');
@@ -28,6 +29,8 @@ const REMEMBER_ME_DAYS = 30;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_check()) {
         $errors[] = 'Your session expired. Please try again.';
+    } elseif (!turnstile_verify($_POST['cf-turnstile-response'] ?? null, $_SERVER['REMOTE_ADDR'] ?? '')) {
+        $errors[] = 'Please complete the security check and try again.';
     } else {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -140,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -212,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <a href="forgot_password.php" style="font-weight:700;color:var(--green-dark);">Forgot password?</a>
                     </div>
 
+                    <?= turnstile_widget() ?>
                     <button type="submit" class="ring-pill ring-pill-block ring-pill-strong"><span class="ring-pill-disc"><?= icon('arrow-right', 16) ?></span><span class="ring-pill-label">Log in</span></button>
                 </form>
 

@@ -523,4 +523,51 @@ return [
             $pdo->exec('UPDATE users SET tour_seen_at = COALESCE(onboarded_at, created_at, NOW())');
         }
     },
+
+    // Sessions move off the host's local disk and into MySQL - see
+    // includes/db_session_handler.php's header for why (short version:
+    // InfinityFree and similar free hosts sweep session temp files on their
+    // own schedule, independent of this app's settings, which was silently
+    // logging users out). config.php's session_set_save_handler() wires
+    // this table up directly, and the handler also creates it itself via
+    // CREATE TABLE IF NOT EXISTS on every request (it has to run before
+    // this migrations file's normal apply-on-request path even loads) -
+    // this entry exists so schema.sql-reading humans and a fresh
+    // setup.php run see nutri_sessions as a normal, documented part of the
+    // schema rather than a table that appears from nowhere.
+    '2026_10_11_db_sessions' => "
+        CREATE TABLE IF NOT EXISTS nutri_sessions (
+            id VARCHAR(128) NOT NULL PRIMARY KEY,
+            data MEDIUMTEXT NOT NULL,
+            last_activity INT UNSIGNED NOT NULL,
+            INDEX idx_last_activity (last_activity)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
+
+    // In-app account deletion (delete_account.php, includes/account_deletion.php).
+    // An account with payment history can't simply vanish - recipe sales
+    // and payouts belong to the other party too, and payment records have
+    // to be kept - so those accounts are anonymised instead and marked
+    // here. current_user() treats a deleted account as logged out.
+    '2026_11_07_user_deleted_at' => function (PDO $pdo): void {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deleted_at'"
+        )->fetchColumn();
+        if (!$has) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN deleted_at DATETIME NULL');
+        }
+    },
+
+    // 2026-11-14 direction change (client decision): NutriTale is a
+    // healthy-eating app for food people cook themselves, from any cuisine.
+    // Deep-fried / takeaway-style dishes come off the library. They are
+    // hidden, not deleted, so Admin > Recipes > Unhide brings one back.
+    // Runs once (tracked by key), so a later Unhide is never undone.
+    '2026_11_14_hide_non_healthy_recipes' => function (PDO $pdo): void {
+        $pdo->exec(
+            "UPDATE recipes SET is_published = 0
+             WHERE id IN ('amagwinya-fat-cakes', 'boerewors-breakfast-rolls')"
+        );
+    },
 ];

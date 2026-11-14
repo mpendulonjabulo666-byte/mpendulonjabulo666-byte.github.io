@@ -11,3 +11,4 @@ scripts/image_review/
 # avatar_ensure_dir() in includes/avatars.php, which recreates both.
 assets/img/avatars/*
 !assets/img/avatars/.htaccess
+recipes.jsonl

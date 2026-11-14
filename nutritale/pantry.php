@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/functions_core.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/ai_pantry.php';
 require_once __DIR__ . '/includes/ai_cache.php';
+require_once __DIR__ . '/includes/idea_photo.php';
 require_once __DIR__ . '/includes/ingredient_matching.php';
 require_once __DIR__ . '/includes/external_recipes.php';
 require_once __DIR__ . '/includes/pantry_expiry.php';
@@ -48,6 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
             foreach ($names as $name) {
                 $stmt->execute([$user['id'], $name]);
             }
+            // Spelling hint, not a silent rewrite: the item is added exactly
+            // as typed above (so nothing is ever lost if the guess is wrong),
+            // and this only offers a one-click fix - see
+            // suggest_ingredient_correction() for why it's a local lookup,
+            // not an AI call.
+            if ($names) {
+                $spellAliasMap = load_ingredient_alias_map();
+                foreach ($names as $name) {
+                    $suggestion = suggest_ingredient_correction($name, $spellAliasMap);
+                    if ($suggestion) {
+                        $_SESSION['pantry_spell_hints'][] = $suggestion;
+                        break; // one hint per submission is plenty - avoid a wall of suggestions
+                    }
+                }
+            }
             // Optional expiry date; adding an item again with a new date updates it.
             $expires = pantry_parse_expiry($_POST['expires_on'] ?? '');
             if ($expires !== null && $names) {
@@ -64,6 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
     } elseif ($action === 'remove') {
         $name = $_POST['ingredient_name'] ?? '';
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $name]);
+    } elseif ($action === 'rename') {
+        // Backs the spelling-hint "Fix it" button: swaps the as-typed entry
+        // for the corrected one in place, rather than leaving a stray
+        // duplicate for the user to notice and remove themselves.
+        $old = trim($_POST['old_name'] ?? '');
+        $new = trim($_POST['new_name'] ?? '');
+        if ($old !== '' && $new !== '') {
+            db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ? AND ingredient_name = ?')->execute([$user['id'], $old]);
+            db()->prepare('INSERT IGNORE INTO user_pantry_items (user_id, ingredient_name) VALUES (?, ?)')->execute([$user['id'], $new]);
+        }
     } elseif ($action === 'clear') {
         db()->prepare('DELETE FROM user_pantry_items WHERE user_id = ?')->execute([$user['id']]);
     } elseif ($action === 'ai_suggest' && $pantry && empty($user['is_admin']) && !platform_setting('enable_ai_matching')) {
@@ -97,6 +123,8 @@ $expiryMap = pantry_expiry_map((int)$user['id']);
 $expiryAlerts = pantry_expiry_alerts($expiryMap);
 $aiResult = $_SESSION['ai_pantry_ideas'] ?? null;
 unset($_SESSION['ai_pantry_ideas']);
+$spellHints = $_SESSION['pantry_spell_hints'] ?? [];
+unset($_SESSION['pantry_spell_hints']);
 
 $matches = [];
 $hiddenByAllergens = 0;
@@ -196,7 +224,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -209,6 +237,19 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
         </div>
     </div>
 
+    <?php foreach ($spellHints as $hint): ?>
+        <div class="alert alert-success" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span>Added "<?= h($hint['original']) ?>" — did you mean "<strong><?= h($hint['corrected']) ?></strong>"?</span>
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                <input type="hidden" name="action" value="rename">
+                <input type="hidden" name="old_name" value="<?= h($hint['original']) ?>">
+                <input type="hidden" name="new_name" value="<?= h($hint['corrected']) ?>">
+                <button type="submit" class="btn btn-small">Fix it</button>
+            </form>
+        </div>
+    <?php endforeach; ?>
+
     <?php if (!$isPremiumOrAdmin): ?>
         <p class="muted mb-16" style="font-size:13px;">
             <?= $aiCapReached ? "You've used your $aiDailyCap free AI idea generations ($aiPeriodLabel)." : max(0, $aiDailyCap - $aiUsedToday) . ' free AI idea generation' . ((max(0, $aiDailyCap - $aiUsedToday)) === 1 ? '' : 's') . ' left (' . $aiDailyCap . ' ' . $aiPeriodLabel . ').' ?>
@@ -219,12 +260,12 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
     <?= render_pantry_expiry_banner($expiryAlerts) ?>
 
     <div class="card mb-16">
-        <form method="post" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="post" data-nt-loading style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="add">
             <input type="text" name="ingredient_name" placeholder="e.g. chicken, spinach, rice..." aria-label="Add an ingredient" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);" required>
             <input type="date" name="expires_on" class="pantry-date-input" aria-label="Expiry date (optional)" title="Expiry date (optional)">
-            <button type="submit" class="btn btn-primary"><?= icon('plus', 16) ?> Add</button>
+            <button type="submit" class="btn btn-primary" data-loading-text="Adding..."><?= icon('plus', 16) ?> Add</button>
         </form>
         <div class="pantry-scan-row">
             <?php if ($isPremiumOrAdmin): ?>
@@ -236,6 +277,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
         <?php if ($isPremiumOrAdmin): ?>
             <div class="pantry-scan-panel" id="scan-panel" hidden>
                 <div id="scan-reader" class="pantry-scan-reader"></div>
+                <button type="button" class="btn btn-small pantry-scan-toggle" id="scan-toggle" data-mode="stop">&#10005; Stop scanning</button>
                 <p class="muted pantry-scan-status" id="scan-status" role="status">Point your camera at the barcode on the pack.</p>
                 <form class="pantry-scan-manual" id="scan-manual">
                     <input type="text" id="scan-code" inputmode="numeric" pattern="[0-9]{6,14}" placeholder="...or type the barcode number" aria-label="Barcode number">
@@ -274,7 +316,11 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                 <button type="submit" class="btn btn-text btn-small" style="color:var(--error);"><?= icon('trash', 14) ?> Clear all</button>
             </form>
         <?php else: ?>
-            <p class="muted mt-16" style="font-size:13px;">Your pantry is empty — add a few ingredients to get recipe ideas.</p>
+            <div class="nt-empty-state mt-16">
+                <div class="nt-empty-state__icon" aria-hidden="true"><?= icon('wand', 26) ?></div>
+                <h3>Your pantry is empty</h3>
+                <p>Add what's in your fridge and cupboards above, and NutriTale will show what you can cook with it.</p>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -292,10 +338,10 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                     <?php endif; ?>
                 </div>
                 <?php if (!$aiCapReached): ?>
-                    <form method="post">
+                    <form method="post" data-nt-loading data-nt-page-loader="true" data-nt-loader-message="Reading your pantry...|Checking your diet and allergens...|Writing three meal ideas. This can take up to 20 seconds.">
                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                         <input type="hidden" name="action" value="ai_suggest">
-                        <button type="submit" class="btn btn-primary btn-small"><?= icon('wand', 14) ?> Get AI ideas</button>
+                        <button type="submit" class="btn btn-primary btn-small" data-loading-text="Thinking..."><?= icon('wand', 14) ?> Get AI ideas</button>
                     </form>
                 <?php else: ?>
                     <p class="muted" style="font-size:12.5px;margin:0;">Today's limit reached<?= $isPremiumOrAdmin ? '' : ' — ' ?><?= $isPremiumOrAdmin ? '.' : '<a href="premium.php" style="color:var(--green-dark);font-weight:600;">go Premium</a> for more.' ?></p>
@@ -321,6 +367,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
                 <div class="mt-16" style="display:grid;gap:14px;">
                     <?php foreach ($aiResult['meals'] as $meal): ?>
                         <div class="shopping-list card" style="box-shadow:none;border:1px solid var(--border);margin:0;">
+                            <?= idea_photo_html((string)($meal['title'] ?? '')) ?>
                             <h3 style="margin-top:0;font-size:15px;"><?= h($meal['title'] ?? '') ?></h3>
                             <p class="muted" style="font-size:13px;margin:0 0 8px;"><?= h($meal['description'] ?? '') ?></p>
                             <?php if (!empty($meal['uses_from_pantry'])): ?>
@@ -360,7 +407,7 @@ $showWorld = $hasFullLibrary && $pantry && mealdb_enabled();
             <div class="recipe-grid">
                 <?php foreach ($matches as $m): $recipe = $m['recipe']; ?>
                     <div class="recipe-card">
-                        <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')">
+                        <div class="recipe-card-image" style="<?= recipe_photo_bg($recipe['image_url'] ?? '') ?>">
                             <?= recipe_photo_credit($recipe['id'], $recipe['image_url'] ?? null, 'recipe-card-credit') ?>
                             <span class="pantry-match-badge <?= $m['pct'] >= 1 ? 'is-full' : '' ?>"><?= $m['have'] ?>/<?= $m['total'] ?> ingredients</span>
                             <?php if ($m['diet_match']): ?>

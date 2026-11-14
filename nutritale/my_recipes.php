@@ -27,7 +27,7 @@ $recipes = $stmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -60,7 +60,7 @@ $recipes = $stmt->fetchAll();
             <?php foreach ($recipes as $recipe): ?>
                 <div class="recipe-card" data-title="<?= h(mb_strtolower($recipe['title'])) ?>">
                     <a href="recipe.php?id=<?= urlencode($recipe['id']) ?>">
-                        <div class="recipe-card-image" style="background-image:url('<?= h($recipe['image_url']) ?>')"></div>
+                        <div class="recipe-card-image" style="<?= recipe_photo_bg($recipe['image_url'] ?? '') ?>"></div>
                         <div class="recipe-card-body">
                             <h3><?= h($recipe['title']) ?></h3>
                             <?php if ($recipe['is_premium'] && !$isCurrentlyPremium): ?>

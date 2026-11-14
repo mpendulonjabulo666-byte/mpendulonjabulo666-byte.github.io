@@ -192,7 +192,7 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -376,6 +376,12 @@ $goals = $goalStmt->fetch() ?: [];
         <?php if ($user['is_vendor']): ?>
             <a class="btn btn-text btn-small mt-16" href="vendor.php"><?= icon('flame', 14) ?> Go to your vendor dashboard</a>
         <?php endif; ?>
+    </div>
+
+    <div class="card mt-16">
+        <h2 style="font-size:16px;margin-top:0;">Delete account</h2>
+        <p class="muted" style="margin-top:0;font-size:13px;">Permanently remove your account and personal data from <?= APP_NAME ?>.</p>
+        <a class="btn btn-text btn-small" href="delete_account.php" style="color:#c0392b;">Delete my account</a>
     </div>
 <?php include __DIR__ . '/includes/profile_more.php'; ?>
 </main>

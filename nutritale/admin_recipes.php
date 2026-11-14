@@ -93,7 +93,7 @@ $recipes = $stmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -226,6 +226,13 @@ $recipes = $stmt->fetchAll();
                                     </form>
                                 <?php else: ?>
                                     <span class="btn btn-text btn-small" style="opacity:0.5;cursor:not-allowed;" title="Built-in catalog recipe - not editable here">Edit</span>
+                                    <?php if (!empty($recipe['image_url'])): ?>
+                                        <form method="post" action="admin_recipe_clear_photo.php" onsubmit="return confirm('Clear this recipe\'s photo?');">
+                                            <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
+                                            <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">
+                                            <button type="submit" class="btn btn-text btn-small"><?= icon('trash', 14) ?> Clear photo</button>
+                                        </form>
+                                    <?php endif; ?>
                                     <form method="post" action="admin_recipe_toggle_publish.php">
                                         <input type="hidden" name="csrf_token" value="<?= h(csrf_token()) ?>">
                                         <input type="hidden" name="recipe_id" value="<?= h($recipe['id']) ?>">

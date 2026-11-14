@@ -51,10 +51,29 @@ function avatar_ensure_dir(): bool
             // this whole directory - including the images themselves.
             // The FilesMatch block below blocks php execution without
             // depending on which SAPI is running PHP.
-            'SetHandler default-handler',
-            'Options -ExecCGI -Indexes',
+            //
+            // Every directive below is IfModule-guarded (matching the
+            // root .htaccess's own convention) because a bare, unguarded
+            // directive is exactly what broke this on InfinityFree: its
+            // AllowOverride config rejects a bare "Options" line outright
+            // (500 "Something Went Wrong" on every request under this
+            // directory, images included) and a bare "Require all denied"
+            // has no fallback if mod_authz_core isn't loaded. Dropping
+            // "Options -ExecCGI -Indexes" entirely rather than guarding it -
+            // it added nothing the FilesMatch deny below doesn't already
+            // cover, and directory listing of a folder with no index.php
+            // is not a real exposure here.
+            '<IfModule mod_mime.c>',
+            '    SetHandler default-handler',
+            '</IfModule>',
             '<FilesMatch "\.(?i:php|phtml|phar|cgi|pl|py|sh|htaccess)$">',
-            '    Require all denied',
+            '    <IfModule mod_authz_core.c>',
+            '        Require all denied',
+            '    </IfModule>',
+            '    <IfModule !mod_authz_core.c>',
+            '        Order allow,deny',
+            '        Deny from all',
+            '    </IfModule>',
             '</FilesMatch>',
             '',
         ]));

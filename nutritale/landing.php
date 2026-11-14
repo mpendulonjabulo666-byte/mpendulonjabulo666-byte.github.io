@@ -31,6 +31,19 @@ function ring_thumb(string $url): string
     return preg_replace('#/thumb/(.+)/\d+px-#', '/thumb/$1/500px-', $url);
 }
 
+// Hero photo: use the pasta photo when it has been added, else the oats bowl.
+// Illustrative only - the badge says what the photo shows.
+$heroPasta = __DIR__ . '/assets/img/hero/pasta-pesto-hero.jpg';
+if (is_file($heroPasta)) {
+    $heroImage = 'assets/img/hero/pasta-pesto-hero.jpg';
+    $heroAlt = 'A bowl of pesto pasta with peas and basil';
+    $heroBadge = 'Pesto pasta';
+} else {
+    $heroImage = 'assets/img/hero/overnight-oats-bowl.jpg';
+    $heroAlt = 'A bowl of overnight oats';
+    $heroBadge = 'Overnight oats';
+}
+
 // The one CTA label/style repeated down the page (hero, after benefits,
 // final CTA) - kept as one constant specifically so it can never drift
 // into three slightly different asks ("Get started free" / "Try it free" /
@@ -52,7 +65,18 @@ $testimonials = [];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= APP_NAME ?> — Cook what you have, plan what you need</title>
-<meta name="description" content="Turn what's already in your kitchen into real meals. NutriTale gives you AI-powered recipe ideas from your pantry, allergy-safe filtering, meal planning, and shopping lists that build themselves.">
+<meta name="description" content="Turn what's already in your kitchen into healthy meals you cook yourself. NutriTale gives you AI-powered recipe ideas from your pantry, allergy-safe filtering, meal planning, and shopping lists that build themselves.">
+<link rel="canonical" href="<?= htmlspecialchars(app_base_url() . '/landing.php', ENT_QUOTES) ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NutriTale">
+<meta property="og:title" content="NutriTale: cook what you have, plan what you need">
+<meta property="og:description" content="Healthy recipes matched to your pantry, checked against your allergies, with a shopping list for what is missing.">
+<meta property="og:url" content="<?= htmlspecialchars(app_base_url() . '/landing.php', ENT_QUOTES) ?>">
+<meta property="og:image" content="<?= htmlspecialchars(app_base_url() . '/assets/img/og/nutritale-preview.jpg', ENT_QUOTES) ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A bowl of pesto pasta with peas and basil (illustrative image)">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="assets/img/logo/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/img/logo/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
@@ -62,10 +86,11 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/hero-photo-motion.js?v=18" defer></script>
 <script src="assets/js/recipe-ring.js?v=18" defer></script>
+<script src="assets/js/nutritale-ui.js?v=2" defer></script>
 </head>
 <body class="landing-body">
 <header class="app-nav landing-nav">
@@ -78,6 +103,9 @@ $testimonials = [];
 </header>
 
 <main class="landing-main">
+    <?php if (isset($_GET['account_deleted'])): ?>
+        <div class="alert alert-success" role="status" style="max-width:640px;margin:16px auto;">Your account has been deleted.</div>
+    <?php endif; ?>
     <div class="landing-glow-field">
         <div class="landing-blob landing-blob-1"></div>
         <div class="landing-blob landing-blob-2"></div>
@@ -87,7 +115,7 @@ $testimonials = [];
         <section class="landing-hero">
             <div class="landing-hero-grid">
                 <div class="landing-hero-copy">
-                    <h1>Never Wonder What<br>to Cook Again</h1>
+                    <h1>Never wonder what<br>to <em>cook</em> again</h1>
                     <p class="muted landing-hero-sub">
                         Tell <?= APP_NAME ?> what's in your kitchen and get real recipes back — matched to your
                         diet and checked against your allergies, with a shopping list for whatever's still missing.
@@ -98,9 +126,9 @@ $testimonials = [];
                     <p class="muted" style="font-size:12.5px;"><?= $recipeCount ?>+ recipes ready to browse today</p>
                 </div>
                 <div class="landing-hero-photo-wrap">
-                    <div class="landing-hero-photo-disc"></div>
-                    <div class="landing-hero-photo" style="background-image:url('assets/img/hero/overnight-oats-bowl.jpg');"></div>
-                    <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> 340 cal <span class="muted" style="font-weight:400;">Overnight oats</span></span>
+                    <div class="landing-hero-photo" style="background-image:url('<?= htmlspecialchars($heroImage, ENT_QUOTES) ?>');" role="img" aria-label="<?= htmlspecialchars($heroAlt, ENT_QUOTES) ?>"></div>
+                    <span class="landing-float-badge landing-float-badge-cal"><?= icon('flame', 14) ?> <?= htmlspecialchars($heroBadge, ENT_QUOTES) ?></span>
+                    <span class="landing-illustrative">Illustrative image</span>
                     <span class="landing-float-badge landing-float-badge-match"><?= icon('wand', 14) ?> Pantry-matched</span>
                 </div>
             </div>
@@ -112,7 +140,7 @@ $testimonials = [];
         <div class="landing-trust-item"><?= icon('shield', 20) ?> Secure payments via PayFast</div>
         <div class="landing-trust-item"><?= icon('lock', 20) ?> POPIA-aligned privacy</div>
         <div class="landing-trust-item"><?= icon('wand', 20) ?> AI-powered allergen checking</div>
-        <div class="landing-trust-item"><?= icon('leaf', 20) ?> Built for South African kitchens</div>
+        <div class="landing-trust-item"><?= icon('leaf', 20) ?> Healthy food from any cuisine, for the whole family</div>
     </section>
 
     <!-- 3. BENEFITS — value first, feature second -->
@@ -138,6 +166,12 @@ $testimonials = [];
             <p class="muted">Every AI suggestion is checked twice — once when we ask it to avoid your allergens,
                 again after, when we scan the result and throw out anything that slipped through.</p>
         </div>
+        <div class="feature-card landing-glass-card">
+            <?= icon('shopping-cart', 26) ?>
+            <h3>From recipe to shopping basket <span class="tag premium-tag" style="vertical-align:middle;">Premium</span></h3>
+            <p class="muted">One tap takes you to a recipe's ingredients at Pick n Pay. You order and pay on
+                their site, so their prices and delivery apply.</p>
+        </div>
     </section>
 
     <?php if (count($ringRecipes) >= 6): ?>
@@ -147,7 +181,7 @@ $testimonials = [];
     <section class="recipe-ring-section" aria-labelledby="recipe-ring-heading">
         <div class="landing-section-heading">
             <h2 id="recipe-ring-heading">A taste of what's inside</h2>
-            <p class="muted recipe-ring-sub">From braai-day classics to weeknight bowls. Drag to spin.</p>
+            <p class="muted recipe-ring-sub">Healthy meals from many cuisines, for adults and children. Drag to spin.</p>
         </div>
         <div class="recipe-ring-stage" tabindex="0" role="group" aria-roledescription="carousel"
              aria-label="Featured recipes. Drag, or use the left and right arrow keys, to spin.">
@@ -221,6 +255,7 @@ $testimonials = [];
             <summary>What does Premium actually add?<?= icon('chevron-right', 16) ?></summary>
             <p>Every recipe in the library (free accounts can open <?= FREE_RECIPE_LIMIT ?> to start), and a
                 higher AI pantry-idea cap — <?= AI_PANTRY_DAILY_CAP ?> a day instead of <?= AI_PANTRY_FREE_DAILY_CAP ?> —
+                one-tap links to buy ingredients at Pick n Pay,
                 for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month. Nothing you already have on the free
                 plan goes away or expires.</p>
         </details>
@@ -247,22 +282,10 @@ $testimonials = [];
 <!-- 7. FOOTER — essential links only. -->
 <footer class="landing-footer muted">
     <div class="landing-footer-links">
-        <!--
-            Stub pages (privacy.php/terms.php/refund.php) - each just says
-            "not published yet" plus a contact email, noindex'd, so these
-            links don't 404 from the public landing page while the real
-            policies (Premium billing, marketplace terms, data collection -
-            legal/business content, not something to fabricate here) are
-            still being written.
-        -->
         <a href="privacy.php">Privacy Policy</a>
         <a href="terms.php">Terms of Service</a>
         <a href="refund.php">Refund Policy</a>
-        <!--
-            Placeholder - no real support inbox has been set up for this
-            app yet. Replace with a real, monitored address before launch.
-        -->
-        <a href="mailto:hello@nutritale.co.za">hello@nutritale.co.za</a>
+        <a href="mailto:<?= h(SUPPORT_EMAIL) ?>"><?= h(SUPPORT_EMAIL) ?></a>
     </div>
     <!-- Social follow icons go here once there are real NutriTale accounts
          to link - none exist yet, so nothing is shown rather than linking

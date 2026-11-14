@@ -44,6 +44,7 @@ $navLink = function (string $page, string $iconName, string $label) use ($navCur
             <?php
             $navLink('index.php', 'list', 'Recipes');
             $navLink('pantry.php', 'wand', 'What Can I Make?');
+            $navLink('hormone_guide.php', 'leaf', 'Hormone Eating');
             $navLink('favorites.php', 'heart', 'Favorites');
             $navLink('planner.php', 'calendar', 'Planner');
             $navLink('my_recipes.php', 'plus', 'My Recipes');
@@ -117,14 +118,11 @@ $renderTab = function (array $tab) use ($navCurrent, $vtLabel) {
 ?>
 <nav class="app-tabbar" aria-label="Main">
     <?php foreach ($tabsBeforeFab as $tab) { $renderTab($tab); } ?>
-    <?php $fabActive = $navCurrent === 'add_recipe.php'; ?>
-    <a href="add_recipe.php" class="app-tabbar-fab<?= $fabActive ? ' is-active' : '' ?>" aria-label="Add recipe"<?= $fabActive ? ' aria-current="page"' : '' ?>>
-        <span class="app-tabbar-fab-glow" aria-hidden="true"></span>
-        <span class="app-tabbar-fab-icon"<?= $fabActive ? $vtLabel('tab-label-', 'add_recipe.php') : '' ?>><?= icon('plus', 24) ?></span>
-    </a>
+    <?php $renderTab(['add_recipe.php', 'plus', 'Add', ['add_recipe.php']]); ?>
     <?php foreach ($tabsAfterFab as $tab) { $renderTab($tab); } ?>
 </nav>
 <script src="assets/js/nav-drawer-keyboard.js?v=18" defer></script>
+<script src="assets/js/nutritale-ui.js?v=2" defer></script>
 <?php
 // First-visit tour (includes/app_tour.php): automatically on a new account's
 // first page in the app, or on request with ?tour=1 (from the profile page).
