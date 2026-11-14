@@ -60,7 +60,7 @@ the audit and `TASKS.md` for the phased work list.
 ### Rules for the API
 
 - **Base URL is configurable.** Server: `APP_BASE_URL` / `API_BASE_URL` read through `nt_env()`. Apps: one build-time setting (Expo `extra` / env), never a hard-coded host in screens. Staging and production differ only by that value.
-- **Retailer links stay external redirects.** The API returns the Pick n Pay / Uber Eats URLs built by `includes/store_links.php`; the app opens them in the system browser. No ordering, login or scraping through NutriTale.
+- **Retailer links stay external redirects.** The API returns the Pick n Pay URLs built by `includes/store_links.php`; the app opens them in the system browser. No ordering, login or scraping through NutriTale.
 - **Payments.** Web keeps PayFast. For store apps, digital subscriptions sold inside the app must use Apple / Google billing; simplest compliant first release is to have the apps read Premium status only and not sell it in-app. Decide before the first store submission.
 - **Rate limiting** per token and per IP on login and AI endpoints.
 - **Images.** Recipe images are already external URLs, so apps load them directly. Avatars move behind a configurable `UPLOADS_BASE_URL`.

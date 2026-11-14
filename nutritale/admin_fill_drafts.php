@@ -27,7 +27,7 @@ $total = count(nutritale_draft_recipes());
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fill draft recipes · <?= APP_NAME ?></title>
-<link rel="stylesheet" href="assets/css/style.css?v=42">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <style>body{max-width:640px;margin:40px auto;padding:0 16px;font-family:sans-serif}.box{border:1px solid #ccc;border-radius:8px;padding:16px;margin-bottom:16px}</style>
 </head>
 <body>

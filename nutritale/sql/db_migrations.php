@@ -558,4 +558,16 @@ return [
             $pdo->exec('ALTER TABLE users ADD COLUMN deleted_at DATETIME NULL');
         }
     },
+
+    // 2026-11-14 direction change (client decision): NutriTale is a
+    // healthy-eating app for food people cook themselves, from any cuisine.
+    // Deep-fried / takeaway-style dishes come off the library. They are
+    // hidden, not deleted, so Admin > Recipes > Unhide brings one back.
+    // Runs once (tracked by key), so a later Unhide is never undone.
+    '2026_11_14_hide_non_healthy_recipes' => function (PDO $pdo): void {
+        $pdo->exec(
+            "UPDATE recipes SET is_published = 0
+             WHERE id IN ('amagwinya-fat-cakes', 'boerewors-breakfast-rolls')"
+        );
+    },
 ];

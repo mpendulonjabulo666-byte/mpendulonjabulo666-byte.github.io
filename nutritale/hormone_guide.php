@@ -105,7 +105,7 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=42">
+<link rel="stylesheet" href="assets/css/style.css?v=43">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <style>
     /* Palette: #0F2A1D #375534 #6B9071 #AEC3B0 #E3EED4 */
@@ -235,9 +235,6 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
                             <?php else: ?>
                                 You have everything.
                             <?php endif; ?>
-                            <?php if ($unlocked && dish_on_uber_eats($recipe['title'])): ?>
-                                <a class="store-link" href="<?= h(uber_eats_search_link($recipe['title'])) ?>" target="_blank" rel="noopener noreferrer">Order on Uber Eats</a>
-                            <?php endif; ?>
                         </p>
                     <?php endif; ?>
                 </div>
@@ -259,10 +256,6 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
                 <?php endif; ?>
             <?php endforeach; ?>
         </div>
-        <?php if ($unlocked): ?>
-            <p style="margin-top:12px;"><a class="btn btn-small" href="https://www.ubereats.com/za/near-me" target="_blank" rel="noopener noreferrer">Browse Uber Eats</a>
-                <span class="muted" style="font-size:12px;">Links open in a new tab; prices and stock are theirs.</span></p>
-        <?php endif; ?>
     <?php endif; ?>
 
     <p class="hg-note">Sleep, movement, stress and a healthy weight shape your hormones as much as food does. <?= h(hormone_doctor_note()) ?></p>

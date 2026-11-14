@@ -72,7 +72,7 @@ Confirmed in code comments, `CONTINUE.md`, or InfinityFree's own documentation:
 - `includes/ingredient_matching.php` — pantry-to-recipe matching, aliases, typo correction
 - `includes/ai_pantry.php`, `includes/ai_cache.php` — AI prompt, allergen filtering, caps, caching
 - `includes/allergens.php`, `includes/pantry_expiry.php`, `includes/external_recipes.php`
-- `includes/store_links.php` — Pick n Pay / Uber Eats link builders (pure functions)
+- `includes/store_links.php` — Pick n Pay link builders (pure functions). Uber Eats was removed for good on 2026-11-14
 - `includes/payfast_gateway.php`, `includes/vendor_payouts.php`, `includes/account_deletion.php`
 - The whole database schema and migration system
 - Existing tests for all of the above

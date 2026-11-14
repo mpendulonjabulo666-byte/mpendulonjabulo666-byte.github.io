@@ -3468,7 +3468,7 @@ html.tour-open { overflow: hidden; }
     .tour-spot::after { animation: none; }
 }
 
-/* Store link-outs (Pick n Pay / Uber Eats) */
+/* Store link-outs (Pick n Pay) */
 .store-link { margin-left: 8px; font-size: 12px; font-weight: 700; color: var(--green-dark); text-decoration: none; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .store-link:hover { background: var(--green-dark); color: #fff; }
 /* Uses the theme variables so it stays readable in dark mode. */
@@ -3608,7 +3608,6 @@ html.tour-open { overflow: hidden; }
     .print-book-foot { display: block; text-align: center; font-style: italic; font-size: 8.5pt; margin-top: 3mm; padding-top: 2mm; border-top: 1px solid #8b6b3d; }
 }
 
-.tag.uber-tag { background: #06c167; color: #fff; border-color: #06c167; }
 
 /* ---------------------------------------------------------------------
    Frosted "glass" top bar and bottom tab bar (phones/tablets, <=900px).
