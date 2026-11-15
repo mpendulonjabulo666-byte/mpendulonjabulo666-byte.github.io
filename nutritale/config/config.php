@@ -125,7 +125,10 @@ define('PLATFORM_COMMISSION_PCT', 10);
 // Listings are arranged directly between members; no money passes through
 // NutriTale or PayFast. Leave false until PayFast approves marketplace use.
 define('MARKETPLACE_PAYMENTS_ENABLED', false);
-define('PREMIUM_MONTHLY_PRICE', 99.00);
+define('PREMIUM_MONTHLY_PRICE', 110.00);
+// Members selling recipes (money paid out to third parties) is switched off
+// until PayFast approves it. Existing code stays; flip to true to reopen.
+define('RECIPE_SELLING_ENABLED', false);
 
 // Google Gemini API (https://aistudio.google.com/apikey) — powers the
 // "Get AI ideas" button on the pantry page (real AI-generated meal ideas

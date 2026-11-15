@@ -24,7 +24,7 @@ legal_page_start('Privacy Policy', 'What personal information ' . APP_NAME . ' c
 <ul>
     <li>To run your account and show you recipes, meal plans and shopping lists.</li>
     <li>To hide recipes with your allergens and to check AI meal ideas against them.</li>
-    <li>To take payments, pay recipe sellers, and keep the records the law requires.</li>
+    <li>To take payments and keep the records the law requires.</li>
     <li>To keep accounts safe, stop abuse, and fix problems.</li>
     <li>To understand which parts of the app are used, so we can improve them.</li>
 </ul>

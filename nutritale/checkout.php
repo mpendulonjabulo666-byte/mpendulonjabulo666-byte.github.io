@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/payfast_gateway.php';
 
 $user = require_login();
 
+if (!RECIPE_SELLING_ENABLED) {
+    flash_set('error', 'Buying recipes from members is coming soon.');
+    redirect('index.php');
+}
+
 $recipeId = $_GET['recipe_id'] ?? '';
 $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND is_premium = 1');
 $stmt->execute([$recipeId]);

@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/legal_layout.php';
 $price = 'R' . number_format(PREMIUM_MONTHLY_PRICE, 2);
 $commission = (int)PLATFORM_COMMISSION_PCT;
 
-legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, Premium, selling recipes and the marketplace.");
+legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, Premium, the ingredient marketplace.");
 ?>
 <p>These terms are the agreement between you and <?= legal_contact_html() ?> ("we", "us"), who runs <?= APP_NAME ?>. By creating an account or using <?= APP_NAME ?> you agree to them. If you do not agree, please do not use the service.</p>
 
@@ -26,18 +26,14 @@ legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, 
 <h2>3. Free and Premium</h2>
 <ul>
     <li>A free account includes up to <?= (int)FREE_RECIPE_LIMIT ?> recipes and a limited number of pantry matches and AI meal ideas.</li>
-    <li>Premium costs <?= h($price) ?> per month, in South African rand, VAT included where it applies. It unlocks the features listed on the Premium page. Recipes that other members sell are bought separately. Premium is charged through PayFast every month until you cancel.</li>
+    <li>Premium costs <?= h($price) ?> per month, in South African rand, VAT included where it applies. It unlocks the features listed on the Premium page. Premium is charged through PayFast every month until you cancel.</li>
     <li><strong>Delivery:</strong> <?= APP_NAME ?> is a digital service, so nothing is posted or couriered to you. Premium features, and any recipe you buy, are available in your account as soon as PayFast confirms your payment, usually within a few minutes. If they have not appeared after an hour, contact us and we will fix it or refund you.</li>
     <li>You can cancel at any time from your profile. Cancelling stops all future payments, and Premium features end straight away. See the <a href="refund.php">Refund Policy</a> for refunds.</li>
     <li>We will tell you at least 30 days before a price change. The new price applies only from your next payment after that notice.</li>
 </ul>
 
 <h2>4. Selling recipes</h2>
-<ul>
-    <li>Premium members can sell their own recipes. You must own the recipe and any photos you upload, or have permission to use them.</li>
-    <li>We keep a <?= $commission ?>% platform fee from each sale. The rest is owed to you and paid by EFT to your bank account.</li>
-    <li>We can hide or remove a recipe that breaks these terms, copies someone else's work, or is reported and found to be unsafe or misleading.</li>
-</ul>
+<p>Selling your own recipes to other members is coming soon and is not available yet. These terms will be updated, with the details, before it opens.</p>
 
 <h2>5. The ingredient marketplace</h2>
 <p>The ingredient marketplace is coming soon. For now, members can list ingredients and contact each other directly. Any sale is between the buyer and the seller, who agree the price, pickup or delivery and pay each other themselves. <?= h(APP_NAME) ?> does not take payment for these sales, does not hold anyone's money, and is not a party to them. The seller is responsible for the quality and safety of what they sell. Premium-only listings are visible to Premium members only. When we add payments inside the app, these terms will be updated first.</p>

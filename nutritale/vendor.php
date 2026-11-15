@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/vendor_payouts.php';
 
 $user = require_login();
 
+if (!RECIPE_SELLING_ENABLED) {
+    flash_set('error', 'Selling recipes is coming soon.');
+    redirect('profile.php');
+}
+
 if (empty($user['is_vendor'])) {
     http_response_code(403);
     die('Turn on "Sell your recipes" in your profile to access the vendor dashboard.');

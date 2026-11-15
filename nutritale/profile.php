@@ -113,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         redirect('profile.php');
     } elseif ($form === 'vendor') {
         $isVendor = isset($_POST['is_vendor']) ? 1 : 0;
+        if ($isVendor && !RECIPE_SELLING_ENABLED) {
+            flash_set('error', 'Selling recipes is coming soon.');
+            redirect('profile.php');
+        }
         // Selling requires Premium - checked server-side, not just hidden
         // client-side, since a stale page (checkbox rendered before an
         // expiry) could still POST this. Turning selling OFF is always
@@ -357,6 +361,7 @@ $goals = $goalStmt->fetch() ?: [];
         </form>
     </div>
 
+    <?php if (RECIPE_SELLING_ENABLED): ?>
     <div class="card mt-16">
         <h2 style="font-size:16px;margin-top:0;">Sell your recipes</h2>
         <p class="muted" style="margin-top:0;font-size:13px;">Turn this on to mark your own recipes as premium with a price. Buyers pay through PayFast to unlock the full recipe.</p>
@@ -377,6 +382,7 @@ $goals = $goalStmt->fetch() ?: [];
             <a class="btn btn-text btn-small mt-16" href="vendor.php"><?= icon('flame', 14) ?> Go to your vendor dashboard</a>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <div class="card mt-16">
         <h2 style="font-size:16px;margin-top:0;">Delete account</h2>

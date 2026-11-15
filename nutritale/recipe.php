@@ -302,7 +302,11 @@ $isTierLocked = !$isPurchaseLocked && recipe_plan_locked($user, $recipe);
                     <?= icon('wand', 28) ?>
                     <h3>Unlock the full recipe</h3>
                     <p class="muted">Ingredients and step-by-step instructions for this premium recipe unlock after purchase.</p>
-                    <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
+                    <?php if (RECIPE_SELLING_ENABLED): ?>
+                        <a class="btn btn-primary" href="checkout.php?recipe_id=<?= urlencode($recipe['id']) ?>">Buy for R<?= number_format((float)$recipe['price'], 2) ?></a>
+                    <?php else: ?>
+                        <span class="muted">Buying member recipes is coming soon.</span>
+                    <?php endif; ?>
                 </div>
             <?php };
             // Real teaser content (first 2 ingredients, first step), not the
