@@ -24,9 +24,12 @@ legal_page_start('Refund Policy', 'How cancellations and refunds work for ' . AP
 <h2>3. Ingredients from the marketplace</h2>
 <p>The seller is responsible for what they send. If your order does not arrive, or arrives damaged, spoiled or different from the listing, contact the seller and us within 7 days. If it cannot be fixed, we refund your payment.</p>
 
-<h2>4. How refunds are paid</h2>
+<h2>4. Delivery</h2>
+<p><?= APP_NAME ?> Premium and the recipes you buy are digital. Nothing is posted or couriered. They are available in your account as soon as PayFast confirms your payment, usually within a few minutes. If they have not appeared after an hour, email us and we will fix it or refund the payment in full. Ingredients bought from another member on the marketplace are delivered by that seller, as described on their listing.</p>
+
+<h2>5. How refunds are paid</h2>
 <p>Refunds go back through PayFast to the card or account you paid with, usually within 7 to 10 working days after we approve them.</p>
 
-<h2>5. How to ask</h2>
-<p>Email <?= legal_contact_html() ?> with the email address on your account, the date and amount of the payment, and what went wrong. We reply within 3 working days.</p>
+<h2>6. How to ask</h2>
+<p>Contact <?= legal_contact_html() ?> with the email address on your account, the date and amount of the payment, and what went wrong. We reply within 3 working days.</p>
 <?php legal_page_end();

@@ -3877,3 +3877,24 @@ html.tour-open { overflow: hidden; }
 
 .landing-illustrative { position: absolute; left: 14px; bottom: 10px; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 0.02em; }
 @media (min-width: 900px) { .landing-illustrative { left: auto; right: 28px; bottom: 8px; } }
+
+
+/* Photo loaders (assets/js/nutritale-ui.js setupPhotoLoaders): a soft sweep
+   over a photo box until its picture arrives. Uses ::after because
+   .recipe-card-image already uses ::before. */
+.nt-photo-loading { position: relative; overflow: hidden; }
+.nt-photo-loading::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+    background-size: 220% 100%;
+    animation: nt-photo-sweep 1.3s ease-in-out infinite;
+}
+img.nt-img-loading {
+    background: linear-gradient(100deg, var(--nt-skeleton) 20%, var(--nt-skeleton-shine) 50%, var(--nt-skeleton) 80%);
+    background-size: 220% 100%;
+    animation: nt-photo-sweep 1.3s ease-in-out infinite;
+}
+@keyframes nt-photo-sweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .nt-photo-loading::after, img.nt-img-loading { animation: none; }
+}

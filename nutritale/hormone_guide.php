@@ -105,7 +105,7 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
 <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
 <meta name="theme-color" content="#2fae66">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=43">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <style>
     /* Palette: #0F2A1D #375534 #6B9071 #AEC3B0 #E3EED4 */
@@ -122,6 +122,7 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
     [data-theme="dark"] .hg-opt.is-active { border-color: #AEC3B0; background: #AEC3B0; color: #0F2A1D; }
     .hg-sym { width: 34px; height: 34px; flex: none; background-color: currentColor;
         -webkit-mask: var(--sym) center / contain no-repeat; mask: var(--sym) center / contain no-repeat; }
+    .hg-ico .hg-sym { width: 36px; height: 36px; }
     .hg-sym-woman { --sym: url('assets/img/hormone/woman.png'); }
     .hg-sym-man { --sym: url('assets/img/hormone/man.png'); }
     .hg-other { display: inline-block; font-size: 13px; padding: 6px 14px; border-radius: 999px; text-decoration: none; color: inherit;
@@ -194,7 +195,15 @@ $userAllergens = $userAllergenStmt->fetchAll(PDO::FETCH_COLUMN);
     <div class="hg-grid">
         <?php foreach ($active['groups'] as $g): ?>
             <div class="hg-card <?= $group === $g ? 'is-active' : '' ?>">
-                <div class="hg-ico"><?= icon('leaf', 26) ?></div>
+                <div class="hg-ico">
+                    <?php if ($focus === 'men'): ?>
+                        <span class="hg-sym hg-sym-man" aria-hidden="true"></span>
+                    <?php elseif ($focus === 'women'): ?>
+                        <span class="hg-sym hg-sym-woman" aria-hidden="true"></span>
+                    <?php else: ?>
+                        <?= icon('leaf', 26) ?>
+                    <?php endif; ?>
+                </div>
                 <h3><?= h($groups[$g]['label']) ?></h3>
                 <p><?= h($groups[$g]['why']) ?></p>
                 <a class="hg-view" href="<?= h(hg_url(['group' => $g])) ?>"><span class="hg-play">▶</span> View</a>

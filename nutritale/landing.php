@@ -86,11 +86,11 @@ $testimonials = [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=43">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 <script src="assets/js/hero-photo-motion.js?v=18" defer></script>
 <script src="assets/js/recipe-ring.js?v=18" defer></script>
-<script src="assets/js/nutritale-ui.js?v=2" defer></script>
+<script src="assets/js/nutritale-ui.js?v=3" defer></script>
 </head>
 <body class="landing-body">
 <header class="app-nav landing-nav">
@@ -241,8 +241,8 @@ $testimonials = [];
     <section class="landing-faq">
         <details class="faq-item">
             <summary>Is it free to start?<?= icon('chevron-right', 16) ?></summary>
-            <p>Yes. Creating an account, browsing every recipe, and building meal plans costs nothing.
-                Free accounts also get <?= AI_PANTRY_FREE_DAILY_CAP ?> AI-generated pantry ideas every day,
+            <p>Yes. Creating an account, opening <?= FREE_RECIPE_LIMIT ?> recipes, and building meal plans costs nothing.
+                Free accounts also get <?= AI_PANTRY_FREE_DAILY_CAP ?> AI-generated pantry ideas every <?= AI_PANTRY_FREE_WINDOW_DAYS ?> days,
                 on top of the always-free rule-based pantry matcher.</p>
         </details>
         <details class="faq-item">
@@ -254,7 +254,7 @@ $testimonials = [];
         <details class="faq-item">
             <summary>What does Premium actually add?<?= icon('chevron-right', 16) ?></summary>
             <p>Every recipe in the library (free accounts can open <?= FREE_RECIPE_LIMIT ?> to start), and a
-                higher AI pantry-idea cap — <?= AI_PANTRY_DAILY_CAP ?> a day instead of <?= AI_PANTRY_FREE_DAILY_CAP ?> —
+                higher AI pantry-idea cap — <?= AI_PANTRY_DAILY_CAP ?> a day instead of <?= AI_PANTRY_FREE_DAILY_CAP ?> every <?= AI_PANTRY_FREE_WINDOW_DAYS ?> days — barcode scanning, and
                 one-tap links to buy ingredients at Pick n Pay,
                 for R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?>/month. Nothing you already have on the free
                 plan goes away or expires.</p>
@@ -287,6 +287,9 @@ $testimonials = [];
         <a href="refund.php">Refund Policy</a>
         <a href="mailto:<?= h(SUPPORT_EMAIL) ?>"><?= h(SUPPORT_EMAIL) ?></a>
     </div>
+    <p style="margin:14px 0 0;"><?= APP_NAME ?> is run by <?= h(LEGAL_OPERATOR_NAME) ?><?php if (LEGAL_ADDRESS !== ''): ?>, <?= h(LEGAL_ADDRESS) ?><?php endif; ?><?php if (LEGAL_PHONE !== ''): ?>.
+        Phone <a href="tel:<?= h(preg_replace('/\s+/', '', LEGAL_PHONE)) ?>"><?= h(LEGAL_PHONE) ?></a><?php endif; ?>.
+        Premium is R<?= number_format(PREMIUM_MONTHLY_PRICE, 2) ?> a month, paid securely through PayFast.</p>
     <!-- Social follow icons go here once there are real NutriTale accounts
          to link - none exist yet, so nothing is shown rather than linking
          to a placeholder/guessed handle. -->

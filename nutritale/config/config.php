@@ -73,11 +73,15 @@ define('APP_NAME', 'NutriTale');
 // and Refund pages and in the account-deletion screen. Set the real
 // registered business name and a mailbox someone actually reads in
 // config.local.php (putenv('LEGAL_OPERATOR_NAME=...')), not here.
-define('LEGAL_OPERATOR_NAME', nt_env('LEGAL_OPERATOR_NAME') ?: APP_NAME);
-define('SUPPORT_EMAIL', nt_env('SUPPORT_EMAIL') ?: 'hello@nutritale.co.za');
+// These are public contact details (they are printed on the site), not
+// secrets, so the client's real ones are the defaults here. Supplied by the
+// owner on 2026-11-15. config.local.php can still override any of them.
+define('LEGAL_OPERATOR_NAME', nt_env('LEGAL_OPERATOR_NAME') ?: 'Linen Style');
+define('SUPPORT_EMAIL', nt_env('SUPPORT_EMAIL') ?: 'ntandomvula48@gmail.com');
 // South Africa's ECTA (section 43) requires an online seller to publish a
-// physical address. Shown on the policy pages once it is set.
-define('LEGAL_ADDRESS', nt_env('LEGAL_ADDRESS') ?: '');
+// physical address and a phone number. Shown on the policy pages and footer.
+define('LEGAL_ADDRESS', nt_env('LEGAL_ADDRESS') ?: 'P1152 Mlungu Circle, Umlazi, Durban, 4066');
+define('LEGAL_PHONE', nt_env('LEGAL_PHONE') ?: '082 582 5559');
 
 // Cloudflare Turnstile (bot check on login/register). The site key is public
 // by design; the SECRET key must only ever live in config.local.php
@@ -94,10 +98,25 @@ define('TURNSTILE_SECRET_KEY', nt_env('TURNSTILE_SECRET_KEY') ?: '');
 // settings, and set PAYFAST_SANDBOX to false. See DEPLOYMENT.md's "Going
 // live with PayFast" section for the full checklist - no other code
 // change is needed, only these values.
-define('PAYFAST_SANDBOX', true);
-define('PAYFAST_MERCHANT_ID', '10000100');
-define('PAYFAST_MERCHANT_KEY', '46f0cd694581a');
-define('PAYFAST_PASSPHRASE', '');
+//
+// Going live needs NO code edit: put the real values in config.local.php on
+// the server (never in this file, never in chat):
+//   putenv('PAYFAST_SANDBOX=0');
+//   putenv('PAYFAST_MERCHANT_ID=...');
+//   putenv('PAYFAST_MERCHANT_KEY=...');
+//   putenv('PAYFAST_PASSPHRASE=...');   // exactly as saved in the PayFast dashboard
+//
+// The passphrase matters: PayFast adds the account's passphrase when it
+// rebuilds the signature. If the account has one and we sign without it (or
+// with a different one) PayFast answers "400 Bad Request: Generated signature
+// does not match submitted signature". The shared sandbox account 10000100
+// has the published test passphrase below; signing with '' was the bug.
+$pfSandboxRaw = nt_env('PAYFAST_SANDBOX');
+define('PAYFAST_SANDBOX', $pfSandboxRaw === false || $pfSandboxRaw === '' ? true : !in_array(strtolower((string)$pfSandboxRaw), ['0', 'false', 'no', 'off'], true));
+define('PAYFAST_MERCHANT_ID', nt_env('PAYFAST_MERCHANT_ID') ?: '10000100');
+define('PAYFAST_MERCHANT_KEY', nt_env('PAYFAST_MERCHANT_KEY') ?: '46f0cd694581a');
+$pfPassRaw = nt_env('PAYFAST_PASSPHRASE');
+define('PAYFAST_PASSPHRASE', $pfPassRaw !== false ? (string)$pfPassRaw : (PAYFAST_MERCHANT_ID === '10000100' ? 'jt7NOE43FZPn' : ''));
 
 // Platform economics. PLATFORM_COMMISSION_PCT applies to both premium
 // recipe sales and ingredient marketplace sales.

@@ -47,6 +47,9 @@ function legal_contact_html(): string
 {
     $email = h(SUPPORT_EMAIL);
     $html = h(LEGAL_OPERATOR_NAME) . ', email <a href="mailto:' . $email . '">' . $email . '</a>';
+    if (defined('LEGAL_PHONE') && LEGAL_PHONE !== '') {
+        $html .= ', phone <a href="tel:' . h(preg_replace('/\s+/', '', LEGAL_PHONE)) . '">' . h(LEGAL_PHONE) . '</a>';
+    }
     if (defined('LEGAL_ADDRESS') && LEGAL_ADDRESS !== '') {
         $html .= ', ' . h(LEGAL_ADDRESS);
     }

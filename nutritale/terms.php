@@ -19,12 +19,15 @@ legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, 
     <li>Recipes, calorie and nutrition figures and meal ideas are general information only. They are not medical or dietary advice. Speak to a doctor or dietitian about any medical condition.</li>
     <li>You can tell <?= APP_NAME ?> about your allergies. We use them to hide recipes that contain those allergens and to check AI meal ideas. These checks can miss things: always read the ingredients and the labels on the food you buy.</li>
     <li>AI meal ideas are written by a computer (Google Gemini). They can be wrong or incomplete. Use your own judgement before cooking them.</li>
+    <li>The hormone-supportive eating guide is general nutrition information about everyday foods. It does not diagnose, treat or cure any condition and makes no promise about your health. If you have a medical condition, are pregnant or breastfeeding, or take medication, speak to your doctor or clinic before changing your diet.</li>
+    <li>Links to Pick n Pay open their website. Anything you buy there is a sale between you and Pick n Pay, at their prices and on their terms. We are not paid for those links.</li>
 </ul>
 
 <h2>3. Free and Premium</h2>
 <ul>
     <li>A free account includes up to <?= (int)FREE_RECIPE_LIMIT ?> recipes and a limited number of pantry matches and AI meal ideas.</li>
-    <li>Premium costs <?= h($price) ?> per month and unlocks the features listed on the Premium page. Recipes that other members sell are bought separately. Premium is charged through PayFast every month until you cancel.</li>
+    <li>Premium costs <?= h($price) ?> per month, in South African rand, VAT included where it applies. It unlocks the features listed on the Premium page. Recipes that other members sell are bought separately. Premium is charged through PayFast every month until you cancel.</li>
+    <li><strong>Delivery:</strong> <?= APP_NAME ?> is a digital service, so nothing is posted or couriered to you. Premium features, and any recipe you buy, are available in your account as soon as PayFast confirms your payment, usually within a few minutes. If they have not appeared after an hour, contact us and we will fix it or refund you.</li>
     <li>You can cancel at any time from your profile. Cancelling stops all future payments, and Premium features end straight away. See the <a href="refund.php">Refund Policy</a> for refunds.</li>
     <li>We will tell you at least 30 days before a price change. The new price applies only from your next payment after that notice.</li>
 </ul>

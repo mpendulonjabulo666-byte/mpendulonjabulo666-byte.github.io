@@ -23,6 +23,22 @@ function payfast_validate_url(): string
     return PAYFAST_SANDBOX ? 'https://sandbox.payfast.co.za/eng/query/validate' : 'https://www.payfast.co.za/eng/query/validate';
 }
 
+// Trims every value and drops empty ones, so the form posts exactly the
+// bytes payfast_signature() signed. Without this a name saved with a
+// trailing space was signed trimmed but posted untrimmed, which PayFast
+// rejects as a signature mismatch.
+function payfast_clean_fields(array $data): array
+{
+    $out = [];
+    foreach ($data as $key => $value) {
+        $value = trim((string)$value);
+        if ($value !== '') {
+            $out[$key] = $value;
+        }
+    }
+    return $out;
+}
+
 // $data must be an ordered array (insertion order matters — PayFast
 // signs the fields in the order they're sent, not alphabetically).
 function payfast_signature(array $data, string $passphrase = ''): string

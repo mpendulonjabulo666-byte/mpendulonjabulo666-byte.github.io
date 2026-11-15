@@ -131,5 +131,27 @@ check(
     payfast_api_error_reason(['data' => ['response' => false], 'message' => false], 400) === 'PayFast returned HTTP 400.'
 );
 
+
+// --- Checkout form signature (the "Generated signature does not match"
+// bug, 2026-11-15). Expected values are built by hand here, not by calling
+// payfast_signature() on itself.
+$form = [
+    'merchant_id' => '10000100', 'merchant_key' => '46f0cd694581a',
+    'return_url' => 'https://example.test/r.php?m=abc', 'name_first' => ' Thandi  M ',
+    'email_address' => 'a+b@example.test', 'amount' => '99.00', 'item_name' => 'NutriTale Premium (monthly)',
+    'empty_field' => '', 'subscription_type' => '1', 'frequency' => '3', 'cycles' => '0',
+];
+$manual = 'merchant_id=10000100&merchant_key=46f0cd694581a&return_url=https%3A%2F%2Fexample.test%2Fr.php%3Fm%3Dabc'
+    . '&name_first=Thandi++M&email_address=a%2Bb%40example.test&amount=99.00&item_name=NutriTale+Premium+%28monthly%29'
+    . '&subscription_type=1&frequency=3&cycles=0';
+check('form signature: order kept, empties skipped, values trimmed, + for spaces', payfast_signature($form) === md5($manual));
+check('form signature: passphrase appended last', payfast_signature($form, 'jt7NOE43FZPn') === md5($manual . '&passphrase=jt7NOE43FZPn'));
+check('form signature: passphrase changes the result', payfast_signature($form) !== payfast_signature($form, 'jt7NOE43FZPn'));
+check('form signature: "0" is a value, not empty (cycles=0 must be signed)', strpos($manual, 'cycles=0') !== false && payfast_signature(['cycles' => '0']) === md5('cycles=0'));
+check('clean_fields trims and drops empties, keeps "0" and order', payfast_clean_fields($form) === ['merchant_id' => '10000100', 'merchant_key' => '46f0cd694581a', 'return_url' => 'https://example.test/r.php?m=abc', 'name_first' => 'Thandi  M', 'email_address' => 'a+b@example.test', 'amount' => '99.00', 'item_name' => 'NutriTale Premium (monthly)', 'subscription_type' => '1', 'frequency' => '3', 'cycles' => '0']);
+check('cleaning does not change the signature', payfast_signature(payfast_clean_fields($form), 'x') === payfast_signature($form, 'x'));
+check('shared sandbox account signs with its published passphrase', PAYFAST_MERCHANT_ID !== '10000100' || PAYFAST_PASSPHRASE === 'jt7NOE43FZPn');
+check('sandbox is the default until config.local.php says otherwise', getenv('PAYFAST_SANDBOX') !== false || PAYFAST_SANDBOX === true);
+
 echo "\n$pass passed, $fail failed\n";
 exit($fail > 0 ? 1 : 0);

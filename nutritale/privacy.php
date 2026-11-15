@@ -12,6 +12,7 @@ legal_page_start('Privacy Policy', 'What personal information ' . APP_NAME . ' c
 <ul>
     <li><strong>Your account:</strong> name, email address, and your password (stored only as a scrambled "hash" that cannot be turned back into the password). If you sign in with Google, Facebook or Apple, we receive your name, email and an account number from that provider, never your password there. A profile photo, only if you add one.</li>
     <li><strong>Food and health details you choose to give:</strong> allergies, diet preferences (for example vegetarian or gluten-free) and daily nutrition goals. Allergies count as health information under POPIA. By adding them you agree that we use them for the purpose below, and you can remove them at any time in your profile.</li>
+    <li><strong>The hormone-supportive eating guide:</strong> the guide does not save whether you chose Men, Women or Everyone, and it does not save the ingredients you type into its search. Nothing about your sex or health is stored by it.</li>
     <li><strong>What you do in the app:</strong> your pantry list, meal plans, shopping lists, favourites, ratings and reviews, recipes you add, reports you send, the recipes you open, and the AI meal ideas you ask for.</li>
     <li><strong>Payments:</strong> PayFast handles your card or bank details. We never see or store them. We keep the payment reference, amount, date and status.</li>
     <li><strong>Security and device details:</strong> the internet (IP) address and email used for each login attempt, to block password-guessing, and the time you last signed in.</li>
@@ -36,6 +37,8 @@ legal_page_start('Privacy Policy', 'What personal information ' . APP_NAME . ' c
     <li><strong>Open Food Facts</strong> (barcode scanning): only the barcode number you scan.</li>
     <li><strong>TheMealDB</strong> (extra recipe ideas for Premium): ingredient names only.</li>
     <li><strong>Google, Facebook or Apple</strong>, only if you choose to sign in with them.</li>
+    <li><strong>Pick n Pay</strong>: when you tap a Pick n Pay link, the name of the ingredient is sent to their website as a search. Nothing about you is sent by us.</li>
+    <li><strong>Unsplash</strong> (recipe photos): photos load from Unsplash's servers, which see your device's internet address like any website you visit.</li>
     <li><strong>Our hosting provider</strong>, which stores the app and its database.</li>
 </ul>
 <p>Some of these companies store data outside South Africa. We only use providers that protect personal information to a standard similar to POPIA. We share information with the police or a court only when the law requires it.</p>

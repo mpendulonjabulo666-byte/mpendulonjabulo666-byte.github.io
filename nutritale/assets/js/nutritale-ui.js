@@ -193,6 +193,34 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupReveal);
     else setupReveal();
 
+    // Photo loaders. Recipe photos are CSS backgrounds (and a few <img>), so
+    // a slow connection used to show a flat box until the picture arrived.
+    // Each photo box shimmers until its picture has loaded or failed, then
+    // the shimmer is removed. No photo URL = nothing to wait for = no shimmer.
+    function setupPhotoLoaders() {
+        var boxes = document.querySelectorAll('.recipe-card-image, .recipe-detail-image, .page-hero-banner, .nt-photo');
+        Array.prototype.forEach.call(boxes, function (box) {
+            var m = /url\((['"]?)(.*?)\1\)/.exec(box.style.backgroundImage || '');
+            if (!m || !m[2] || box.classList.contains('skeleton-block')) return;
+            var img = new Image(), done = false;
+            function finish() { if (done) return; done = true; box.classList.remove('nt-photo-loading'); }
+            img.onload = finish; img.onerror = finish;
+            img.src = m[2];
+            if (img.complete) return;            // already cached: never flash a loader
+            box.classList.add('nt-photo-loading');
+            setTimeout(finish, 12000);           // never shimmer forever
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('img'), function (img) {
+            if (img.complete || !img.getAttribute('src')) return;
+            img.classList.add('nt-img-loading');
+            function finish() { img.classList.remove('nt-img-loading'); }
+            img.addEventListener('load', finish); img.addEventListener('error', finish);
+            setTimeout(finish, 12000);
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupPhotoLoaders);
+    else setupPhotoLoaders();
+
     window.addEventListener('offline', function () {
         toast("You're offline. Changes won't save until you're connected again.", 'error');
     });

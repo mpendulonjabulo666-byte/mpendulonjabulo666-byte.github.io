@@ -56,6 +56,7 @@ $pfData = [
     'item_name' => mb_substr($recipe['title'], 0, 100),
     'item_description' => 'Premium recipe on ' . APP_NAME,
 ];
+$pfData = payfast_clean_fields($pfData);
 $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 ?>
 <!DOCTYPE html>
@@ -74,7 +75,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=43">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 </head>
 <body>
 <div class="auth-shell">

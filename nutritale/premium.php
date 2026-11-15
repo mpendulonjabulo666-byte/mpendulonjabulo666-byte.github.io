@@ -25,7 +25,7 @@ if ($user['is_premium_member']) {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=43">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -34,14 +34,15 @@ if ($user['is_premium_member']) {
     <div class="page-hero-banner center-text" style="background-image:url('assets/img/banners/premium-plated.jpg');justify-content:center;">
         <div>
             <h1><?= icon('wand', 28) ?> Go Premium</h1>
-            <p>Unlimited ingredient recommendations, matched to your diet.</p>
+            <p>Every recipe, more AI meal ideas, and one-tap ingredient shopping.</p>
         </div>
     </div>
 
     <div class="card">
         <ul style="padding-left:20px;margin:0 0 20px;font-size:14px;line-height:1.9;">
-            <li>Unlimited use of <strong>What Can I Make?</strong> — no trial limit</li>
-            <li>Recommendations ranked to match your diet preferences first</li>
+            <li><strong>Every recipe</strong> in the library (free accounts can open <?= (int)FREE_RECIPE_LIMIT ?>)</li>
+            <li>Every match on <strong>What Can I Make?</strong>, and up to <?= (int)AI_PANTRY_DAILY_CAP ?> AI meal ideas a day</li>
+            <li><strong>Barcode scanning</strong> to add food to your pantry faster</li>
             <li>One-tap links to buy a recipe's ingredients at <strong>Pick n Pay</strong> (you order and pay on their site)</li>
             <li>A premium badge on your profile</li>
         </ul>
@@ -56,6 +57,11 @@ if ($user['is_premium_member']) {
         <?php endif; ?>
 
         <a href="premium_checkout.php" class="btn btn-primary btn-block">Subscribe with PayFast</a>
+        <p class="muted center-text" style="font-size:12px;margin:12px 0 0;">
+            Charged monthly in rand through PayFast until you cancel. Digital service: access starts as soon as your payment is confirmed.
+            By subscribing you agree to the <a href="terms.php">Terms</a> and <a href="refund.php">Refund Policy</a>.
+            Sold by <?= h(LEGAL_OPERATOR_NAME) ?>.
+        </p>
     </div>
 </main>
 </body>
