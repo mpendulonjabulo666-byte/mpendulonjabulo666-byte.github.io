@@ -27,7 +27,7 @@ $pfData = [
     'm_payment_id' => $mPaymentId,
     'amount' => number_format((float)PREMIUM_MONTHLY_PRICE, 2, '.', ''),
     'item_name' => APP_NAME . ' Premium (monthly)',
-    'item_description' => 'Unlimited AI ingredient recommendations, billed monthly.',
+    'item_description' => 'Full recipe library and Premium features, billed monthly.',
     // PayFast recurring subscription fields — see
     // https://developers.payfast.co.za/docs#subscriptions
     'subscription_type' => '1',
@@ -36,6 +36,7 @@ $pfData = [
     'frequency' => '3', // 3 = monthly
     'cycles' => '0', // 0 = bill indefinitely, until cancelled
 ];
+$pfData = payfast_clean_fields($pfData);
 $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 ?>
 <!DOCTYPE html>
@@ -54,7 +55,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 </head>
 <body>
 <div class="auth-shell">

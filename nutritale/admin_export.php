@@ -26,7 +26,7 @@ if ($type === 'recipes') {
     }
 } else {
     fputcsv($out, ['ID', 'Name', 'Email', 'Admin', 'Vendor', 'Premium', 'Last login', 'Joined']);
-    $stmt = db()->query('SELECT id, name, email, is_admin, is_vendor, is_premium_member, last_login_at, created_at FROM users ORDER BY created_at DESC');
+    $stmt = db()->query('SELECT id, name, email, is_admin, is_vendor, is_premium_member, last_login_at, created_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC');
     foreach ($stmt as $row) {
         fputcsv($out, [
             $row['id'], $row['name'], $row['email'], $row['is_admin'] ? 'Yes' : 'No',

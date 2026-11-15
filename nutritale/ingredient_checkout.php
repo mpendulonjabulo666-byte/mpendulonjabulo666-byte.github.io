@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/payfast_gateway.php';
 
 $user = require_login();
 
+if (!MARKETPLACE_PAYMENTS_ENABLED) {
+    flash_set('error', 'Paying inside the app is coming soon. Contact the seller directly for now.');
+    redirect('marketplace.php');
+}
+
 $listingId = (int)($_GET['listing_id'] ?? 0);
 $stmt = db()->prepare("SELECT * FROM ingredient_listings WHERE id = ? AND status = 'available'");
 $stmt->execute([$listingId]);
@@ -41,6 +46,7 @@ $pfData = [
     'item_name' => mb_substr($listing['ingredient_name'], 0, 100),
     'item_description' => 'Ingredient marketplace purchase on ' . APP_NAME,
 ];
+$pfData = payfast_clean_fields($pfData);
 $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 ?>
 <!DOCTYPE html>
@@ -59,7 +65,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 </head>
 <body>
 <div class="auth-shell">

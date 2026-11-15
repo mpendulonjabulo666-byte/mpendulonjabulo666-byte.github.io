@@ -2,8 +2,57 @@
 // Optional untracked file for local-only secrets (never committed - see
 // .gitignore). It just calls putenv() for whichever keys you want to set,
 // so every getenv()-first setting below picks them up automatically.
+//
+// InfinityFree (and some other free hosts) disable putenv() or don't let
+// getenv() see what it sets, so nt_env() below falls back to reading the
+// same putenv('KEY=value') lines straight out of config.local.php. Either
+// way works; no change to that file is needed. The include is silenced
+// with @ so a disabled putenv() can't print a warning into the page.
+if (!function_exists('putenv')) {
+    // putenv() disabled by the host: stub it so config.local.php still runs
+    // (its values are picked up by nt_env() instead).
+    function putenv($assignment) { return false; }
+}
 if (file_exists(__DIR__ . '/config.local.php')) {
-    require __DIR__ . '/config.local.php';
+    @require __DIR__ . '/config.local.php';
+}
+
+function nt_local_cfg(): array
+{
+    static $cfg = null;
+    if ($cfg !== null) {
+        return $cfg;
+    }
+    $file = __DIR__ . '/config.local.php';
+    $cfg = is_readable($file) ? nt_parse_local_cfg((string)file_get_contents($file)) : [];
+    return $cfg;
+}
+
+// Reads the putenv('KEY=value'); lines out of config.local.php's source.
+// /s and the lazy (.*?) let one value span several lines - the Apple
+// sign-in .p8 key is a multi-line PEM block, which the old single-line
+// pattern silently skipped. Tested in tests/config_local_test.php.
+function nt_parse_local_cfg(string $src): array
+{
+    $cfg = [];
+    if (preg_match_all("/^\\s*putenv\\(\\s*'([A-Z0-9_]+)=(.*?)'\\s*\\)\\s*;/ms", $src, $m, PREG_SET_ORDER)) {
+        foreach ($m as $row) {
+            $cfg[$row[1]] = stripslashes($row[2]);
+        }
+    }
+    return $cfg;
+}
+
+// getenv() first (real environment variables, e.g. Railway), then whatever
+// config.local.php defined. Returns false when unset, exactly like getenv().
+function nt_env(string $key)
+{
+    $v = getenv($key);
+    if ($v !== false) {
+        return $v;
+    }
+    $local = nt_local_cfg();
+    return $local[$key] ?? false;
 }
 
 // Fill these in with your own database's connection details before
@@ -12,13 +61,33 @@ if (file_exists(__DIR__ . '/config.local.php')) {
 // On a platform that injects DB credentials as environment variables
 // (e.g. Railway's MySQL plugin, which sets MYSQLHOST/MYSQLPORT/etc.),
 // those are picked up automatically — no edit needed here.
-define('DB_HOST', getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: 'localhost'));
-define('DB_PORT', getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306'));
-define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'nutritale'));
-define('DB_USER', getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root'));
-define('DB_PASS', getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: ''));
+define('DB_HOST', nt_env('DB_HOST') ?: (nt_env('MYSQLHOST') ?: 'localhost'));
+define('DB_PORT', nt_env('DB_PORT') ?: (nt_env('MYSQLPORT') ?: '3306'));
+define('DB_NAME', nt_env('DB_NAME') ?: (nt_env('MYSQLDATABASE') ?: 'nutritale'));
+define('DB_USER', nt_env('DB_USER') ?: (nt_env('MYSQLUSER') ?: 'root'));
+define('DB_PASS', nt_env('DB_PASS') ?: (nt_env('MYSQLPASSWORD') ?: ''));
 
 define('APP_NAME', 'NutriTale');
+
+// Who runs the service and how to reach them - shown on the Terms, Privacy
+// and Refund pages and in the account-deletion screen. Set the real
+// registered business name and a mailbox someone actually reads in
+// config.local.php (putenv('LEGAL_OPERATOR_NAME=...')), not here.
+// These are public contact details (they are printed on the site), not
+// secrets, so the client's real ones are the defaults here. Supplied by the
+// owner on 2026-11-15. config.local.php can still override any of them.
+define('LEGAL_OPERATOR_NAME', nt_env('LEGAL_OPERATOR_NAME') ?: 'Linen Style');
+define('SUPPORT_EMAIL', nt_env('SUPPORT_EMAIL') ?: 'ntandomvula48@gmail.com');
+// South Africa's ECTA (section 43) requires an online seller to publish a
+// physical address and a phone number. Shown on the policy pages and footer.
+define('LEGAL_ADDRESS', nt_env('LEGAL_ADDRESS') ?: 'P1152 Mlungu Circle, Umlazi, Durban, 4066');
+define('LEGAL_PHONE', nt_env('LEGAL_PHONE') ?: '082 582 5559');
+
+// Cloudflare Turnstile (bot check on login/register). The site key is public
+// by design; the SECRET key must only ever live in config.local.php
+// (putenv('TURNSTILE_SECRET_KEY=...')). With no secret set, the check is off.
+define('TURNSTILE_SITE_KEY', nt_env('TURNSTILE_SITE_KEY') ?: '0x4AAAAAAF3xhS8iRnuAjDOe');
+define('TURNSTILE_SECRET_KEY', nt_env('TURNSTILE_SECRET_KEY') ?: '');
 
 // PayFast (https://www.payfast.co.za) payment settings for premium recipe
 // purchases. The values below are PayFast's published SANDBOX test
@@ -29,15 +98,37 @@ define('APP_NAME', 'NutriTale');
 // settings, and set PAYFAST_SANDBOX to false. See DEPLOYMENT.md's "Going
 // live with PayFast" section for the full checklist - no other code
 // change is needed, only these values.
-define('PAYFAST_SANDBOX', true);
-define('PAYFAST_MERCHANT_ID', '10000100');
-define('PAYFAST_MERCHANT_KEY', '46f0cd694581a');
-define('PAYFAST_PASSPHRASE', '');
+//
+// Going live needs NO code edit: put the real values in config.local.php on
+// the server (never in this file, never in chat):
+//   putenv('PAYFAST_SANDBOX=0');
+//   putenv('PAYFAST_MERCHANT_ID=...');
+//   putenv('PAYFAST_MERCHANT_KEY=...');
+//   putenv('PAYFAST_PASSPHRASE=...');   // exactly as saved in the PayFast dashboard
+//
+// The passphrase matters: PayFast adds the account's passphrase when it
+// rebuilds the signature. If the account has one and we sign without it (or
+// with a different one) PayFast answers "400 Bad Request: Generated signature
+// does not match submitted signature". The shared sandbox account 10000100
+// has the published test passphrase below; signing with '' was the bug.
+$pfSandboxRaw = nt_env('PAYFAST_SANDBOX');
+define('PAYFAST_SANDBOX', $pfSandboxRaw === false || $pfSandboxRaw === '' ? true : !in_array(strtolower((string)$pfSandboxRaw), ['0', 'false', 'no', 'off'], true));
+define('PAYFAST_MERCHANT_ID', nt_env('PAYFAST_MERCHANT_ID') ?: '10000100');
+define('PAYFAST_MERCHANT_KEY', nt_env('PAYFAST_MERCHANT_KEY') ?: '46f0cd694581a');
+$pfPassRaw = nt_env('PAYFAST_PASSPHRASE');
+define('PAYFAST_PASSPHRASE', $pfPassRaw !== false ? (string)$pfPassRaw : (PAYFAST_MERCHANT_ID === '10000100' ? 'jt7NOE43FZPn' : ''));
 
 // Platform economics. PLATFORM_COMMISSION_PCT applies to both premium
 // recipe sales and ingredient marketplace sales.
 define('PLATFORM_COMMISSION_PCT', 10);
-define('PREMIUM_MONTHLY_PRICE', 99.00);
+// Ingredient marketplace: buying/selling through the app is NOT open yet.
+// Listings are arranged directly between members; no money passes through
+// NutriTale or PayFast. Leave false until PayFast approves marketplace use.
+define('MARKETPLACE_PAYMENTS_ENABLED', false);
+define('PREMIUM_MONTHLY_PRICE', 110.00);
+// Members selling recipes (money paid out to third parties) is switched off
+// until PayFast approves it. Existing code stays; flip to true to reopen.
+define('RECIPE_SELLING_ENABLED', false);
 
 // Google Gemini API (https://aistudio.google.com/apikey) — powers the
 // "Get AI ideas" button on the pantry page (real AI-generated meal ideas
@@ -47,7 +138,7 @@ define('PREMIUM_MONTHLY_PRICE', 99.00);
 // commit a real key to git. GEMINI_MAX_OUTPUT_TOKENS caps how long each
 // response is allowed to be; every call also counts against the daily
 // caps below, so usage (and cost) stays bounded per user.
-define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
+define('GEMINI_API_KEY', nt_env('GEMINI_API_KEY') ?: '');
 define('GEMINI_MODEL', 'gemini-2.5-flash');
 define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 
@@ -58,9 +149,9 @@ define('GEMINI_MAX_OUTPUT_TOKENS', 1500);
 // burned by once - see the landing page hero photo's own history). Leave
 // blank to skip that script entirely; nothing else in the app reads this.
 // Free tier: register an app at unsplash.com/oauth/applications, use its
-// "Access Key" (not the secret) here. Same getenv()-first pattern as
+// "Access Key" (not the secret) here. Same nt_env()-first pattern as
 // DB_HOST above, for hosts that inject it as an environment variable.
-define('UNSPLASH_ACCESS_KEY', getenv('UNSPLASH_ACCESS_KEY') ?: '');
+define('UNSPLASH_ACCESS_KEY', nt_env('UNSPLASH_ACCESS_KEY') ?: '');
 
 // Optional "Sign in with Google" / "Sign in with Facebook" on the login
 // and sign-up pages (includes/oauth.php + oauth_*.php). Same pattern as
@@ -84,15 +175,15 @@ define('UNSPLASH_ACCESS_KEY', getenv('UNSPLASH_ACCESS_KEY') ?: '');
 // an account the first already created.
 //
 // Every value below can come from a real environment variable instead of
-// being edited into this file - same getenv()-first pattern DB_HOST etc.
+// being edited into this file - same nt_env()-first pattern DB_HOST etc.
 // already use up top, useful for a host (like Railway) that injects
 // secrets as env vars rather than letting you edit files directly. Left
 // blank (the default either way), the matching sign-in button just shows
 // disabled - never an error.
-define('GOOGLE_CLIENT_ID', getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '');
-define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_OAUTH_CLIENT_SECRET') ?: '');
-define('FACEBOOK_APP_ID', getenv('FACEBOOK_OAUTH_CLIENT_ID') ?: '');
-define('FACEBOOK_APP_SECRET', getenv('FACEBOOK_OAUTH_CLIENT_SECRET') ?: '');
+define('GOOGLE_CLIENT_ID', nt_env('GOOGLE_OAUTH_CLIENT_ID') ?: '');
+define('GOOGLE_CLIENT_SECRET', nt_env('GOOGLE_OAUTH_CLIENT_SECRET') ?: '');
+define('FACEBOOK_APP_ID', nt_env('FACEBOOK_OAUTH_CLIENT_ID') ?: '');
+define('FACEBOOK_APP_SECRET', nt_env('FACEBOOK_OAUTH_CLIENT_SECRET') ?: '');
 
 // Apple "Sign in with Apple" - developer.apple.com/sign-in-with-apple.
 // Unlike Google/Facebook, Apple has no static client secret: APPLE_OAUTH_*
@@ -112,10 +203,10 @@ define('FACEBOOK_APP_SECRET', getenv('FACEBOOK_OAUTH_CLIENT_SECRET') ?: '');
 //                             newlines intact. Almost always set via an
 //                             environment variable rather than pasted
 //                             here, since it's a multi-line secret.
-define('APPLE_OAUTH_CLIENT_ID', getenv('APPLE_OAUTH_CLIENT_ID') ?: '');
-define('APPLE_OAUTH_TEAM_ID', getenv('APPLE_OAUTH_TEAM_ID') ?: '');
-define('APPLE_OAUTH_KEY_ID', getenv('APPLE_OAUTH_KEY_ID') ?: '');
-define('APPLE_OAUTH_PRIVATE_KEY', getenv('APPLE_OAUTH_PRIVATE_KEY') ?: '');
+define('APPLE_OAUTH_CLIENT_ID', nt_env('APPLE_OAUTH_CLIENT_ID') ?: '');
+define('APPLE_OAUTH_TEAM_ID', nt_env('APPLE_OAUTH_TEAM_ID') ?: '');
+define('APPLE_OAUTH_KEY_ID', nt_env('APPLE_OAUTH_KEY_ID') ?: '');
+define('APPLE_OAUTH_PRIVATE_KEY', nt_env('APPLE_OAUTH_PRIVATE_KEY') ?: '');
 
 // AI pantry-suggestion usage caps, all enforced in pantry.php via
 // includes/ai_cache.php's ai_generations-backed counters - see
@@ -166,7 +257,7 @@ define('EXTERNAL_RECIPE_LIMIT', 10);
 // released publicly to become a supporter and use the upgraded key they
 // email you - set MEALDB_API_KEY (config.local.php / env) to that before
 // launch. Set it to '' to switch the internet recipes off entirely.
-define('MEALDB_API_KEY', getenv('MEALDB_API_KEY') !== false ? getenv('MEALDB_API_KEY') : '1');
+define('MEALDB_API_KEY', nt_env('MEALDB_API_KEY') !== false ? nt_env('MEALDB_API_KEY') : '1');
 
 // Outgoing email (password resets, "someone rated your recipe" notices).
 // Leave SMTP_HOST blank to fall back to PHP's mail(), which many hosts
@@ -221,6 +312,40 @@ function is_https_request(): bool
     return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 }
 
+// How long a login should persist with no activity at all - used for both
+// the base session cookie below and the DB session handler's own cleanup
+// (session.gc_maxlifetime, set further down). Matches login.php's
+// REMEMBER_ME_DAYS: previously that 30-day figure only applied if someone
+// actually ticked "Remember me", and everyone else got a cookie that died
+// the moment their browser fully closed (lifetime => 0) - which on a phone,
+// especially a PWA added to the home screen, is effectively "every time you
+// reopen the app". Nobody expects a recipe app to need a checkbox ticked to
+// stay logged in, so that's now the default for everyone; the checkbox in
+// login.php still works, it just no longer does anything meaningfully
+// different from not checking it.
+define('SESSION_LIFETIME_DAYS', 30);
+
+// Store sessions in MySQL rather than the host's local disk - see
+// includes/db_session_handler.php's header comment for the full reasoning
+// (short version: InfinityFree and other free shared hosts sweep session
+// temp files on their own schedule regardless of what this app asks for,
+// which was the actual cause of users getting silently logged out - not a
+// multi-server/scaling problem, so no Redis or similar needed). Must happen
+// before session_start() below, and can't use db()/config/db_conn.php's
+// connection - that file requires this one, not the other way around, so
+// db() doesn't exist yet at this point in the request.
+require_once __DIR__ . '/../includes/db_session_handler.php';
+session_set_save_handler(
+    new DbSessionHandler(DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS),
+    true
+);
+// PHP's own garbage collector (not just our handler's gc() method, though
+// that reads this too) should only consider a session old enough to delete
+// on the same schedule the cookie itself is good for - otherwise a session
+// could be cleaned out of the database while the browser still presents a
+// cookie claiming it's valid for weeks longer.
+ini_set('session.gc_maxlifetime', (string)(SESSION_LIFETIME_DAYS * 86400));
+
 // Session cookie hardening: HttpOnly (JavaScript can never read it via
 // document.cookie - the whole point), Secure (never sent over plain HTTP,
 // skipped automatically on this local dev server since is_https_request()
@@ -238,8 +363,13 @@ function is_https_request(): bool
 // while allowing a top-level GET redirect to carry the cookie, which is
 // why it's the OWASP/browser-vendor-recommended default for a session
 // cookie specifically, not a weaker fallback.
+//
+// lifetime is now SESSION_LIFETIME_DAYS, not 0 (a true "dies when the
+// browser fully closes" session cookie) - see that constant's comment
+// above for why 0 was actually the bulk of this bug, independent of the
+// disk-storage issue the DB handler above fixes.
 session_set_cookie_params([
-    'lifetime' => 0,
+    'lifetime' => SESSION_LIFETIME_DAYS * 86400,
     'path' => '/',
     'domain' => '',
     'secure' => is_https_request(),
