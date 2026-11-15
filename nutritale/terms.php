@@ -40,7 +40,7 @@ legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, 
 </ul>
 
 <h2>5. The ingredient marketplace</h2>
-<p>When you buy ingredients from another member, the sale is between you and that seller. The seller is responsible for the quality, safety and delivery of what they sell. We process the payment through PayFast, keep a <?= $commission ?>% platform fee, and will help sort out a problem if you contact us.</p>
+<p>The ingredient marketplace is coming soon. For now, members can list ingredients and contact each other directly. Any sale is between the buyer and the seller, who agree the price, pickup or delivery and pay each other themselves. <?= h(APP_NAME) ?> does not take payment for these sales, does not hold anyone's money, and is not a party to them. The seller is responsible for the quality and safety of what they sell. Premium-only listings are visible to Premium members only. When we add payments inside the app, these terms will be updated first.</p>
 
 <h2>6. What you may not do</h2>
 <ul>

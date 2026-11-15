@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/payfast_gateway.php';
 
 $user = require_login();
 
+if (!MARKETPLACE_PAYMENTS_ENABLED) {
+    flash_set('error', 'Paying inside the app is coming soon. Contact the seller directly for now.');
+    redirect('marketplace.php');
+}
+
 $listingId = (int)($_GET['listing_id'] ?? 0);
 $stmt = db()->prepare("SELECT * FROM ingredient_listings WHERE id = ? AND status = 'available'");
 $stmt->execute([$listingId]);

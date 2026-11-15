@@ -121,6 +121,10 @@ define('PAYFAST_PASSPHRASE', $pfPassRaw !== false ? (string)$pfPassRaw : (PAYFAS
 // Platform economics. PLATFORM_COMMISSION_PCT applies to both premium
 // recipe sales and ingredient marketplace sales.
 define('PLATFORM_COMMISSION_PCT', 10);
+// Ingredient marketplace: buying/selling through the app is NOT open yet.
+// Listings are arranged directly between members; no money passes through
+// NutriTale or PayFast. Leave false until PayFast approves marketplace use.
+define('MARKETPLACE_PAYMENTS_ENABLED', false);
 define('PREMIUM_MONTHLY_PRICE', 99.00);
 
 // Google Gemini API (https://aistudio.google.com/apikey) — powers the

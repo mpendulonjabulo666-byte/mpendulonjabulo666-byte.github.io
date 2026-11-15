@@ -11,6 +11,7 @@ legal_page_start('Privacy Policy', 'What personal information ' . APP_NAME . ' c
 <h2>1. What we collect</h2>
 <ul>
     <li><strong>Your account:</strong> name, email address, and your password (stored only as a scrambled "hash" that cannot be turned back into the password). If you sign in with Google, Facebook or Apple, we receive your name, email and an account number from that provider, never your password there. A profile photo, only if you add one.</li>
+    <li><strong>Marketplace listings:</strong> if you list an ingredient, the ingredient details and the contact number you type in. Other members can see that number (Premium-only listings: only Premium members). Do not add it if you do not want to be contacted.</li>
     <li><strong>Food and health details you choose to give:</strong> allergies, diet preferences (for example vegetarian or gluten-free) and daily nutrition goals. Allergies count as health information under POPIA. By adding them you agree that we use them for the purpose below, and you can remove them at any time in your profile.</li>
     <li><strong>The hormone-supportive eating guide:</strong> the guide does not save whether you chose Men, Women or Everyone, and it does not save the ingredients you type into its search. Nothing about your sex or health is stored by it.</li>
     <li><strong>What you do in the app:</strong> your pantry list, meal plans, shopping lists, favourites, ratings and reviews, recipes you add, reports you send, the recipes you open, and the AI meal ideas you ask for.</li>

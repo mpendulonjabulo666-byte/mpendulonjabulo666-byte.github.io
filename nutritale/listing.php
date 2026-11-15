@@ -58,11 +58,14 @@ $isOwn = (int)$listing['seller_id'] === (int)$user['id'];
             <p class="muted center-text" style="font-size:13px;">This is your own listing — manage it from the <a href="marketplace.php">marketplace page</a>.</p>
         <?php elseif ($listing['status'] === 'sold'): ?>
             <button class="btn btn-block" disabled>Already sold</button>
+        <?php elseif (!empty($listing['is_premium']) && empty($user['is_premium_member']) && empty($user['is_admin'])): ?>
+            <a href="premium.php" class="btn btn-primary btn-block">Premium members only</a>
         <?php else: ?>
-            <a href="ingredient_checkout.php?listing_id=<?= (int)$listing['id'] ?>" class="btn btn-primary btn-block"><?= icon('shopping-cart', 16) ?> Buy for R<?= number_format((float)$listing['price'], 2) ?></a>
-            <?php if (PAYFAST_SANDBOX): ?>
-                <p class="muted center-text mt-16" style="font-size:12px;">Sandbox mode — no real money moves.</p>
+            <?php $digits = preg_replace('/[^0-9+]/', '', (string)($listing['contact'] ?? '')); ?>
+            <?php if ($digits !== ''): ?>
+                <p style="margin:0 0 12px;"><strong>Contact the seller:</strong> <a href="tel:<?= h($digits) ?>"><?= h($listing['contact']) ?></a></p>
             <?php endif; ?>
+            <p class="muted" style="font-size:13px;margin:0;">Paying inside the app is coming soon. For now, agree the price and pickup with the seller and pay them directly. <?= APP_NAME ?> does not take payment for this sale. Meet in a public place and check the ingredient before you pay.</p>
         <?php endif; ?>
     </div>
 </main>

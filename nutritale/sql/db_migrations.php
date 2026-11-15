@@ -570,4 +570,30 @@ return [
              WHERE id IN ('amagwinya-fat-cakes', 'boerewors-breakfast-rolls')"
         );
     },
+
+    // 2026-11-15: more unhealthy dishes hidden (client: only the best,
+    // healthy food). Hidden, not deleted; Admin > Recipes > Unhide restores.
+    '2026_11_15_hide_more_non_healthy_recipes' => function (PDO $pdo): void {
+        $pdo->exec(
+            "UPDATE recipes SET is_published = 0
+             WHERE id IN ('koeksisters', 'malva-pudding', 'melktert-milk-tart',
+                          'peppermint-crisp-tart', 'vetkoek-with-curried-mince',
+                          'bunny-chow-with-lamb-curry')"
+        );
+    },
+
+    // 2026-11-15: marketplace is "coming soon". Members can list ingredients
+    // (optionally Premium-only) with a contact number; buyer and seller settle
+    // up directly, the app never handles the money.
+    '2026_11_15_listing_contact_premium' => function (PDO $pdo): void {
+        foreach (['contact' => 'VARCHAR(60) NULL', 'is_premium' => 'TINYINT(1) NOT NULL DEFAULT 0'] as $col => $def) {
+            $has = (int)$pdo->query(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ingredient_listings' AND COLUMN_NAME = '$col'"
+            )->fetchColumn();
+            if (!$has) {
+                $pdo->exec("ALTER TABLE ingredient_listings ADD COLUMN $col $def");
+            }
+        }
+    },
 ];
