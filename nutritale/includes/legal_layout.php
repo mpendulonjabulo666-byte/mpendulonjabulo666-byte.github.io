@@ -2,7 +2,7 @@
 // Shared frame for the Terms, Privacy and Refund pages: same head, header
 // and card as before, so the three policy pages only hold their own text.
 
-const LEGAL_LAST_UPDATED = '7 November 2026';
+const LEGAL_LAST_UPDATED = '15 November 2026';
 
 function legal_page_start(string $title, string $description): void
 {
