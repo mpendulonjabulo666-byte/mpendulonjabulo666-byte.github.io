@@ -27,7 +27,7 @@ legal_page_start('Terms of Service', APP_NAME . "'s Terms of Service: accounts, 
 <ul>
     <li>A free account includes up to <?= (int)FREE_RECIPE_LIMIT ?> recipes and a limited number of pantry matches and AI meal ideas.</li>
     <li>Premium costs <?= h($price) ?> per month, in South African rand, VAT included where it applies. It unlocks the features listed on the Premium page. Premium is charged through PayFast every month until you cancel.</li>
-    <li><strong>Delivery:</strong> <?= APP_NAME ?> is a digital service, so nothing is posted or couriered to you. Premium features, and any recipe you buy, are available in your account as soon as PayFast confirms your payment, usually within a few minutes. If they have not appeared after an hour, contact us and we will fix it or refund you.</li>
+    <li><strong>Delivery:</strong> <?= APP_NAME ?> is a digital service, so nothing is posted or couriered to you. Premium features are available in your account as soon as PayFast confirms your payment, usually within a few minutes. If they have not appeared after an hour, contact us and we will fix it or refund you.</li>
     <li>You can cancel at any time from your profile. Cancelling stops all future payments, and Premium features end straight away. See the <a href="refund.php">Refund Policy</a> for refunds.</li>
     <li>We will tell you at least 30 days before a price change. The new price applies only from your next payment after that notice.</li>
 </ul>
