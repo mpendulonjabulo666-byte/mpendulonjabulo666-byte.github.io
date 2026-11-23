@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $recipe['carbs'] = (int)($_POST['carbs'] ?? 0);
         $recipe['fat'] = (int)($_POST['fat'] ?? 0);
         $recipe['fiber'] = (int)($_POST['fiber'] ?? 0);
-        $recipe['is_premium'] = $user['is_vendor'] && isset($_POST['is_premium']);
+        $recipe['is_premium'] = RECIPE_SELLING_ENABLED && $user['is_vendor'] && isset($_POST['is_premium']);
         $recipe['price'] = $recipe['is_premium'] ? (float)($_POST['price'] ?? 0) : null;
 
         $selectedDiets = array_intersect($_POST['diet_types'] ?? [], $dietOptions);
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="field"><span>Fiber (g)</span><input type="number" name="fiber" value="<?= h($recipe['fiber']) ?>" min="0"></label>
         </div>
 
-        <?php if ($user['is_vendor']): ?>
+        <?php if (RECIPE_SELLING_ENABLED && $user['is_vendor']): ?>
             <div class="pref-group card" style="background:var(--green-light);border-color:var(--green);">
                 <h3 style="margin-top:0;">Sell this recipe</h3>
                 <label class="pref-chip <?= $recipe['is_premium'] ? 'is-active' : '' ?>" style="display:inline-flex;background:var(--white);">

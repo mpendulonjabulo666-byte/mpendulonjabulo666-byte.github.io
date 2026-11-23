@@ -113,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_check()) {
         redirect('profile.php');
     } elseif ($form === 'vendor') {
         $isVendor = isset($_POST['is_vendor']) ? 1 : 0;
+        if ($isVendor && !RECIPE_SELLING_ENABLED) {
+            flash_set('error', 'Selling recipes is coming soon.');
+            redirect('profile.php');
+        }
         // Selling requires Premium - checked server-side, not just hidden
         // client-side, since a stale page (checkbox rendered before an
         // expiry) could still POST this. Turning selling OFF is always
@@ -192,7 +196,7 @@ $goals = $goalStmt->fetch() ?: [];
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>
@@ -357,6 +361,7 @@ $goals = $goalStmt->fetch() ?: [];
         </form>
     </div>
 
+    <?php if (RECIPE_SELLING_ENABLED): ?>
     <div class="card mt-16">
         <h2 style="font-size:16px;margin-top:0;">Sell your recipes</h2>
         <p class="muted" style="margin-top:0;font-size:13px;">Turn this on to mark your own recipes as premium with a price. Buyers pay through PayFast to unlock the full recipe.</p>
@@ -376,6 +381,13 @@ $goals = $goalStmt->fetch() ?: [];
         <?php if ($user['is_vendor']): ?>
             <a class="btn btn-text btn-small mt-16" href="vendor.php"><?= icon('flame', 14) ?> Go to your vendor dashboard</a>
         <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="card mt-16">
+        <h2 style="font-size:16px;margin-top:0;">Delete account</h2>
+        <p class="muted" style="margin-top:0;font-size:13px;">Permanently remove your account and personal data from <?= APP_NAME ?>.</p>
+        <a class="btn btn-text btn-small" href="delete_account.php" style="color:#c0392b;">Delete my account</a>
     </div>
 <?php include __DIR__ . '/includes/profile_more.php'; ?>
 </main>

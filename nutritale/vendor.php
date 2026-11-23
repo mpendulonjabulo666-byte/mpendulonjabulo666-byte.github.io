@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/vendor_payouts.php';
 
 $user = require_login();
 
+if (!RECIPE_SELLING_ENABLED) {
+    flash_set('error', 'Selling recipes is coming soon.');
+    redirect('profile.php');
+}
+
 if (empty($user['is_vendor'])) {
     http_response_code(403);
     die('Turn on "Sell your recipes" in your profile to access the vendor dashboard.');
@@ -71,7 +76,7 @@ $payoutHistory = $payoutHistoryStmt->fetchAll();
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 <script src="assets/js/theme-toggle.js?v=24" defer></script>
 </head>
 <body>

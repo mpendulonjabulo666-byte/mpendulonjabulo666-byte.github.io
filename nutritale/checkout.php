@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/payfast_gateway.php';
 
 $user = require_login();
 
+if (!RECIPE_SELLING_ENABLED) {
+    flash_set('error', 'Buying recipes from members is coming soon.');
+    redirect('index.php');
+}
+
 $recipeId = $_GET['recipe_id'] ?? '';
 $stmt = db()->prepare('SELECT * FROM recipes WHERE id = ? AND is_premium = 1');
 $stmt->execute([$recipeId]);
@@ -56,6 +61,7 @@ $pfData = [
     'item_name' => mb_substr($recipe['title'], 0, 100),
     'item_description' => 'Premium recipe on ' . APP_NAME,
 ];
+$pfData = payfast_clean_fields($pfData);
 $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 ?>
 <!DOCTYPE html>
@@ -74,7 +80,7 @@ $pfData['signature'] = payfast_signature($pfData, PAYFAST_PASSPHRASE);
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NutriTale">
 <script src="assets/js/theme-init.js?v=24"></script>
-<link rel="stylesheet" href="assets/css/style.css?v=24">
+<link rel="stylesheet" href="assets/css/style.css?v=44">
 </head>
 <body>
 <div class="auth-shell">
